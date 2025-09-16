@@ -1,12 +1,12 @@
 import { useRouter } from "expo-router";
-import { Button, View } from "react-native";
+import { Button, View, Text } from "react-native";
 
 export default function Icon() {
 
     const router = useRouter();
     return (
         <View>
-            <text>Icon!</text>
+            <Text>Icon!</Text>
             <Button
                 title="Match Settings"
                 onPress={() => router.push("../components/matchSettings")}

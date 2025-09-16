@@ -1,10 +1,10 @@
-import { View } from "react-native";
+import { View, Text } from "react-native";
 
 
 export default function Settings() {
     return (
         <View>
-            <text>Holla!</text>
+            <Text>Holla!</Text>
         </View>
     );
 }
