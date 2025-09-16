@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Text, View } from "react-native";
 
 export default function Index() {
   return (
@@ -9,7 +9,9 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-      <h1>Welcome to Songfrontation!</h1>
+      <Text style={{ fontSize: 32, fontWeight: "bold" }}>
+        Welcome to Songfrontation!
+      </Text>
     </View>
   );
 }
