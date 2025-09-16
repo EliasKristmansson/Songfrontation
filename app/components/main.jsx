@@ -7,36 +7,11 @@ import {
     Text,
     View,
     Animated,
-    Easing,
     StyleSheet,
 } from "react-native";
 
 export default function Main() {
     const router = useRouter();
-    const [pressed, setPressed] = useState(null);
-
-    // Animated values for fading
-    const fadeAnim1 = useRef(new Animated.Value(0)).current;
-    const fadeAnim2 = useRef(new Animated.Value(0)).current;
-
-    const handlePressIn = (player) => {
-        setPressed(player);
-        Animated.timing(player === "1p" ? fadeAnim1 : fadeAnim2, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-            easing: Easing.out(Easing.ease),
-        }).start();
-    };
-
-    const handlePressOut = (player) => {
-        Animated.timing(player === "1p" ? fadeAnim1 : fadeAnim2, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-            easing: Easing.in(Easing.ease),
-        }).start(() => setPressed(null));
-    };
 
     return (
         <View
@@ -92,8 +67,6 @@ export default function Main() {
                         justifyContent: "center",
                         paddingVertical: 24,
                     }}
-                    onPressIn={() => handlePressIn("1p")}
-                    onPressOut={() => handlePressOut("1p")}
                     onPress={() => {
                         /* handle 1 player */
                     }}
@@ -142,8 +115,6 @@ export default function Main() {
                         justifyContent: "center",
                         paddingVertical: 24,
                     }}
-                    onPressIn={() => handlePressIn("2p")}
-                    onPressOut={() => handlePressOut("2p")}
                     onPress={() => {
                         /* handle 2 player */
                     }}
