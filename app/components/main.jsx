@@ -19,7 +19,15 @@ export default function Main() {
 
             <Button
                 title="Settings"
-                onPress={() => router.push("/settings")}
+                onPress={() => router.push("../components/settings")}
+            />
+            <Button
+                title="QuickGame"
+                onPress={() => router.push("../components/match")}
+            />
+            <Button
+                title="CustomGame"
+                onPress={() => router.push("../components/icon")}
             />
 
             <View
