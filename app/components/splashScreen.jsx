@@ -1,5 +1,6 @@
-
-
+import Loader from 'react-dots-loader';
+import 'react-dots-loader/index.css';
+ 
 export default function SplashScreen() {
 	return (
 		<div style={{
@@ -31,7 +32,9 @@ export default function SplashScreen() {
 				fontWeight: 'bold',
 				letterSpacing: 1,
 			}}>
-				loading the game...
+				loading the game
+                {" "}
+                <Loader size={10}/>
 			</span>
 		</div>
 	);
