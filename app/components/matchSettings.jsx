@@ -134,7 +134,7 @@ export default function Icon() {
                 />
                 <Button
                     title="gameAlternatives"
-                    onPress={() => router.push("../components/gameCustom")}
+                    onPress={() => router.push("../components/genreCustom")}
                 />
             </View>
         </View>
