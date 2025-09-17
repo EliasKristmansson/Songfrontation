@@ -3,16 +3,16 @@ import { useRouter } from "expo-router";
 import { useRef } from "react";
 import {
     Animated,
-    Button,
     Dimensions,
     Pressable,
     StyleSheet,
     Text,
-    View,
+    TouchableOpacity,
+    View
 } from "react-native";
 
 const windowWidth = Dimensions.get("window").width;
-const BUTTON_WIDTH = Math.min(350, windowWidth - 40); // responsive width
+const BUTTON_WIDTH = Math.min(350, windowWidth - 40);
 
 function PlayerButton({ label, onPress }) {
     const opacity = useRef(new Animated.Value(0)).current;
@@ -38,11 +38,23 @@ function PlayerButton({ label, onPress }) {
             onPress={onPress}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
-            style={{ flex: 1, position: "relative" }}
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
             <Animated.View
                 pointerEvents="none"
-                style={[StyleSheet.absoluteFillObject, styles.overlay, { opacity }]}
+                style={[
+                    {
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(0,0,0,0.25)",
+                        transform: [{ skewX: "-15deg" }],
+                        borderRadius: 50,
+                        opacity,
+                    },
+                ]}
             />
             <View style={styles.playerContent}>
                 <Text style={styles.playerText}>{label}</Text>
@@ -56,22 +68,19 @@ export default function Main() {
 
     return (
         <View style={styles.container}>
-            {/* Top Buttons */}
-            <View style={styles.topButtons}>
-                <Button
-                    title="Settings"
+            {/* Title with settings icon */}
+            <View style={styles.titleContainer}>
+                <Text style={styles.title}>Welcome to Songfrontation!</Text>
+                <TouchableOpacity
+                    style={styles.settingsButtonAbsolute}
                     onPress={() => router.push("../components/settings")}
-                />
-                <Button
-                    title="Splash"
-                    onPress={() => router.push("../components/splashScreen")}
-                />
+                >
+                    <Text style={styles.settingsText}>⚙️</Text>
+                </TouchableOpacity>
             </View>
 
             {/* Center Content */}
             <View style={styles.centerContent}>
-                <Text style={styles.title}>Welcome to Songfrontation!</Text>
-
                 {/* Quick Match */}
                 <View style={{ width: BUTTON_WIDTH, alignItems: "flex-start", paddingLeft: 10 }}>
                     <Text style={styles.sectionLabel}>Quick Match</Text>
@@ -82,15 +91,9 @@ export default function Main() {
                     end={[0.9, 1]}
                     style={[styles.buttonRow, { width: BUTTON_WIDTH }]}
                 >
-                    <PlayerButton
-                        label="1 Player"
-                        onPress={() => router.push("../components/match")}
-                    />
+                    <PlayerButton label="1 Player" onPress={() => router.push("../components/match")} />
                     <View style={styles.divider} />
-                    <PlayerButton
-                        label="2 Players"
-                        onPress={() => router.push("../components/match")}
-                    />
+                    <PlayerButton label="2 Players" onPress={() => router.push("../components/match")} />
                 </LinearGradient>
 
                 {/* Custom Match */}
@@ -103,15 +106,9 @@ export default function Main() {
                     end={[0.9, 1]}
                     style={[styles.buttonRow, { width: BUTTON_WIDTH }]}
                 >
-                    <PlayerButton
-                        label="1 Player"
-                        onPress={() => router.push("../components/icon")}
-                    />
+                    <PlayerButton label="1 Player" onPress={() => router.push("../components/icon")} />
                     <View style={styles.divider} />
-                    <PlayerButton
-                        label="2 Players"
-                        onPress={() => router.push("../components/icon")}
-                    />
+                    <PlayerButton label="2 Players" onPress={() => router.push("../components/icon")} />
                 </LinearGradient>
             </View>
         </View>
@@ -125,29 +122,29 @@ const styles = StyleSheet.create({
         paddingTop: 40,
         alignItems: "center",
     },
-    topButtons: {
-        width: "90%",
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 20,
-    },
-    centerContent: {
-        flex: 1,
-        justifyContent: "flex-start",
-        alignItems: "center",
+    titleContainer: {
         width: "100%",
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 20,
+        position: "relative",
     },
     title: {
         fontSize: 28,
         fontWeight: "bold",
         color: "black",
-        marginBottom: 20,
         textAlign: "center",
     },
-    sectionLabelWrap: {
-        width: "90%",
-        alignItems: "flex-start",
-        paddingLeft: 10,
+    settingsButtonAbsolute: {
+        position: "absolute",
+        right: 20,
+        top: 0,
+        padding: 4,
+        borderRadius: 16,
+        backgroundColor: "#f5f5f5",
+    },
+    settingsText: {
+        fontSize: 24,
     },
     sectionLabel: {
         fontSize: 16,
@@ -159,6 +156,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
         overflow: "hidden",
         position: "relative",
+        height: 60,
     },
     divider: {
         position: "absolute",
@@ -169,16 +167,11 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(0,0,0,0.25)",
         transform: [{ rotate: "15deg" }],
     },
-    overlay: {
-        backgroundColor: "rgba(0,0,0,0.25)",
-        transform: [{ skewX: "-15deg" }],
-        zIndex: 0,
-    },
     playerContent: {
-        zIndex: 1,
+        zIndex: 2,
         flex: 1,
-        alignItems: "center",
         justifyContent: "center",
+        alignItems: "center",
         paddingVertical: 16,
     },
     playerText: {
@@ -188,5 +181,11 @@ const styles = StyleSheet.create({
         letterSpacing: 2,
         fontStyle: "normal",
         textAlign: "center",
+    },
+    centerContent: {
+        flex: 1,
+        justifyContent: "flex-start",
+        alignItems: "center",
+        width: "100%",
     },
 });
