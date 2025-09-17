@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     sliderCard: {
         backgroundColor: SLIDER_BG,
         borderRadius: 18,
-        padding: 24,
+        padding: 8,
         marginVertical: 18,
         width: "66%",
         maxWidth: 700,
@@ -110,12 +110,11 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         width: "100%",
-        marginBottom: 8,
     },
     slider: {
         flex: 1,
         marginHorizontal: 12,
-        height: 40,
+        height: 10,
     },
     sliderLabel: {
         fontSize: 14,
@@ -127,7 +126,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
         color: DARK_BLUE,
-        marginTop: 2,
         letterSpacing: 0.5,
     },
 });
