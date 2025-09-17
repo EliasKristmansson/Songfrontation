@@ -1,13 +1,12 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useState, useRef } from "react";
 import {
+    Animated,
     Button,
     Pressable,
+    StyleSheet,
     Text,
     View,
-    Animated,
-    StyleSheet,
 } from "react-native";
 
 export default function Main() {
@@ -87,7 +86,6 @@ export default function Main() {
                             StyleSheet.absoluteFillObject,
                             {
                                 backgroundColor: "rgba(0,0,0,0.15)",
-                                opacity: fadeAnim1,
                                 transform: [{ skewX: "-15deg" }],
                             },
                         ]}
@@ -134,8 +132,7 @@ export default function Main() {
                         style={[
                             StyleSheet.absoluteFillObject,
                             {
-                                backgroundColor: "rgba(0,0,0,0.15)",
-                                opacity: fadeAnim2,
+                                backgroundColor: "rgba(0,0,0,0.15)",    
                                 transform: [{ skewX: "-15deg" }],
                             },
                         ]}
