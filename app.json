@@ -4,7 +4,7 @@
     "slug": "Songfrontation",
     "version": "1.0.0",
     "orientation": "landscape",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/appicon.png",
     "scheme": "songfrontation",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
