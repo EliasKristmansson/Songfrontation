@@ -1,12 +1,10 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-    Animated,
     Button,
     Pressable,
-    StyleSheet,
     Text,
-    View,
+    View
 } from "react-native";
 
 export default function Main() {
@@ -43,11 +41,11 @@ export default function Main() {
             <Button
                 title="CustomGame"
                 onPress={() => router.push("../components/icon")}
-            /><Button
+            />
+            <Button
                 title="Splash"
                 onPress={() => router.push("../components/splashScreen")}
             />
-
 
             <LinearGradient
                 colors={["#6a82fb", "#8e7cc3", "#a18cd1", "#7f6edb"]}
@@ -64,12 +62,18 @@ export default function Main() {
             >
                 {/* Player 1 */}
                 <Pressable
-                    style={{
-                        flex: 1,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        paddingVertical: 24,
-                    }}
+                    style={({ pressed }) => [
+                        {
+                            flex: 1,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            paddingVertical: 24,
+                        },
+                        pressed && {
+                            backgroundColor: "rgba(0,0,0,0.2)",
+                            transform: [{ skewX: "-15deg" }], // skew
+                        },
+                    ]}
                     onPress={() => {
                         /* handle 1 player */
                     }}
@@ -84,19 +88,9 @@ export default function Main() {
                     >
                         1 Player
                     </Text>
-                    {/* Animated overlay */}
-                    <Animated.View
-                        style={[
-                            StyleSheet.absoluteFillObject,
-                            {
-                                backgroundColor: "rgba(0,0,0,0.15)",
-                                transform: [{ skewX: "-15deg" }],
-                            },
-                        ]}
-                    />
                 </Pressable>
 
-                {/* Slanted Divider */}
+                {/* Divider */}
                 <View
                     style={{
                         position: "absolute",
@@ -111,12 +105,18 @@ export default function Main() {
 
                 {/* Player 2 */}
                 <Pressable
-                    style={{
-                        flex: 1,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        paddingVertical: 24,
-                    }}
+                    style={({ pressed }) => [
+                        {
+                            flex: 1,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            paddingVertical: 24,
+                        },
+                        pressed && {
+                            backgroundColor: "rgba(0,0,0,0.2)",
+                            transform: [{ skewX: "-15deg" }], // skew
+                        },
+                    ]}
                     onPress={() => {
                         /* handle 2 player */
                     }}
@@ -131,16 +131,6 @@ export default function Main() {
                     >
                         2 Players
                     </Text>
-                    {/* Animated overlay */}
-                    <Animated.View
-                        style={[
-                            StyleSheet.absoluteFillObject,
-                            {
-                                backgroundColor: "rgba(0,0,0,0.15)",    
-                                transform: [{ skewX: "-15deg" }],
-                            },
-                        ]}
-                    />
                 </Pressable>
             </LinearGradient>
         </View>
