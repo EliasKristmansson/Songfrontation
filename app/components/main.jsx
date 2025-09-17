@@ -51,7 +51,6 @@ function PlayerButton({ label, onPress }) {
                         bottom: 0,
                         backgroundColor: "rgba(0,0,0,0.25)",
                         transform: [{ skewX: "-15deg" }],
-                        borderRadius: 50,
                         opacity,
                     },
                 ]}
