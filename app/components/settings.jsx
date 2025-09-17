@@ -1,18 +1,30 @@
 import Slider from "@react-native-community/slider";
+import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 const DARK_BLUE = "#2c3e50";
 const LIGHT_BG = "#f5f6fa";
 const SLIDER_BG = "#e1e6f9";
 
 export default function Settings() {
+    const router = useRouter();
     const [master, setMaster] = useState(50);
     const [effects, setEffects] = useState(50);
     const [music, setMusic] = useState(50);
 
     return (
         <View style={styles.container}>
+            {/* "Header"" */}
+            <View style={styles.headerRow}>
+                <TouchableOpacity
+                    style={styles.roundedButton}
+                    onPress={() => router.push("/")}
+                >
+                    <Text style={styles.buttonText}>Back</Text>
+                </TouchableOpacity>
+            </View>
+            
+
             {/* Master Volume (slider) */}
             <View style={styles.sliderCard}>
                 <Text style={styles.volumeLabel}>Master Volume</Text>
@@ -127,5 +139,17 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: DARK_BLUE,
         letterSpacing: 0.5,
+    },
+    roundedButton: {
+        backgroundColor: LIGHT_BG,
+        borderRadius: 25,
+        paddingVertical: 12,
+        paddingHorizontal: 32,
+        minWidth: 100,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.10,
+        shadowRadius: 6,
+        elevation: 2,
     },
 });
