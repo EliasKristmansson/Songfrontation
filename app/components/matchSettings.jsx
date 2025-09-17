@@ -1,7 +1,7 @@
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native"; // Ta bort button sedan
 
 const DARK_BLUE = "#1a237e";
 const BUTTON_BG = "#232b4d";
@@ -126,6 +126,12 @@ export default function Icon() {
                         </Text>
                     </TouchableOpacity>
                 ))}
+
+                {/* Ta bort denna kknapp sedan */}
+                <Button
+                    title="gameAlternatives"
+                    onPress={() => router.push("../components/genreAlternatives")}
+                />
             </View>
         </View>
     );
