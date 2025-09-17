@@ -70,41 +70,13 @@ export default function Main() {
             />
 
             {/* Center Content */}
-            <View
-                style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                 {/* Title */}
-                <Text
-                    style={{
-                        fontSize: 32,
-                        fontWeight: "bold",
-                        color: "black",
-                        marginBottom: 40,
-                    }}
-                >
-                    Welcome to Songfrontation!
-                </Text>
+                <Text style={styles.title}>Welcome to Songfrontation!</Text>
 
-                {/* Quick Match Label (aligned left, above buttons) */}
-                <View
-                    style={{
-                        width: 400,
-                        alignItems: "flex-start",
-                        paddingLeft: 10,
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontSize: 16,
-                            color: "black",
-                        }}
-                    >
-                        Quick Match
-                    </Text>
+                {/* Quick Match Label (left aligned above the buttons) */}
+                <View style={styles.sectionLabelWrap}>
+                    <Text style={styles.sectionLabel}>Quick Match</Text>
                 </View>
 
                 {/* Quick Match Buttons */}
@@ -112,195 +84,101 @@ export default function Main() {
                     colors={["#6a82fb", "#8e7cc3", "#a18cd1", "#7f6edb"]}
                     start={[0.1, 0]}
                     end={[0.9, 1]}
-                    style={{
-                        flexDirection: "row",
-                        borderRadius: 50,
-                        marginTop: 10,
-                        width: 400,
-                        overflow: "hidden",
-                        position: "relative",
-                    }}
+                    style={styles.buttonRow}
                 >
-                    {/* Player 1 */}
-                    <Pressable
-                        style={({ pressed }) => [
-                            {
-                                flex: 1,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                paddingVertical: 24,
-                            },
-                            pressed && {
-                                backgroundColor: "rgba(0,0,0,0.2)",
-                                transform: [{ skewX: "-15deg" }],
-                            },
-                        ]}
-                        onPress={() => {
-                            /* handle 1 player */
-                        }}
-                    >
-                        <Text
-                            style={{
-                                color: "white",
-                                fontSize: 16,
-                                fontWeight: "bold",
-                                letterSpacing: 2,
-                            }}
-                        >
-                            1 Player
-                        </Text>
-                    </Pressable>
-
-                    {/* Divider */}
-                    <View
-                        style={{
-                            position: "absolute",
-                            top: 0,
-                            bottom: 0,
-                            left: "50%",
-                            width: 2,
-                            backgroundColor: "rgba(0,0,0,0.25)",
-                            transform: [{ rotate: "15deg" }],
-                        }}
+                    <PlayerButton
+                        label="1 Player"
+                        onPress={() => router.push("../components/match")}
                     />
 
-                    {/* Player 2 */}
-                    <Pressable
-                        style={({ pressed }) => [
-                            {
-                                flex: 1,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                paddingVertical: 24,
-                            },
-                            pressed && {
-                                backgroundColor: "rgba(0,0,0,0.2)",
-                                transform: [{ skewX: "-15deg" }],
-                            },
-                        ]}
-                        onPress={() => {
-                            /* handle 2 player */
-                        }}
-                    >
-                        <Text
-                            style={{
-                                color: "white",
-                                fontSize: 16,
-                                fontWeight: "bold",
-                                letterSpacing: 2,
-                            }}
-                        >
-                            2 Players
-                        </Text>
-                    </Pressable>
+                    {/* Divider */}
+                    <View style={styles.divider} />
+
+                    <PlayerButton
+                        label="2 Players"
+                        onPress={() => router.push("../components/match")}
+                    />
                 </LinearGradient>
 
-
-                {/* Custom Match Label (aligned left, above buttons) */}
-                <View
-                    style={{
-                        width: 400,
-                        alignItems: "flex-start",
-                        paddingLeft: 10,
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontSize: 16,
-                            color: "black",
-                        }}
-                    >
-                        Quick Match
-                    </Text>
+                {/* Custom Match Label */}
+                <View style={[styles.sectionLabelWrap, { marginTop: 30 }]}>
+                    <Text style={styles.sectionLabel}>Custom Match</Text>
                 </View>
+
                 {/* Custom Match Buttons */}
                 <LinearGradient
                     colors={["#6a82fb", "#8e7cc3", "#a18cd1", "#7f6edb"]}
                     start={[0.1, 0]}
                     end={[0.9, 1]}
-                    style={{
-                        flexDirection: "row",
-                        borderRadius: 50,
-                        marginTop: 10,
-                        width: 400,
-                        overflow: "hidden",
-                        position: "relative",
-                    }}
+                    style={styles.buttonRow}
                 >
-                    {/* Player 1 */}
-                    <Pressable
-                        style={({ pressed }) => [
-                            {
-                                flex: 1,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                paddingVertical: 24,
-                            },
-                            pressed && {
-                                backgroundColor: "rgba(0,0,0,0.2)",
-                                transform: [{ skewX: "-15deg" }],
-                            },
-                        ]}
-                        onPress={() => {
-                            /* handle 1 player */
-                        }}
-                    >
-                        <Text
-                            style={{
-                                color: "white",
-                                fontSize: 16,
-                                fontWeight: "bold",
-                                letterSpacing: 2,
-                            }}
-                        >
-                            1 Player
-                        </Text>
-                    </Pressable>
-
-                    {/* Divider */}
-                    <View
-                        style={{
-                            position: "absolute",
-                            top: 0,
-                            bottom: 0,
-                            left: "50%",
-                            width: 2,
-                            backgroundColor: "rgba(0,0,0,0.25)",
-                            transform: [{ rotate: "15deg" }],
-                        }}
+                    <PlayerButton
+                        label="1 Player"
+                        onPress={() => router.push("../components/icon")}
                     />
 
-                    {/* Player 2 */}
-                    <Pressable
-                        style={({ pressed }) => [
-                            {
-                                flex: 1,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                paddingVertical: 24,
-                            },
-                            pressed && {
-                                backgroundColor: "rgba(0,0,0,0.2)",
-                                transform: [{ skewX: "-15deg" }],
-                            },
-                        ]}
-                        onPress={() => {
-                            /* handle 2 player */
-                        }}
-                    >
-                        <Text
-                            style={{
-                                color: "white",
-                                fontSize: 16,
-                                fontWeight: "bold",
-                                letterSpacing: 2,
-                            }}
-                        >
-                            2 Players
-                        </Text>
-                    </Pressable>
+                    <View style={styles.divider} />
+
+                    <PlayerButton
+                        label="2 Players"
+                        onPress={() => router.push("../components/icon")}
+                    />
                 </LinearGradient>
             </View>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    title: {
+        fontSize: 32,
+        fontWeight: "bold",
+        color: "black",
+        marginBottom: 40,
+    },
+    sectionLabelWrap: {
+        width: 400,
+        alignItems: "flex-start",
+        paddingLeft: 10,
+    },
+    sectionLabel: {
+        fontSize: 16,
+        color: "black",
+    },
+    buttonRow: {
+        flexDirection: "row",
+        borderRadius: 50,
+        marginTop: 10,
+        width: 400,
+        overflow: "hidden",
+        position: "relative",
+    },
+    divider: {
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+        left: "50%",
+        width: 2,
+        backgroundColor: "rgba(0,0,0,0.25)",
+        transform: [{ rotate: "15deg" }],
+    },
+    overlay: {
+        backgroundColor: "rgba(0,0,0,0.25)",
+        transform: [{ skewX: "-15deg" }],
+        zIndex: 0,
+    },
+    playerContent: {
+        zIndex: 1,
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 24,
+    },
+    playerText: {
+        color: "white",
+        fontSize: 16,
+        fontWeight: "bold",
+        letterSpacing: 2,
+        fontStyle: "normal",
+    },
+});
