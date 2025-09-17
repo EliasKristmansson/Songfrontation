@@ -43,7 +43,11 @@ export default function Main() {
             <Button
                 title="CustomGame"
                 onPress={() => router.push("../components/icon")}
+            /><Button
+                title="Splash"
+                onPress={() => router.push("../components/splashScreen")}
             />
+
 
             <LinearGradient
                 colors={["#6a82fb", "#8e7cc3", "#a18cd1", "#7f6edb"]}
