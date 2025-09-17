@@ -5,7 +5,9 @@ import { StyleSheet, Text, View } from "react-native";
 const DARK_BLUE = "#2c3e50"; // Example color
 
 export default function Settings() {
-    const [duration, setDuration] = useState(5);
+    const [master, setMaster] = useState(50);
+    const [effects, setEffects] = useState(50);
+    const [music, setMusic] = useState(50);
 
     return (
         <>
@@ -18,14 +20,14 @@ export default function Settings() {
                     minimumValue={0}
                     maximumValue={100}
                     step={1}
-                    value={duration}
-                    onValueChange={setDuration}
+                    value={master}
+                    onValueChange={setMaster}
                     minimumTrackTintColor={DARK_BLUE}
                     maximumTrackTintColor="#bbb"
                     thumbTintColor={DARK_BLUE}
                 />
                 <Text style={styles.sliderLabel}>100%</Text>
-                <Text style={styles.sliderInfo}>{duration}%</Text>
+                <Text style={styles.sliderInfo}>{master}%</Text>
             </View>
             {/* Effects Volume (slider) */}
             <View style={styles.volumeRow}>
@@ -36,14 +38,14 @@ export default function Settings() {
                     minimumValue={0}
                     maximumValue={100}
                     step={1}
-                    value={duration}
-                    onValueChange={setDuration}
+                    value={effects}
+                    onValueChange={setEffects}
                     minimumTrackTintColor={DARK_BLUE}
                     maximumTrackTintColor="#bbb"
                     thumbTintColor={DARK_BLUE}
                 />
                 <Text style={styles.sliderLabel}>100%</Text>
-                <Text style={styles.sliderInfo}>{duration}%</Text>
+                <Text style={styles.sliderInfo}>{effects}%</Text>
             </View>{/* Music Volume (slider) */}
             <View style={styles.volumeRow}>
                 <Text style={styles.volumeLabelInline}>Music Volume</Text>
@@ -53,14 +55,14 @@ export default function Settings() {
                     minimumValue={0}
                     maximumValue={100}
                     step={1}
-                    value={duration}
-                    onValueChange={setDuration}
+                    value={music}
+                    onValueChange={setMusic}
                     minimumTrackTintColor={DARK_BLUE}
                     maximumTrackTintColor="#bbb"
                     thumbTintColor={DARK_BLUE}
                 />
                 <Text style={styles.sliderLabel}>100%</Text>
-                <Text style={styles.sliderInfo}>{duration}%</Text>
+                <Text style={styles.sliderInfo}>{music}%</Text>
             </View>
             
         </>
