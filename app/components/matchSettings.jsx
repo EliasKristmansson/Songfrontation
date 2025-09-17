@@ -20,7 +20,7 @@ export default function Icon() {
             <View style={styles.headerRow}>
                 <TouchableOpacity
                     style={styles.roundedButton}
-                    onPress={() => router.push("../components/icons")}
+                    onPress={() => router.push("../components/icon")}
                 >
                     <Text style={styles.buttonText}>Back</Text>
                 </TouchableOpacity>
