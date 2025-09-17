@@ -1,7 +1,7 @@
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native"; // Ta bort button sedan
+import { Button, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"; // <-- Add ScrollView
 
 const DARK_BLUE = "#1a237e";
 const BUTTON_BG = "#232b4d";
@@ -15,7 +15,7 @@ export default function Icon() {
     const [points, setPoints] = useState(3);
 
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
             {/* "Header"" */}
             <View style={styles.headerRow}>
                 <TouchableOpacity
@@ -137,7 +137,7 @@ export default function Icon() {
                     onPress={() => router.push("../components/genreCustom")}
                 />
             </View>
-        </View>
+        </ScrollView>
     );
 }
 
