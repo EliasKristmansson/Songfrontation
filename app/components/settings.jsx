@@ -9,9 +9,9 @@ export default function Settings() {
 
     return (
         <>
-            {/* Round duration (slider) */}
-            <View style={styles.genreRow}>
-                <Text style={styles.genreLabelInline}>Master Volume</Text>
+            {/* Master Volume (slider) */}
+            <View style={styles.volumeRow}>
+                <Text style={styles.volumeLabelInline}>Master Volume</Text>
                 <Text style={styles.sliderLabel}>0%</Text>
                 <Slider
                     style={{ flex: 1, marginHorizontal: 10 }}
@@ -25,20 +25,56 @@ export default function Settings() {
                     thumbTintColor={DARK_BLUE}
                 />
                 <Text style={styles.sliderLabel}>100%</Text>
-                <Text style={styles.durationValue}>{duration}%</Text>
+                <Text style={styles.sliderInfo}>{duration}%</Text>
             </View>
+            {/* Effects Volume (slider) */}
+            <View style={styles.volumeRow}>
+                <Text style={styles.volumeLabelInline}>Effects Volume</Text>
+                <Text style={styles.sliderLabel}>0%</Text>
+                <Slider
+                    style={{ flex: 1, marginHorizontal: 10 }}
+                    minimumValue={0}
+                    maximumValue={100}
+                    step={1}
+                    value={duration}
+                    onValueChange={setDuration}
+                    minimumTrackTintColor={DARK_BLUE}
+                    maximumTrackTintColor="#bbb"
+                    thumbTintColor={DARK_BLUE}
+                />
+                <Text style={styles.sliderLabel}>100%</Text>
+                <Text style={styles.sliderInfo}>{duration}%</Text>
+            </View>{/* Music Volume (slider) */}
+            <View style={styles.volumeRow}>
+                <Text style={styles.volumeLabelInline}>Music Volume</Text>
+                <Text style={styles.sliderLabel}>0%</Text>
+                <Slider
+                    style={{ flex: 1, marginHorizontal: 10 }}
+                    minimumValue={0}
+                    maximumValue={100}
+                    step={1}
+                    value={duration}
+                    onValueChange={setDuration}
+                    minimumTrackTintColor={DARK_BLUE}
+                    maximumTrackTintColor="#bbb"
+                    thumbTintColor={DARK_BLUE}
+                />
+                <Text style={styles.sliderLabel}>100%</Text>
+                <Text style={styles.sliderInfo}>{duration}%</Text>
+            </View>
+            
         </>
     );
 }
 
 const styles = StyleSheet.create({
-    genreRow: {
+    volumeRow: {
         flexDirection: "row",
         alignItems: "center",
         marginVertical: 20,
         paddingHorizontal: 10,
     },
-    genreLabelInline: {
+    volumeLabelInline: {
         fontSize: 16,
         fontWeight: "bold",
         marginRight: 10,
@@ -47,7 +83,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#555",
     },
-    durationValue: {
+    sliderInfo: {
         fontSize: 16,
         fontWeight: "bold",
         marginLeft: 10,
