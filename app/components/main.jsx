@@ -1,7 +1,7 @@
 import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
     Animated,
     Dimensions,
@@ -13,6 +13,7 @@ import {
     ImageBackground,
 } from "react-native";
 import SplashScreen from "./splashScreen";
+import Help from "./modals/help";
 
 const windowWidth = Dimensions.get("window").width;
 const BUTTON_WIDTH = Math.min(350, windowWidth - 40);
@@ -41,7 +42,7 @@ function PlayerButton({ label, onPress }) {
             onPress={onPress}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
-            style={{ flex: 1, justifyContent: "center", alignItems: "center", }}
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
             <Animated.View
                 pointerEvents="none"
@@ -55,7 +56,6 @@ function PlayerButton({ label, onPress }) {
                         backgroundColor: "rgba(0,0,0,0.25)",
                         transform: [{ skewX: "-15deg" }],
                         opacity,
-
                     },
                 ]}
             />
@@ -79,6 +79,8 @@ export default function Main() {
         OutfitThin: require("../../assets/fonts/Outfit/Outfit-Thin.ttf"),
     });
 
+    const [helpVisible, setHelpVisible] = useState(false);
+
     if (!fontsLoaded) {
         return <SplashScreen />;
     }
@@ -90,53 +92,93 @@ export default function Main() {
             source={require("../../assets/images/Background3.png")}
             style={styles.container}
         >
-            {/* Title with settings icon */}
             <View style={styles.titleContainer}>
                 <Text style={styles.title}>Welcome to Songfrontation!</Text>
-                <TouchableOpacity
-                    style={styles.settingsButtonAbsolute}
-                    onPress={() => router.push("../components/settings")}
-                >
-                    <Text style={styles.settingsText}>⚙️</Text>
-                </TouchableOpacity>
+
+                {/* Row container for buttons */}
+                <View style={styles.topRightButtons}>
+                    {/* Help */}
+                    <TouchableOpacity
+                        style={styles.settingsButton}
+                        onPress={() => setHelpVisible(true)}
+                    >
+                        <Text style={styles.settingsText}>❔</Text>
+                    </TouchableOpacity>
+
+                    {/* Settings */}
+                    <TouchableOpacity
+                        style={styles.settingsButton}
+                        onPress={() => router.push("../components/settings")}
+                    >
+                        <Text style={styles.settingsText}>⚙️</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {/* Center Content */}
             <View style={styles.centerContent}>
                 {/* Quick Match */}
-                <View style={{ width: BUTTON_WIDTH, alignItems: "flex-start", paddingLeft: 10 }}>
+                <View
+                    style={{
+                        width: BUTTON_WIDTH,
+                        alignItems: "flex-start",
+                        paddingLeft: 10,
+                    }}
+                >
                     <Text style={styles.sectionLabel}>Quick Match</Text>
                 </View>
                 <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
                     <LinearGradient
-                        colors={["#412F7E", "#5663C4","#896DA3", "#B77586"]}
+                        colors={["#412F7E", "#5663C4", "#896DA3", "#B77586"]}
                         start={[0.1, 0]}
                         end={[0.9, 1]}
                         style={styles.buttonRow}
                     >
-                        <PlayerButton label="1 Player" onPress={() => router.push("../components/match")} />
+                        <PlayerButton
+                            label="1 Player"
+                            onPress={() => router.push("../components/match")}
+                        />
                         <View style={styles.divider} />
-                        <PlayerButton label="2 Players" onPress={() => router.push("../components/match")} />
+                        <PlayerButton
+                            label="2 Players"
+                            onPress={() => router.push("../components/match")}
+                        />
                     </LinearGradient>
                 </View>
 
                 {/* Custom Match */}
-                <View style={{ width: BUTTON_WIDTH, alignItems: "flex-start", paddingLeft: 10, marginTop: 30 }}>
+                <View
+                    style={{
+                        width: BUTTON_WIDTH,
+                        alignItems: "flex-start",
+                        paddingLeft: 10,
+                        marginTop: 30,
+                    }}
+                >
                     <Text style={styles.sectionLabel}>Custom Match</Text>
                 </View>
                 <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
                     <LinearGradient
-                        colors={["#B77586", "#896DA3","#5663C4", "#412F7E"]}
+                        colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
                         start={[0.1, 0]}
                         end={[0.9, 1]}
                         style={styles.buttonRow}
                     >
-                        <PlayerButton label="1 Player" onPress={() => router.push("../components/icon")} />
+                        <PlayerButton
+                            label="1 Player"
+                            onPress={() => router.push("../components/icon")}
+                        />
                         <View style={styles.divider} />
-                        <PlayerButton label="2 Players" onPress={() => router.push("../components/icon")} />
+                        <PlayerButton
+                            label="2 Players"
+                            onPress={() => router.push("../components/icon")}
+                        />
                     </LinearGradient>
                 </View>
             </View>
+
+            {/* Help Modal */}
+            <Help visible={helpVisible} onClose={() => setHelpVisible(false)} />
         </ImageBackground>
     );
 }
@@ -155,6 +197,13 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         position: "relative",
     },
+    topRightButtons: {
+        position: "absolute",
+        right: 20,
+        top: 0,
+        flexDirection: "row",
+        gap: 10, // if your RN version doesn't support gap, replace with marginRight on first button
+    },
     title: {
         fontSize: 28,
         fontWeight: "bold",
@@ -162,13 +211,10 @@ const styles = StyleSheet.create({
         textAlign: "center",
         fontFamily: "OutfitBold",
     },
-    settingsButtonAbsolute: {
-        position: "absolute",
-        right: 20,
-        top: 0,
+    settingsButton: {
         padding: 4,
-        borderRadius: 16,
-        backgroundColor: "#f5f5f5",
+        borderRadius: 50,
+        backgroundColor: "#5C66C5",
     },
     settingsText: {
         fontSize: 24,
@@ -190,7 +236,6 @@ const styles = StyleSheet.create({
         marginTop: 10,
         overflow: "visible", // allows shadow to be visible
     },
-
     buttonRow: {
         flexDirection: "row",
         borderRadius: 50,
@@ -200,7 +245,6 @@ const styles = StyleSheet.create({
         borderColor: "white",
         position: "relative",
     },
-
     divider: {
         position: "absolute",
         top: 0,
