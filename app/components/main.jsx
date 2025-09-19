@@ -1,7 +1,7 @@
 import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import {
     Animated,
     Dimensions,
@@ -11,13 +11,11 @@ import {
     TouchableOpacity,
     View,
     ImageBackground,
-    Image,
 } from "react-native";
 import SplashScreen from "./splashScreen";
 
 const windowWidth = Dimensions.get("window").width;
 const BUTTON_WIDTH = Math.min(350, windowWidth - 40);
-const bgImage = require("../../assets/images/Background3.png"); // local image
 
 function PlayerButton({ label, onPress }) {
     const opacity = useRef(new Animated.Value(0)).current;
@@ -43,7 +41,7 @@ function PlayerButton({ label, onPress }) {
             onPress={onPress}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+            style={{ flex: 1, justifyContent: "center", alignItems: "center", }}
         >
             <Animated.View
                 pointerEvents="none"
@@ -57,6 +55,7 @@ function PlayerButton({ label, onPress }) {
                         backgroundColor: "rgba(0,0,0,0.25)",
                         transform: [{ skewX: "-15deg" }],
                         opacity,
+
                     },
                 ]}
             />
@@ -80,26 +79,17 @@ export default function Main() {
         OutfitThin: require("../../assets/fonts/Outfit/Outfit-Thin.ttf"),
     });
 
-    const [bgLoaded, setBgLoaded] = useState(false);
-    const router = useRouter();
-
-    if (!fontsLoaded || !bgLoaded) {
-        // SplashScreen until fonts AND background are ready
+    if (!fontsLoaded) {
         return <SplashScreen />;
     }
 
+    const router = useRouter();
+
     return (
         <ImageBackground
-            source={bgImage}
+            source={require("../../assets/images/Background3.png")}
             style={styles.container}
         >
-            {/* Hidden Image to trigger onLoad */}
-            <Image
-                source={bgImage}
-                style={{ width: 0, height: 0 }}
-                onLoad={() => setBgLoaded(true)}
-            />
-
             {/* Title with settings icon */}
             <View style={styles.titleContainer}>
                 <Text style={styles.title}>Welcome to Songfrontation!</Text>
@@ -117,38 +107,39 @@ export default function Main() {
                 <View style={{ width: BUTTON_WIDTH, alignItems: "flex-start", paddingLeft: 10 }}>
                     <Text style={styles.sectionLabel}>Quick Match</Text>
                 </View>
-                <LinearGradient
-                    colors={["#6a82fb", "#8e7cc3", "#a18cd1", "#7f6edb"]}
-                    start={[0.1, 0]}
-                    end={[0.9, 1]}
-                    style={[styles.buttonRow, { width: BUTTON_WIDTH }]}
-                >
-                    <PlayerButton label="1 Player" onPress={() => router.push("../components/match")} />
-                    <View style={styles.divider} />
-                    <PlayerButton label="2 Players" onPress={() => router.push("../components/match")} />
-                </LinearGradient>
+                <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
+                    <LinearGradient
+                        colors={["#412F7E", "#5663C4","#896DA3", "#B77586"]}
+                        start={[0.1, 0]}
+                        end={[0.9, 1]}
+                        style={styles.buttonRow}
+                    >
+                        <PlayerButton label="1 Player" onPress={() => router.push("../components/match")} />
+                        <View style={styles.divider} />
+                        <PlayerButton label="2 Players" onPress={() => router.push("../components/match")} />
+                    </LinearGradient>
+                </View>
 
                 {/* Custom Match */}
                 <View style={{ width: BUTTON_WIDTH, alignItems: "flex-start", paddingLeft: 10, marginTop: 30 }}>
                     <Text style={styles.sectionLabel}>Custom Match</Text>
                 </View>
-                <LinearGradient
-                    colors={["#6a82fb", "#8e7cc3", "#a18cd1", "#7f6edb"]}
-                    start={[0.1, 0]}
-                    end={[0.9, 1]}
-                    style={[styles.buttonRow, { width: BUTTON_WIDTH }]}
-                >
-                    <PlayerButton label="1 Player" onPress={() => router.push("../components/icon")} />
-                    <View style={styles.divider} />
-                    <PlayerButton label="2 Players" onPress={() => router.push("../components/icon")} />
-                </LinearGradient>
+                <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
+                    <LinearGradient
+                        colors={["#B77586", "#896DA3","#5663C4", "#412F7E"]}
+                        start={[0.1, 0]}
+                        end={[0.9, 1]}
+                        style={styles.buttonRow}
+                    >
+                        <PlayerButton label="1 Player" onPress={() => router.push("../components/icon")} />
+                        <View style={styles.divider} />
+                        <PlayerButton label="2 Players" onPress={() => router.push("../components/icon")} />
+                    </LinearGradient>
+                </View>
             </View>
         </ImageBackground>
     );
 }
-
-// (styles remain the same)
-
 
 const styles = StyleSheet.create({
     container: {
@@ -187,14 +178,29 @@ const styles = StyleSheet.create({
         color: "white",
         fontFamily: "OutfitLight",
     },
+    buttonRowShadow: {
+        // iOS shadow
+        shadowColor: "#8e7cc3",
+        shadowOpacity: 0.8,
+        shadowRadius: 15,
+
+        // Android shadow
+        elevation: 10,
+        borderRadius: 50,
+        marginTop: 10,
+        overflow: "visible", // allows shadow to be visible
+    },
+
     buttonRow: {
         flexDirection: "row",
         borderRadius: 50,
-        marginTop: 10,
-        overflow: "hidden",
-        position: "relative",
         height: 60,
+        overflow: "hidden", // preserves rounded corners for gradient & press
+        borderWidth: 2,
+        borderColor: "white",
+        position: "relative",
     },
+
     divider: {
         position: "absolute",
         top: 0,
