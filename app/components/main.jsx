@@ -1,7 +1,7 @@
 import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
     Animated,
     Dimensions,
@@ -11,11 +11,13 @@ import {
     TouchableOpacity,
     View,
     ImageBackground,
+    Image,
 } from "react-native";
 import SplashScreen from "./splashScreen";
 
 const windowWidth = Dimensions.get("window").width;
 const BUTTON_WIDTH = Math.min(350, windowWidth - 40);
+const bgImage = require("../../assets/images/Background3.png"); // local image
 
 function PlayerButton({ label, onPress }) {
     const opacity = useRef(new Animated.Value(0)).current;
@@ -78,17 +80,26 @@ export default function Main() {
         OutfitThin: require("../../assets/fonts/Outfit/Outfit-Thin.ttf"),
     });
 
-    if (!fontsLoaded) {
+    const [bgLoaded, setBgLoaded] = useState(false);
+    const router = useRouter();
+
+    if (!fontsLoaded || !bgLoaded) {
+        // SplashScreen until fonts AND background are ready
         return <SplashScreen />;
     }
 
-    const router = useRouter();
-
     return (
         <ImageBackground
-            source={require("../../assets/images/Background3.png")}
+            source={bgImage}
             style={styles.container}
         >
+            {/* Hidden Image to trigger onLoad */}
+            <Image
+                source={bgImage}
+                style={{ width: 0, height: 0 }}
+                onLoad={() => setBgLoaded(true)}
+            />
+
             {/* Title with settings icon */}
             <View style={styles.titleContainer}>
                 <Text style={styles.title}>Welcome to Songfrontation!</Text>
@@ -135,6 +146,9 @@ export default function Main() {
         </ImageBackground>
     );
 }
+
+// (styles remain the same)
+
 
 const styles = StyleSheet.create({
     container: {
