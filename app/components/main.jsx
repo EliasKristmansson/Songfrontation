@@ -9,7 +9,8 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    ImageBackground,
 } from "react-native";
 import SplashScreen from "./splashScreen";
 
@@ -78,13 +79,16 @@ export default function Main() {
     });
 
     if (!fontsLoaded) {
-        return <SplashScreen/>; // or a loading indicator
+        return <SplashScreen />;
     }
 
     const router = useRouter();
 
     return (
-        <View style={styles.container}>
+        <ImageBackground
+            source={require("../../assets/images/Background3.png")}
+            style={styles.container}
+        >
             {/* Title with settings icon */}
             <View style={styles.titleContainer}>
                 <Text style={styles.title}>Welcome to Songfrontation!</Text>
@@ -128,16 +132,16 @@ export default function Main() {
                     <PlayerButton label="2 Players" onPress={() => router.push("../components/icon")} />
                 </LinearGradient>
             </View>
-        </View>
+        </ImageBackground>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "white",
         paddingTop: 40,
         alignItems: "center",
+        justifyContent: "flex-start",
     },
     titleContainer: {
         width: "100%",
@@ -149,7 +153,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: "bold",
-        color: "black",
+        color: "white",
         textAlign: "center",
         fontFamily: "OutfitBold",
     },
@@ -166,8 +170,8 @@ const styles = StyleSheet.create({
     },
     sectionLabel: {
         fontSize: 16,
-        color: "black",
-        fontFamily: "OutfitThin",
+        color: "white",
+        fontFamily: "OutfitLight",
     },
     buttonRow: {
         flexDirection: "row",
@@ -198,7 +202,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
         letterSpacing: 2,
-        fontStyle: "normal",
         textAlign: "center",
         fontFamily: "OutfitRegular",
     },
