@@ -1,3 +1,4 @@
+import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useRef } from "react";
@@ -10,6 +11,7 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import SplashScreen from "./splashScreen";
 
 const windowWidth = Dimensions.get("window").width;
 const BUTTON_WIDTH = Math.min(350, windowWidth - 40);
@@ -63,6 +65,22 @@ function PlayerButton({ label, onPress }) {
 }
 
 export default function Main() {
+    const [fontsLoaded] = useFonts({
+        OutfitBlack: require("../../assets/fonts/Outfit/Outfit-Black.ttf"),
+        OutfitBold: require("../../assets/fonts/Outfit/Outfit-Bold.ttf"),
+        OutfitExtraBold: require("../../assets/fonts/Outfit/Outfit-ExtraBold.ttf"),
+        OutfitExtraLight: require("../../assets/fonts/Outfit/Outfit-ExtraLight.ttf"),
+        OutfitLight: require("../../assets/fonts/Outfit/Outfit-Light.ttf"),
+        OutfitMedium: require("../../assets/fonts/Outfit/Outfit-Medium.ttf"),
+        OutfitRegular: require("../../assets/fonts/Outfit/Outfit-Regular.ttf"),
+        OutfitSemiBold: require("../../assets/fonts/Outfit/Outfit-SemiBold.ttf"),
+        OutfitThin: require("../../assets/fonts/Outfit/Outfit-Thin.ttf"),
+    });
+
+    if (!fontsLoaded) {
+        return <SplashScreen/>; // or a loading indicator
+    }
+
     const router = useRouter();
 
     return (
@@ -133,6 +151,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "black",
         textAlign: "center",
+        fontFamily: "OutfitBold",
     },
     settingsButtonAbsolute: {
         position: "absolute",
@@ -148,6 +167,7 @@ const styles = StyleSheet.create({
     sectionLabel: {
         fontSize: 16,
         color: "black",
+        fontFamily: "OutfitThin",
     },
     buttonRow: {
         flexDirection: "row",
@@ -180,6 +200,7 @@ const styles = StyleSheet.create({
         letterSpacing: 2,
         fontStyle: "normal",
         textAlign: "center",
+        fontFamily: "OutfitRegular",
     },
     centerContent: {
         flex: 1,
