@@ -133,8 +133,12 @@ export default function Icon() {
                     onPress={() => router.push("../components/genreAlternatives")}
                 />
                 <Button
-                    title="gameAlternatives"
+                    title="genreCustom"
                     onPress={() => router.push("../components/genreCustom")}
+                />
+                <Button
+                    title="gameRandom"
+                    onPress={() => router.push("../components/genreRandom")}
                 />
             </View>
         </ScrollView>
