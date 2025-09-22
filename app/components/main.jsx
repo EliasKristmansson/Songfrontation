@@ -1,18 +1,16 @@
-import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
     Animated,
     Dimensions,
+    ImageBackground,
     Pressable,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
-    ImageBackground,
 } from "react-native";
-import SplashScreen from "./splashScreen";
 import Help from "./modals/help";
 
 const windowWidth = Dimensions.get("window").width;
@@ -67,24 +65,7 @@ function PlayerButton({ label, onPress }) {
 }
 
 export default function Main() {
-    const [fontsLoaded] = useFonts({
-        OutfitBlack: require("../../assets/fonts/Outfit/Outfit-Black.ttf"),
-        OutfitBold: require("../../assets/fonts/Outfit/Outfit-Bold.ttf"),
-        OutfitExtraBold: require("../../assets/fonts/Outfit/Outfit-ExtraBold.ttf"),
-        OutfitExtraLight: require("../../assets/fonts/Outfit/Outfit-ExtraLight.ttf"),
-        OutfitLight: require("../../assets/fonts/Outfit/Outfit-Light.ttf"),
-        OutfitMedium: require("../../assets/fonts/Outfit/Outfit-Medium.ttf"),
-        OutfitRegular: require("../../assets/fonts/Outfit/Outfit-Regular.ttf"),
-        OutfitSemiBold: require("../../assets/fonts/Outfit/Outfit-SemiBold.ttf"),
-        OutfitThin: require("../../assets/fonts/Outfit/Outfit-Thin.ttf"),
-    });
-
     const [helpVisible, setHelpVisible] = useState(false);
-
-    if (!fontsLoaded) {
-        return <SplashScreen />;
-    }
-
     const router = useRouter();
 
     return (
@@ -202,7 +183,7 @@ const styles = StyleSheet.create({
         right: 20,
         top: 0,
         flexDirection: "row",
-        gap: 10, // if your RN version doesn't support gap, replace with marginRight on first button
+        gap: 10, // fallback: replace with marginRight if needed
     },
     title: {
         fontSize: 28,
@@ -225,22 +206,19 @@ const styles = StyleSheet.create({
         fontFamily: "OutfitLight",
     },
     buttonRowShadow: {
-        // iOS shadow
         shadowColor: "#8e7cc3",
         shadowOpacity: 0.8,
         shadowRadius: 15,
-
-        // Android shadow
         elevation: 10,
         borderRadius: 50,
         marginTop: 10,
-        overflow: "visible", // allows shadow to be visible
+        overflow: "visible",
     },
     buttonRow: {
         flexDirection: "row",
         borderRadius: 50,
         height: 60,
-        overflow: "hidden", // preserves rounded corners for gradient & press
+        overflow: "hidden",
         borderWidth: 2,
         borderColor: "white",
         position: "relative",
