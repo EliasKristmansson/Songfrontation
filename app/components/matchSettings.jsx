@@ -1,7 +1,7 @@
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Button, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"; // <-- Add ScrollView
+import { Button, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const DARK_BLUE = "#1a237e";
 const BUTTON_BG = "#232b4d";
@@ -14,9 +14,24 @@ export default function Icon() {
     const [guesses, setGuesses] = useState(3);
     const [points, setPoints] = useState(3);
 
+    // Next-knappens routing logik + skicka med parametrar
+    const handleNext = () => {
+        const params = { genre, rounds: String(rounds), duration: String(duration), guesses: String(guesses), points: String(points) };
+
+        if (genre === "Random") {
+            router.push({ pathname: "../components/genreRandom", params });
+        } else if (genre === "Alternatives") {
+            router.push({ pathname: "../components/genreAlternatives", params });
+        } else if (genre === "Custom") {
+            router.push({ pathname: "../components/genreCustom", params });
+        } else {
+            // Om inget val görs, gör inget
+        }
+    };
+
     return (
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* "Header"" */}
+            {/* Header */}
             <View style={styles.headerRow}>
                 <TouchableOpacity
                     style={styles.roundedButton}
@@ -27,16 +42,16 @@ export default function Icon() {
                 <Text style={styles.headerText}>Game Settings</Text>
                 <TouchableOpacity
                     style={styles.roundedButton}
-                    onPress={() => router.push("../components/match")}
+                    onPress={handleNext}
                 >
-                    <Text style={styles.buttonText}>Match</Text>
+                    <Text style={styles.buttonText}>Next</Text>
                 </TouchableOpacity>
             </View>
 
             {/* Selection of Genre */}
             <View style={styles.genreRow}>
                 <Text style={styles.genreLabelInline}>Selection of Genre</Text>
-                {["Random", "Alternatives", "Choose"].map(option => (
+                {["Random", "Alternatives", "Custom"].map(option => (
                     <TouchableOpacity
                         key={option}
                         style={[
@@ -126,20 +141,6 @@ export default function Icon() {
                         </Text>
                     </TouchableOpacity>
                 ))}
-
-                {/* Ta bort denna kknapp sedan */}
-                <Button
-                    title="gameAlternatives"
-                    onPress={() => router.push("../components/genreAlternatives")}
-                />
-                <Button
-                    title="genreCustom"
-                    onPress={() => router.push("../components/genreCustom")}
-                />
-                <Button
-                    title="gameRandom"
-                    onPress={() => router.push("../components/genreRandom")}
-                />
             </View>
         </ScrollView>
     );
