@@ -22,6 +22,17 @@ export default function Help({ visible, onClose }) {
                     end={{ x: 0.8, y: 1 }}
                     style={styles.gradient}
                 >
+                    {/* Close button top-right */}
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={onClose}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // extends touch area
+                    >
+                        <Text style={[styles.closeText, { fontFamily: "OutfitBold" }]}>
+                            ✕
+                        </Text>
+                    </TouchableOpacity>
+
                     <Text style={[styles.title, { fontFamily: "OutfitBold" }]}>
                         Help & Instructions
                     </Text>
@@ -33,12 +44,6 @@ export default function Help({ visible, onClose }) {
                         - Tap settings to configure settings.{"\n\n"}
                         Have fun battling with music! 🎶
                     </Text>
-
-                    <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                        <Text style={[styles.closeText, { fontFamily: "OutfitSemiBold" }]}>
-                            Close
-                        </Text>
-                    </TouchableOpacity>
                 </LinearGradient>
             </View>
         </View>
@@ -119,15 +124,17 @@ const styles = StyleSheet.create({
         color: "white",
     },
     closeButton: {
-        alignSelf: "center",
-        paddingVertical: 10,
-        paddingHorizontal: 18,
-        backgroundColor: "#5C66C5",
-        borderRadius: 12,
+        position: "absolute",
+        top: 15, // small offset from top
+        right: 15, // small offset from right
+        paddingVertical: 4, // match the X size
+        paddingHorizontal: 6, // match the X size
+        borderRadius: 6,
     },
+
     closeText: {
         color: "white",
-        fontSize: 15,
+        fontSize: 20,
         fontWeight: "600",
     },
 });
