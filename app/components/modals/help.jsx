@@ -1,3 +1,5 @@
+// ./modals/help.jsx
+import { LinearGradient } from "expo-linear-gradient";
 import {
     Dimensions,
     Modal,
@@ -14,23 +16,30 @@ export default function Help({ visible, onClose }) {
     const content = (
         <View style={styles.overlay}>
             <View style={styles.modalContent}>
-                <Text style={[styles.title, { fontFamily: "OutfitBold" }]}>
-                    Help & Instructions
-                </Text>
-
-                <Text style={[styles.body, { fontFamily: "OutfitRegular" }]}>
-                    Welcome to Songfrontation! 🎵 {"\n\n"}
-                    - Choose Quick Match for a fast game.{"\n"}
-                    - Use Custom Match to set your own rules.{"\n"}
-                    - Tap settings to configure settings.{"\n\n"}
-                    Have fun battling with music! 🎶
-                </Text>
-
-                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                    <Text style={[styles.closeText, { fontFamily: "OutfitSemiBold" }]}>
-                        Close
+                <LinearGradient
+                    colors={["#1A123B", "#242F7D", "#412F59", "#804D58"]}
+                    start={{ x: 0.2, y: 0 }}
+                    end={{ x: 0.8, y: 1 }}
+                    style={styles.gradient}
+                >
+                    <Text style={[styles.title, { fontFamily: "OutfitBold" }]}>
+                        Help & Instructions
                     </Text>
-                </TouchableOpacity>
+
+                    <Text style={[styles.body, { fontFamily: "OutfitRegular" }]}>
+                        Welcome to Songfrontation! 🎵 {"\n\n"}
+                        - Choose Quick Match for a fast game.{"\n"}
+                        - Use Custom Match to set your own rules.{"\n"}
+                        - Tap settings to configure settings.{"\n\n"}
+                        Have fun battling with music! 🎶
+                    </Text>
+
+                    <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                        <Text style={[styles.closeText, { fontFamily: "OutfitSemiBold" }]}>
+                            Close
+                        </Text>
+                    </TouchableOpacity>
+                </LinearGradient>
             </View>
         </View>
     );
@@ -74,38 +83,51 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(0,0,0,0.6)",
         justifyContent: "center",
         alignItems: "center",
+        padding: 20, // adds some breathing room on small devices
     },
     modalContent: {
         width: windowWidth * 0.86,
-        backgroundColor: "white",
-        borderRadius: 20,
-        padding: 22,
-        elevation: 8,
-        shadowColor: "#000",
-        shadowOpacity: 0.18,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
+        borderRadius: 25, // matches player button glow style
+        borderColor: "white",
+        borderWidth: 2,
+
+        // glow/shadow like player buttons
+        shadowColor: "#8e7cc3",
+        shadowOpacity: 0.6,
+        shadowRadius: 20,
+        elevation: 12, // Android shadow
+
+        backgroundColor: "#1A123B", // required for Android shadow
+        padding: 0, // gradient handles padding
+    },
+    gradient: {
+        width: "100%",
+        borderRadius: 25,
+        padding: 20,
     },
     title: {
         fontSize: 18,
-        marginBottom: 8,
+        marginBottom: 12,
         textAlign: "center",
+        color: "white",
     },
     body: {
         fontSize: 15,
-        lineHeight: 20,
-        marginBottom: 16,
+        lineHeight: 22,
+        marginBottom: 20,
         textAlign: "left",
+        color: "white",
     },
     closeButton: {
         alignSelf: "center",
         paddingVertical: 10,
         paddingHorizontal: 18,
         backgroundColor: "#5C66C5",
-        borderRadius: 10,
+        borderRadius: 12,
     },
     closeText: {
         color: "white",
         fontSize: 15,
+        fontWeight: "600",
     },
 });

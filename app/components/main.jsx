@@ -70,6 +70,7 @@ export default function Main() {
 
     return (
         <ImageBackground
+            // Change to "Background3compressed2.webp" for final mobile version
             source={require("../../assets/images/Background3.png")}
             style={styles.container}
         >
