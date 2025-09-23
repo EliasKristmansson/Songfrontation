@@ -1,27 +1,22 @@
-import { Text, View, ActivityIndicator, StyleSheet, ImageBackground, Image } from "react-native";
+import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 
 export default function SplashScreen() {
     return (
-        <ImageBackground
-            source={require("../../assets/images/Background3.png")}
-            style={styles.container}
-        >
-            <View style={styles.container}>
-                <View style={styles.iconBox}>
-                    {/* Actual app icon */}
-                    <Image
-                        source={require("../../assets/images/appicon.png")}
-                        style={styles.iconImage}
-                        resizeMode="contain"
-                    />
-                </View>
-
-                <View style={styles.textRow}>
-                    <Text style={styles.loadingText}>Loading the Game</Text>
-                    <ActivityIndicator size="small" color="white" style={{ marginLeft: 8 }} />
-                </View>
+        <View style={styles.container}>
+            <View style={styles.iconBox}>
+                {/* Actual app icon */}
+                <Image
+                    source={require("../../assets/images/appicon2.png")}
+                    style={styles.iconImage}
+                    resizeMode="contain"
+                />
             </View>
-        </ImageBackground>
+
+            <View style={styles.textRow}>
+                <Text style={styles.loadingText}>Loading the Game</Text>
+                <ActivityIndicator size="small" color="black" style={{ marginLeft: 8 }} />
+            </View>
+        </View>
     );
 }
 
@@ -40,7 +35,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 32,
         overflow: "hidden", // ensures the icon respects the border radius
-		border: "2px solid white",
+        border: "2px solid white",
     },
     iconImage: {
         width: "100%",
@@ -52,7 +47,7 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         fontSize: 24,
-        color: "white",
+        color: "black",
         fontWeight: "bold",
         letterSpacing: 1,
     },

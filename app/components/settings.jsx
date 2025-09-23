@@ -1,11 +1,15 @@
 import Slider from "@react-native-community/slider";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-const DARK_BLUE = "#2c3e50";
-const LIGHT_BG = "#f5f6fa";
-const SLIDER_BG = "#e1e6f9";
-const BUTTON_BG = "#232b4d";
+import {
+    ImageBackground,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 export default function Settings() {
     const router = useRouter();
@@ -14,138 +18,118 @@ export default function Settings() {
     const [music, setMusic] = useState(50);
 
     return (
-        <View style={styles.container}>
-            {/* "Header"" */}
-            <View style={styles.headerRow}>
-                <TouchableOpacity
+        <ImageBackground
+            source={require("../../assets/images/Background3.png")}
+            style={styles.container}
+        >
+            {/* Back Button */}
+            <TouchableOpacity
+                onPress={() => router.push("/")}
+                activeOpacity={0.8}
+                style={styles.gradientButtonWrapper}
+            >
+                <LinearGradient
+                    colors={["#412F7E", "#5663C4", "#896DA3", "#B77586"]}
+                    start={[0.1, 0]}
+                    end={[0.9, 1]}
                     style={styles.roundedButton}
-                    onPress={() => router.push("/")}
                 >
                     <Text style={styles.buttonText}>Back</Text>
-                </TouchableOpacity>
-            </View>
-            <View style={styles.slidersColumn}>
-                {/* Master Volume (slider) */}
-                <View style={styles.sliderCard}>
-                    <Text style={styles.volumeLabel}>Master Volume</Text>
-                    <View style={styles.sliderRow}>
-                        <Text style={styles.sliderLabel}>0%</Text>
-                        <Slider
-                            style={styles.slider}
-                            minimumValue={0}
-                            maximumValue={100}
-                            step={1}
-                            value={master}
-                            onValueChange={setMaster}
-                            minimumTrackTintColor={DARK_BLUE}
-                            maximumTrackTintColor="#bbb"
-                            thumbTintColor={DARK_BLUE}
-                        />
-                        <Text style={styles.sliderLabel}>100%</Text>
-                    </View>
-                    <Text style={styles.sliderInfo}>{master}%</Text>
+                </LinearGradient>
+            </TouchableOpacity>
+
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Sliders */}
+                <View style={styles.slidersColumn}>
+                    {["Master", "Effects", "Music"].map((label, idx) => {
+                        const value = [master, effects, music][idx];
+                        const setValue = [setMaster, setEffects, setMusic][idx];
+                        return (
+                            <View key={label} style={styles.sliderCard}>
+                                <Text style={styles.volumeLabel}>{label} Volume</Text>
+                                <View style={styles.sliderRow}>
+                                    <Text style={styles.sliderLabel}>0%</Text>
+                                    <Slider
+                                        style={styles.slider}
+                                        minimumValue={0}
+                                        maximumValue={100}
+                                        step={1}
+                                        value={value}
+                                        onValueChange={setValue}
+                                        minimumTrackTintColor="#fff"
+                                        maximumTrackTintColor="rgba(255,255,255,0.3)"
+                                        thumbTintColor="white"
+                                    />
+                                    <Text style={styles.sliderLabel}>100%</Text>
+                                </View>
+                                <Text style={styles.sliderInfo}>{value}%</Text>
+                            </View>
+                        );
+                    })}
                 </View>
-                {/* Effects Volume (slider) */}
-                <View style={styles.sliderCard}>
-                    <Text style={styles.volumeLabel}>Effects Volume</Text>
-                    <View style={styles.sliderRow}>
-                        <Text style={styles.sliderLabel}>0%</Text>
-                        <Slider
-                            style={styles.slider}
-                            minimumValue={0}
-                            maximumValue={100}
-                            step={1}
-                            value={effects}
-                            onValueChange={setEffects}
-                            minimumTrackTintColor={DARK_BLUE}
-                            maximumTrackTintColor="#bbb"
-                            thumbTintColor={DARK_BLUE}
-                        />
-                        <Text style={styles.sliderLabel}>100%</Text>
-                    </View>
-                    <Text style={styles.sliderInfo}>{effects}%</Text>
-                </View>
-                {/* Music Volume (slider) */}
-                <View style={styles.sliderCard}>
-                    <Text style={styles.volumeLabel}>Music Volume</Text>
-                    <View style={styles.sliderRow}>
-                        <Text style={styles.sliderLabel}>0%</Text>
-                        <Slider
-                            style={styles.slider}
-                            minimumValue={0}
-                            maximumValue={100}
-                            step={1}
-                            value={music}
-                            onValueChange={setMusic}
-                            minimumTrackTintColor={DARK_BLUE}
-                            maximumTrackTintColor="#bbb"
-                            thumbTintColor={DARK_BLUE}
-                        />
-                        <Text style={styles.sliderLabel}>100%</Text>
-                    </View>
-                    <Text style={styles.sliderInfo}>{music}%</Text>
-                </View>
-            </View>
-        </View>
+            </ScrollView>
+        </ImageBackground>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: LIGHT_BG,
-        justifyContent: "flex-start",
-        alignItems: "center",
-        padding: 24,
-
-        color: "#fff",
     },
-    headerRow: {
-        width: "100%",
-        flexDirection: "row",
-        alignItems: "flex-start",
-        justifyContent: "flex-start",
-        marginBottom: 10,
-        paddingHorizontal: 0,
-        paddingVertical: 0,
+    scrollContent: {
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingBottom: 40,
+        paddingTop: 80, // to avoid content under the back button
+    },
+    gradientButtonWrapper: {
+        position: "absolute",
+        top: 30,
+        left: 30,
+        shadowColor: "#8e7cc3",
+        shadowOpacity: 0.8,
+        shadowRadius: 15,
+        elevation: 10,
+        borderRadius: 50,
+        zIndex: 10, // ensure it's above the scroll content
     },
     roundedButton: {
-        backgroundColor: BUTTON_BG,
-        borderRadius: 25,
-        paddingVertical: 12,
-        paddingHorizontal: 32,
-        minWidth: 100,
+        borderRadius: 50,
+        paddingVertical: 10,
+        paddingHorizontal: 28,
+        borderWidth: 2,
+        borderColor: "#fff",
         alignItems: "center",
-        shadowColor: "#000",
-        shadowOpacity: 0.10,
-        shadowRadius: 6,
-        elevation: 2,
+        justifyContent: "center",
+    },
+    buttonText: {
+        fontSize: 16,
+        fontFamily: "OutfitBold",
+        color: "#fff",
+        letterSpacing: 0.5,
     },
     slidersColumn: {
         width: "100%",
         alignItems: "center",
-        justifyContent: "center",
     },
     sliderCard: {
-        backgroundColor: SLIDER_BG,
-        borderRadius: 18,
-        padding: 8,
-        marginVertical: 18,
-        width: "66%",
-        maxWidth: 700,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
+        backgroundColor: "rgba(0,0,0,0.35)",
+        borderRadius: 14,
+        padding: 12,
+        marginVertical: 12,
+        width: "95%",
+        maxWidth: 500,
         alignItems: "center",
     },
     volumeLabel: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: DARK_BLUE,
-        marginBottom: 10,
-        letterSpacing: 1,
+        fontSize: 16,
+        fontFamily: "OutfitBold",
+        color: "#fff",
+        marginBottom: 8,
+        letterSpacing: 0.5,
     },
     sliderRow: {
         flexDirection: "row",
@@ -154,25 +138,20 @@ const styles = StyleSheet.create({
     },
     slider: {
         flex: 1,
-        marginHorizontal: 12,
-        height: 10,
+        marginHorizontal: 8,
+        height: 8,
     },
     sliderLabel: {
-        fontSize: 14,
-        color: "#555",
-        width: 38,
+        fontSize: 12,
+        fontFamily: "OutfitRegular",
+        color: "#ddd",
+        width: 32,
         textAlign: "center",
     },
     sliderInfo: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: DARK_BLUE,
-        letterSpacing: 0.5,
-    },
-    buttonText: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: "#fff",
-        letterSpacing: 0.5,
+        fontSize: 14,
+        fontFamily: "OutfitBold",
+        color: "white",
+        marginTop: 4,
     },
 });

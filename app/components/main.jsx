@@ -1,6 +1,7 @@
+import { Asset } from "expo-asset";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Animated,
     Dimensions,
@@ -10,9 +11,10 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import Help from "./modals/help";
+import SplashScreen from "./splashScreen.jsx";
 
 const windowWidth = Dimensions.get("window").width;
 const BUTTON_WIDTH = Math.min(350, windowWidth - 40);
@@ -67,9 +69,20 @@ function PlayerButton({ label, onPress }) {
 
 export default function Main() {
     const [helpVisible, setHelpVisible] = useState(false);
+    const [bgReady, setBgReady] = useState(false);
     const router = useRouter();
 
-    // Fixed, sparse star positions
+    // Preload background image
+    useEffect(() => {
+        async function preload() {
+            await Asset.fromModule(
+                require("../../assets/images/Background3.png")
+            ).downloadAsync();
+            setBgReady(true);
+        }
+        preload();
+    }, []);
+
     const starSources = [
         require("../../assets/images/star1.png"),
         require("../../assets/images/star2.png"),
@@ -85,6 +98,10 @@ export default function Main() {
         { source: starSources[0], top: "65%", left: "12%", size: 32 },
         { source: starSources[1], top: "78%", left: "85%", size: 40 },
     ];
+
+    if (!bgReady) {
+        return <SplashScreen />;
+    }
 
     return (
         <ImageBackground
@@ -111,9 +128,7 @@ export default function Main() {
             <View style={styles.titleContainer}>
                 <Text style={styles.title}>Welcome to Songfrontation!</Text>
 
-                {/* Row container for buttons */}
                 <View style={styles.topRightButtons}>
-                    {/* Help */}
                     <TouchableOpacity
                         style={styles.settingsButton}
                         onPress={() => setHelpVisible(true)}
@@ -121,7 +136,6 @@ export default function Main() {
                         <Text style={styles.settingsText}>❔</Text>
                     </TouchableOpacity>
 
-                    {/* Settings */}
                     <TouchableOpacity
                         style={styles.settingsButton}
                         onPress={() => router.push("../components/settings")}
@@ -133,7 +147,6 @@ export default function Main() {
 
             {/* Center Content */}
             <View style={styles.centerContent}>
-                {/* Quick Match */}
                 <View
                     style={{
                         width: BUTTON_WIDTH,
@@ -162,7 +175,6 @@ export default function Main() {
                     </LinearGradient>
                 </View>
 
-                {/* Custom Match */}
                 <View
                     style={{
                         width: BUTTON_WIDTH,
@@ -182,7 +194,9 @@ export default function Main() {
                     >
                         <PlayerButton
                             label="1 Player"
-                            onPress={() => router.push("../components/icon")}
+                            onPress={() =>
+                                router.push("../components/iconSinglePlayer")
+                            }
                         />
                         <View style={styles.divider} />
                         <PlayerButton
@@ -193,7 +207,6 @@ export default function Main() {
                 </View>
             </View>
 
-            {/* Help Modal */}
             <Help visible={helpVisible} onClose={() => setHelpVisible(false)} />
         </ImageBackground>
     );
@@ -210,13 +223,11 @@ const styles = StyleSheet.create({
         position: "absolute",
         resizeMode: "contain",
         opacity: 0.6,
-
-        // Glow effect
         shadowColor: "white",
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.7,
         shadowRadius: 3,
-        elevation: 8, // Android glow-ish effect
+        elevation: 8,
     },
     titleContainer: {
         width: "100%",
