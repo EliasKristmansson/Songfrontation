@@ -1,7 +1,7 @@
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
+import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const ICONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -13,7 +13,7 @@ const PASTEL_COLORS = [
     "#E0BBE4", "#FFDFD3", "#C2F784", "#F1CBFF", "#A0CED9"
 ];
 
-function PlaceholderIcon({ selected, style, color }) {
+function PlaceholderIcon({ selected, style, color, children }) {
     return (
         <View
             style={[
@@ -22,7 +22,9 @@ function PlaceholderIcon({ selected, style, color }) {
                 selected && styles.selectedIcon,
                 style,
             ]}
-        />
+        >
+            {children}
+        </View>
     );
 }
 
@@ -30,6 +32,72 @@ export default function Icon() {
     const router = useRouter();
     const [selected1, setSelected1] = useState(null);
     const [selected2, setSelected2] = useState(null);
+    const [customImage1, setCustomImage1] = useState(null);
+    const [customImage2, setCustomImage2] = useState(null);
+
+    const takeSelfie = async (player) => {
+        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permissionResult.granted) {
+            alert("Camera permission is required!");
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+        });
+
+        if (!result.canceled) {
+            if (player === 1) {
+                setCustomImage1(result.assets[0].uri);
+                setSelected1(0);
+            } else {
+                setCustomImage2(result.assets[0].uri);
+                setSelected2(0);
+            }
+        }
+    };
+
+    const renderIcon = (idx, player) => {
+        if (idx === 0) {
+            const customImage = player === 1 ? customImage1 : customImage2;
+            const selected = player === 1 ? selected1 === 0 : selected2 === 0;
+
+            return (
+                <TouchableOpacity
+                    key={0}
+                    onPress={() => takeSelfie(player)}
+                    style={styles.iconWrapper}
+                >
+                    {customImage ? (
+                        <Image
+                            source={{ uri: customImage }}
+                            style={[styles.icon, styles.selectedIcon]}
+                        />
+                    ) : (
+                        <PlaceholderIcon selected={selected} color="#fff" style={{ justifyContent: "center", alignItems: "center" }}>
+                            <Text style={{ fontSize: 32 }}>📷</Text>
+                        </PlaceholderIcon>
+                    )}
+                </TouchableOpacity>
+            );
+        }
+
+        const selected = player === 1 ? selected1 === idx : selected2 === idx;
+        return (
+            <TouchableOpacity
+                key={idx}
+                onPress={() => player === 1 ? setSelected1(idx) : setSelected2(idx)}
+                style={styles.iconWrapper}
+            >
+                <PlaceholderIcon
+                    selected={selected}
+                    color={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
+                />
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <ImageBackground
@@ -60,27 +128,25 @@ export default function Icon() {
                         <PlaceholderIcon
                             selected
                             style={styles.previewIcon}
-                            color={PASTEL_COLORS[selected1 % PASTEL_COLORS.length]}
-                        />
+                            color={selected1 === 0 && customImage1 ? "#fff" : PASTEL_COLORS[selected1 % PASTEL_COLORS.length]}
+                        >
+                            {selected1 === 0 && customImage1 && (
+                                <Image
+                                    source={{ uri: customImage1 }}
+                                    style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                />
+                            )}
+                        </PlaceholderIcon>
                     )}
                 </View>
                 <ScrollView contentContainerStyle={styles.iconList}>
-                    {ICONS.map((icon, idx) => (
-                        <TouchableOpacity
-                            key={icon}
-                            onPress={() => setSelected1(idx)}
-                            style={styles.iconWrapper}
-                        >
-                            <PlaceholderIcon
-                                selected={selected1 === idx}
-                                color={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
-                            />
-                        </TouchableOpacity>
-                    ))}
+                    {ICONS.map((icon, idx) => renderIcon(idx, 1))}
                 </ScrollView>
             </View>
+
             {/* Divider */}
             <View style={styles.divider} />
+
             {/* Player 2 Half */}
             <View style={styles.half}>
                 <View style={styles.headerRow}>
@@ -89,27 +155,22 @@ export default function Icon() {
                         <PlaceholderIcon
                             selected
                             style={styles.previewIcon}
-                            color={PASTEL_COLORS[selected2 % PASTEL_COLORS.length]}
-                        />
+                            color={selected2 === 0 && customImage2 ? "#fff" : PASTEL_COLORS[selected2 % PASTEL_COLORS.length]}
+                        >
+                            {selected2 === 0 && customImage2 && (
+                                <Image
+                                    source={{ uri: customImage2 }}
+                                    style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                />
+                            )}
+                        </PlaceholderIcon>
                     )}
                 </View>
                 <ScrollView contentContainerStyle={styles.iconList}>
-                    {ICONS.map((icon, idx) => (
-                        <TouchableOpacity
-                            key={icon}
-                            onPress={() => setSelected2(idx)}
-                            style={styles.iconWrapper}
-                        >
-                            <PlaceholderIcon
-                                selected={selected2 === idx}
-                                color={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
-                            />
-                        </TouchableOpacity>
-                    ))}
+                    {ICONS.map((icon, idx) => renderIcon(idx, 2))}
                 </ScrollView>
             </View>
         </ImageBackground>
-
     );
 }
 
@@ -165,9 +226,8 @@ const styles = StyleSheet.create({
     iconList: {
         flexDirection: "row",
         flexWrap: "wrap",
-        justifyContent: "flex-start",
-        alignItems: "center",
         justifyContent: "center",
+        alignItems: "center",
     },
     iconWrapper: {
         width: "25%",

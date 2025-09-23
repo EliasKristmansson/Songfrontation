@@ -1,6 +1,7 @@
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const ICONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -12,7 +13,7 @@ const PASTEL_COLORS = [
     "#E0BBE4", "#FFDFD3", "#C2F784", "#F1CBFF", "#A0CED9"
 ];
 
-function PlaceholderIcon({ selected, style, color }) {
+function PlaceholderIcon({ selected, style, color, children }) {
     return (
         <View
             style={[
@@ -21,17 +22,85 @@ function PlaceholderIcon({ selected, style, color }) {
                 selected && styles.selectedIcon,
                 style,
             ]}
-        />
+        >
+            {children}
+        </View>
     );
 }
 
 export default function Icon() {
     const router = useRouter();
     const [selected1, setSelected1] = useState(null);
-    const [selected2, setSelected2] = useState(null);
+    const [customImage1, setCustomImage1] = useState(null);
+
+    const takeSelfie = async () => {
+        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permissionResult.granted) {
+            alert("Camera permission is required!");
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+        });
+
+        if (!result.canceled) {
+            setCustomImage1(result.assets[0].uri);
+            setSelected1(0);
+        }
+    };
+
+    const renderIcon = (idx) => {
+        if (idx === 0) {
+            return (
+                <TouchableOpacity
+                    key={0}
+                    onPress={takeSelfie}
+                    style={styles.iconWrapper}
+                >
+                    {customImage1 ? (
+                        <Image
+                            source={{ uri: customImage1 }}
+                            style={[styles.icon, styles.selectedIcon]}
+                        />
+                    ) : (
+                        <PlaceholderIcon selected={selected1 === 0} color="#fff" style={{ justifyContent: "center", alignItems: "center" }}>
+                            <Text style={{ fontSize: 32 }}>📷</Text>
+                        </PlaceholderIcon>
+                    )}
+                </TouchableOpacity>
+            );
+        }
+
+        return (
+            <TouchableOpacity
+                key={idx}
+                onPress={() => setSelected1(idx)}
+                style={styles.iconWrapper}
+            >
+                <PlaceholderIcon
+                    selected={selected1 === idx}
+                    color={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
+                />
+            </TouchableOpacity>
+        );
+    };
 
     return (
-        <View style={styles.container}>
+        <ImageBackground
+            source={require("../../assets/images/Background3.png")}
+            style={styles.container}
+        >
+            {/* Back Button */}
+            <TouchableOpacity
+                onPress={() => router.push("/")}
+                style={styles.backButton}
+            >
+                <Text style={styles.backArrow}>←</Text>
+            </TouchableOpacity>
+
             {/* Game Settings Button */}
             <TouchableOpacity
                 style={styles.settingsButton}
@@ -48,26 +117,22 @@ export default function Icon() {
                         <PlaceholderIcon
                             selected
                             style={styles.previewIcon}
-                            color={PASTEL_COLORS[selected1 % PASTEL_COLORS.length]}
-                        />
+                            color={selected1 === 0 && customImage1 ? "#fff" : PASTEL_COLORS[selected1 % PASTEL_COLORS.length]}
+                        >
+                            {selected1 === 0 && customImage1 && (
+                                <Image
+                                    source={{ uri: customImage1 }}
+                                    style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                />
+                            )}
+                        </PlaceholderIcon>
                     )}
                 </View>
                 <ScrollView contentContainerStyle={styles.iconList}>
-                    {ICONS.map((icon, idx) => (
-                        <TouchableOpacity
-                            key={icon}
-                            onPress={() => setSelected1(idx)}
-                            style={styles.iconWrapper}
-                        >
-                            <PlaceholderIcon
-                                selected={selected1 === idx}
-                                color={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
-                            />
-                        </TouchableOpacity>
-                    ))}
+                    {ICONS.map((icon, idx) => renderIcon(idx))}
                 </ScrollView>
             </View>
-        </View>
+        </ImageBackground>
     );
 }
 
@@ -80,12 +145,12 @@ const styles = StyleSheet.create({
     },
     settingsButton: {
         position: "absolute",
-        top: 20,
+        top: 30,
         right: 20,
         zIndex: 10,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#5C66C5",
         borderRadius: 20,
-        padding: 8,
+        padding: 4,
         elevation: 2,
     },
     settingsText: {
@@ -94,12 +159,6 @@ const styles = StyleSheet.create({
     half: {
         flex: 1,
         padding: 10,
-        backgroundColor: "#fff",
-    },
-    divider: {
-        width: 2,
-        backgroundColor: "#ccc",
-        height: "100%",
     },
     headerRow: {
         flexDirection: "row",
@@ -110,8 +169,9 @@ const styles = StyleSheet.create({
     },
     header: {
         fontSize: 48,
-        fontWeight: "bold",
+        fontFamily: "OutfitBold",
         textAlign: "center",
+        color: "white",
     },
     previewIcon: {
         marginLeft: 8,
@@ -122,18 +182,19 @@ const styles = StyleSheet.create({
     iconList: {
         flexDirection: "row",
         flexWrap: "wrap",
-        justifyContent: "flex-start",
+        justifyContent: "center",
+        alignItems: "center",
     },
     iconWrapper: {
-        width: "30%",
+        width: "12%",
         aspectRatio: 1,
         margin: "1.5%",
         alignItems: "center",
         justifyContent: "center",
     },
     icon: {
-        width: 100,
-        height: 100,
+        width: 90,
+        height: 90,
         borderRadius: 50,
         backgroundColor: "#bbb",
         borderWidth: 2,
@@ -141,5 +202,16 @@ const styles = StyleSheet.create({
     },
     selectedIcon: {
         borderColor: "#007AFF",
+    },
+    backButton: {
+        position: "absolute",
+        top: 20,
+        left: 20,
+        zIndex: 10,
+        padding: 8,
+    },
+    backArrow: {
+        color: "white",
+        fontSize: 28,
     },
 });
