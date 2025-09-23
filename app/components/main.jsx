@@ -1,9 +1,10 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
     Animated,
     Dimensions,
+    Image,
     ImageBackground,
     Pressable,
     StyleSheet,
@@ -17,7 +18,7 @@ const windowWidth = Dimensions.get("window").width;
 const BUTTON_WIDTH = Math.min(350, windowWidth - 40);
 
 function PlayerButton({ label, onPress }) {
-    const opacity = useRef(new Animated.Value(0)).current;
+    const opacity = new Animated.Value(0);
 
     const handlePressIn = () => {
         Animated.timing(opacity, {
@@ -68,12 +69,45 @@ export default function Main() {
     const [helpVisible, setHelpVisible] = useState(false);
     const router = useRouter();
 
+    // Fixed, sparse star positions
+    const starSources = [
+        require("../../assets/images/star1.png"),
+        require("../../assets/images/star2.png"),
+        require("../../assets/images/star3.png"),
+        require("../../assets/images/star4.png"),
+    ];
+
+    const stars = [
+        { source: starSources[0], top: "8%", left: "10%", size: 25 },
+        { source: starSources[1], top: "20%", left: "80%", size: 35 },
+        { source: starSources[2], top: "35%", left: "15%", size: 30 },
+        { source: starSources[3], top: "50%", left: "75%", size: 28 },
+        { source: starSources[0], top: "65%", left: "12%", size: 32 },
+        { source: starSources[1], top: "78%", left: "85%", size: 40 },
+    ];
+
     return (
         <ImageBackground
-            // Change to "Background3compressed2.webp" for final mobile version
             source={require("../../assets/images/Background3.png")}
             style={styles.container}
         >
+            {/* Stars Layer */}
+            {stars.map((star, idx) => (
+                <Image
+                    key={idx}
+                    source={star.source}
+                    style={[
+                        styles.star,
+                        {
+                            left: star.left,
+                            top: star.top,
+                            width: star.size,
+                            height: star.size,
+                        },
+                    ]}
+                />
+            ))}
+
             <View style={styles.titleContainer}>
                 <Text style={styles.title}>Welcome to Songfrontation!</Text>
 
@@ -172,6 +206,18 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "flex-start",
     },
+    star: {
+        position: "absolute",
+        resizeMode: "contain",
+        opacity: 0.6,
+
+        // Glow effect
+        shadowColor: "white",
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.7,
+        shadowRadius: 3,
+        elevation: 8, // Android glow-ish effect
+    },
     titleContainer: {
         width: "100%",
         justifyContent: "center",
@@ -184,7 +230,7 @@ const styles = StyleSheet.create({
         right: 20,
         top: 0,
         flexDirection: "row",
-        gap: 10, // fallback: replace with marginRight if needed
+        gap: 10,
     },
     title: {
         fontSize: 28,
