@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
+import { useState } from "react";
+import { ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
 
 const ICONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -31,7 +32,18 @@ export default function Icon() {
     const [selected2, setSelected2] = useState(null);
 
     return (
-        <View style={styles.container}>
+        <ImageBackground
+            source={require("../../assets/images/Background3.png")}
+            style={styles.container}
+        >
+            {/* Back Button */}
+            <TouchableOpacity
+                onPress={() => router.push("/")}
+                style={styles.backButton}
+            >
+                <Text style={styles.backArrow}>←</Text>
+            </TouchableOpacity>
+
             {/* Game Settings Button */}
             <TouchableOpacity
                 style={styles.settingsButton}
@@ -96,7 +108,8 @@ export default function Icon() {
                     ))}
                 </ScrollView>
             </View>
-        </View>
+        </ImageBackground>
+
     );
 }
 
@@ -109,12 +122,12 @@ const styles = StyleSheet.create({
     },
     settingsButton: {
         position: "absolute",
-        top: 20,
+        top: 30,
         right: 20,
         zIndex: 10,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#5C66C5",
         borderRadius: 20,
-        padding: 8,
+        padding: 4,
         elevation: 2,
     },
     settingsText: {
@@ -123,7 +136,6 @@ const styles = StyleSheet.create({
     half: {
         flex: 1,
         padding: 10,
-        backgroundColor: "#fff",
     },
     divider: {
         width: 2,
@@ -138,31 +150,35 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     header: {
-        fontSize: 48,
+        fontSize: 36,
         fontWeight: "bold",
         textAlign: "center",
+        color: "white",
+        fontFamily: "OutfitBold",
     },
     previewIcon: {
         marginLeft: 8,
-        width: 64,
-        height: 64,
+        width: 48,
+        height: 48,
         borderRadius: 32,
     },
     iconList: {
         flexDirection: "row",
         flexWrap: "wrap",
         justifyContent: "flex-start",
+        alignItems: "center",
+        justifyContent: "center",
     },
     iconWrapper: {
-        width: "30%",
+        width: "25%",
         aspectRatio: 1,
-        margin: "1.5%",
+        margin: "1%",
         alignItems: "center",
         justifyContent: "center",
     },
     icon: {
-        width: 100,
-        height: 100,
+        width: 90,
+        height: 90,
         borderRadius: 50,
         backgroundColor: "#bbb",
         borderWidth: 2,
@@ -170,5 +186,16 @@ const styles = StyleSheet.create({
     },
     selectedIcon: {
         borderColor: "#007AFF",
+    },
+    backButton: {
+        position: "absolute",
+        top: 20,
+        left: 20,
+        zIndex: 10,
+        padding: 8,
+    },
+    backArrow: {
+        color: "white",
+        fontSize: 28,
     },
 });

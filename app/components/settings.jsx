@@ -1,5 +1,4 @@
 import Slider from "@react-native-community/slider";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -22,20 +21,12 @@ export default function Settings() {
             source={require("../../assets/images/Background3.png")}
             style={styles.container}
         >
-            {/* Back Button */}
+            {/* Simple Back Arrow */}
             <TouchableOpacity
                 onPress={() => router.push("/")}
-                activeOpacity={0.8}
-                style={styles.gradientButtonWrapper}
+                style={styles.backButton}
             >
-                <LinearGradient
-                    colors={["#412F7E", "#5663C4", "#896DA3", "#B77586"]}
-                    start={[0.1, 0]}
-                    end={[0.9, 1]}
-                    style={styles.roundedButton}
-                >
-                    <Text style={styles.buttonText}>Back</Text>
-                </LinearGradient>
+                <Text style={styles.backArrow}>←</Text>
             </TouchableOpacity>
 
             <ScrollView
@@ -83,33 +74,18 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 16,
         paddingBottom: 40,
-        paddingTop: 80, // to avoid content under the back button
+        paddingTop: 40, // leave space for back arrow
     },
-    gradientButtonWrapper: {
+    backButton: {
         position: "absolute",
-        top: 30,
-        left: 30,
-        shadowColor: "#8e7cc3",
-        shadowOpacity: 0.8,
-        shadowRadius: 15,
-        elevation: 10,
-        borderRadius: 50,
-        zIndex: 10, // ensure it's above the scroll content
+        top: 20,
+        left: 20,
+        zIndex: 10,
+        padding: 8,
     },
-    roundedButton: {
-        borderRadius: 50,
-        paddingVertical: 10,
-        paddingHorizontal: 28,
-        borderWidth: 2,
-        borderColor: "#fff",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    buttonText: {
-        fontSize: 16,
-        fontFamily: "OutfitBold",
-        color: "#fff",
-        letterSpacing: 0.5,
+    backArrow: {
+        color: "white",
+        fontSize: 28,
     },
     slidersColumn: {
         width: "100%",
