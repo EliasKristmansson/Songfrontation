@@ -22,20 +22,20 @@ export default function Help({ visible, onClose }) {
                     end={{ x: 0.8, y: 1 }}
                     style={styles.gradient}
                 >
-                    {/* Close button top-right */}
-                    <TouchableOpacity
-                        style={styles.closeButton}
-                        onPress={onClose}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // extends touch area
-                    >
-                        <Text style={[styles.closeText, { fontFamily: "OutfitBold" }]}>
-                            ✕
+                    {/* Header row with title + close button */}
+                    <View style={styles.headerRow}>
+                        <Text style={[styles.title, { fontFamily: "OutfitBold" }]}>
+                            Help & Instructions
                         </Text>
-                    </TouchableOpacity>
-
-                    <Text style={[styles.title, { fontFamily: "OutfitBold" }]}>
-                        Help & Instructions
-                    </Text>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Text style={[styles.closeText, { fontFamily: "OutfitBold" }]}>
+                                ✕
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
 
                     <Text style={[styles.body, { fontFamily: "OutfitRegular" }]}>
                         Welcome to Songfrontation! 🎵 {"\n\n"}
@@ -88,32 +88,32 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(0,0,0,0.6)",
         justifyContent: "center",
         alignItems: "center",
-        padding: 20, // adds some breathing room on small devices
+        padding: 20,
     },
     modalContent: {
         width: windowWidth * 0.86,
-        borderRadius: 25, // matches player button glow style
+        borderRadius: 25,
         borderColor: "white",
         borderWidth: 2,
-
-        // glow/shadow like player buttons
         shadowColor: "#8e7cc3",
         shadowOpacity: 0.6,
         shadowRadius: 20,
-        elevation: 12, // Android shadow
-
-        backgroundColor: "#1A123B", // required for Android shadow
-        padding: 0, // gradient handles padding
+        elevation: 12,
+        backgroundColor: "#1A123B",
     },
     gradient: {
         width: "100%",
         borderRadius: 25,
         padding: 20,
     },
+    headerRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 12,
+    },
     title: {
         fontSize: 18,
-        marginBottom: 12,
-        textAlign: "center",
         color: "white",
     },
     body: {
@@ -123,18 +123,9 @@ const styles = StyleSheet.create({
         textAlign: "left",
         color: "white",
     },
-    closeButton: {
-        position: "absolute",
-        top: 15, // small offset from top
-        right: 15, // small offset from right
-        paddingVertical: 4, // match the X size
-        paddingHorizontal: 6, // match the X size
-        borderRadius: 6,
-    },
-
     closeText: {
         color: "white",
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: "600",
     },
 });
