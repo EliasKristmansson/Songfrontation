@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import PreGameMenuHeader from "./preGameMenuHeader";
+import { StyleSheet, Text, TouchableOpacity, View, ImageBackground } from "react-native";
 
 const DARK_BLUE = "#1a237e";
 const BUTTON_BG = "#232b4d";
@@ -20,24 +21,22 @@ export default function Icon() {
     const [selectedGenre, setSelectedGenre] = useState(null);
 
     return (
-        <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.headerRow}>
-                <TouchableOpacity
-                    style={styles.roundedButton}
-                    onPress={() => router.push("../components/matchSettings")}
-                >
-                    <Text style={styles.buttonText}>Back</Text>
-                </TouchableOpacity>
-                <Text style={styles.headerText}>Selection of Genre</Text>
-                <TouchableOpacity
-                    style={styles.roundedButton}
-                    onPress={() => router.push("../components/match")}
-                >
-                    <Text style={styles.buttonText}>Match</Text>
-                </TouchableOpacity>
-            </View>
 
+        <ImageBackground
+                    source={require("../../assets/images/Background3.png")}
+                    style={{ flex: 1 }}
+                >
+            
+            
+            <PreGameMenuHeader
+                title="Genre Select"
+                onBack={() => router.push("../components/matchSettings")}
+                onProceed={() => router.push("../components/match")}
+                canProceed={!!selectedGenre}
+                proceedLabel="Start Match"
+            />
+            
+            <View style={styles.container}>
             {/* Knappar osm visar tre genres */}
             <View style={styles.genreButtonRow}>
                 {randomGenres.map((genre) => (
@@ -56,6 +55,9 @@ export default function Icon() {
                 ))}
             </View>
         </View>
+
+        </ImageBackground>
+        
     );
 }
 
