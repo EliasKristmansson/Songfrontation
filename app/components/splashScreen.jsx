@@ -13,16 +13,16 @@ export default function SplashScreen() {
             try {
                 // Preload background
                 const bg = Asset.fromModule(
-                    require("../../assets/images/Background3.png")
+                    require("../../assets/images/Background3compressed2.webp")
                 );
                 await bg.downloadAsync();
 
                 // Preload stars
                 const starSources = [
-                    require("../../assets/images/star1.png"),
-                    require("../../assets/images/star2.png"),
-                    require("../../assets/images/star3.png"),
-                    require("../../assets/images/star4.png"),
+                    require("../../assets/images/star1.webp"),
+                    require("../../assets/images/star2.webp"),
+                    require("../../assets/images/star3.webp"),
+                    require("../../assets/images/star4.webp"),
                 ];
                 const stars = [
                     { source: starSources[0], top: "8%", left: "10%", size: 25 },
