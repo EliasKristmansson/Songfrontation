@@ -1,4 +1,5 @@
 import * as ImagePicker from "expo-image-picker";
+import PreGameMenuHeader from "./preGameMenuHeader";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -102,81 +103,81 @@ export default function Icon() {
     return (
         <ImageBackground
             source={require("../../assets/images/Background3.png")}
-            style={styles.container}
+            style={{ flex: 1 }}
         >
-            {/* Back Button */}
-            <TouchableOpacity
-                onPress={() => router.push("/")}
-                style={styles.backButton}
-            >
-                <Text style={styles.backArrow}>←</Text>
-            </TouchableOpacity>
+            {/* Header at the top */}
+            <PreGameMenuHeader
+                title="Icon Select"
+                onBack={() => router.push("../components/main")}
+                onProceed={() => router.push("../components/matchSettings")}
+                canProceed={selected1 !== null && selected2 !== null}
+            />
 
-            {/* Game Settings Button */}
-            <TouchableOpacity
-                style={styles.settingsButton}
-                onPress={() => router.push("../components/matchSettings")}
-            >
-                <Text style={styles.settingsText}>⚙️</Text>
-            </TouchableOpacity>
 
-            {/* Player 1 Half */}
-            <View style={styles.half}>
-                <View style={styles.headerRow}>
-                    <Text style={styles.header}>Player 1</Text>
-                    {selected1 !== null && (
-                        <PlaceholderIcon
-                            selected
-                            style={styles.previewIcon}
-                            color={selected1 === 0 && customImage1 ? "#fff" : PASTEL_COLORS[selected1 % PASTEL_COLORS.length]}
-                        >
-                            {selected1 === 0 && customImage1 && (
-                                <Image
-                                    source={{ uri: customImage1 }}
-                                    style={{ width: "100%", height: "100%", borderRadius: 50 }}
-                                />
-                            )}
-                        </PlaceholderIcon>
-                    )}
+
+            {/* Main content: two halves side by side */}
+            <View style={styles.mainRow}>
+                {/* Player 1 Half */}
+                <View style={styles.half}>
+                    <View style={styles.headerRow}>
+                        <Text style={styles.header}>Player 1</Text>
+                        {selected1 !== null && (
+                            <PlaceholderIcon
+                                selected
+                                style={styles.previewIcon}
+                                color={selected1 === 0 && customImage1 ? "#fff" : PASTEL_COLORS[selected1 % PASTEL_COLORS.length]}
+                            >
+                                {selected1 === 0 && customImage1 && (
+                                    <Image
+                                        source={{ uri: customImage1 }}
+                                        style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                    />
+                                )}
+                            </PlaceholderIcon>
+                        )}
+                    </View>
+                    <ScrollView contentContainerStyle={styles.iconList}>
+                        {ICONS.map((icon, idx) => renderIcon(idx, 1))}
+                    </ScrollView>
                 </View>
-                <ScrollView contentContainerStyle={styles.iconList}>
-                    {ICONS.map((icon, idx) => renderIcon(idx, 1))}
-                </ScrollView>
-            </View>
 
-            {/* Divider */}
-            <View style={styles.divider} />
+                {/* Divider */}
+                <View style={styles.divider} />
 
-            {/* Player 2 Half */}
-            <View style={styles.half}>
-                <View style={styles.headerRow}>
-                    <Text style={styles.header}>Player 2</Text>
-                    {selected2 !== null && (
-                        <PlaceholderIcon
-                            selected
-                            style={styles.previewIcon}
-                            color={selected2 === 0 && customImage2 ? "#fff" : PASTEL_COLORS[selected2 % PASTEL_COLORS.length]}
-                        >
-                            {selected2 === 0 && customImage2 && (
-                                <Image
-                                    source={{ uri: customImage2 }}
-                                    style={{ width: "100%", height: "100%", borderRadius: 50 }}
-                                />
-                            )}
-                        </PlaceholderIcon>
-                    )}
+                {/* Player 2 Half */}
+                <View style={styles.half}>
+                    <View style={styles.headerRow}>
+                        <Text style={styles.header}>Player 2</Text>
+                        {selected2 !== null && (
+                            <PlaceholderIcon
+                                selected
+                                style={styles.previewIcon}
+                                color={selected2 === 0 && customImage2 ? "#fff" : PASTEL_COLORS[selected2 % PASTEL_COLORS.length]}
+                            >
+                                {selected2 === 0 && customImage2 && (
+                                    <Image
+                                        source={{ uri: customImage2 }}
+                                        style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                    />
+                                )}
+                            </PlaceholderIcon>
+                        )}
+                    </View>
+                    <ScrollView contentContainerStyle={styles.iconList}>
+                        {ICONS.map((icon, idx) => renderIcon(idx, 2))}
+                    </ScrollView>
                 </View>
-                <ScrollView contentContainerStyle={styles.iconList}>
-                    {ICONS.map((icon, idx) => renderIcon(idx, 2))}
-                </ScrollView>
             </View>
         </ImageBackground>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    mainRow: {
+        flex: 1,
         flexDirection: "row",
+    },
+    container: {
         flex: 1,
         height: "100%",
         position: "relative",
