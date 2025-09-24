@@ -1,7 +1,6 @@
-import { Asset } from "expo-asset";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     Animated,
     Dimensions,
@@ -11,10 +10,9 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
 import Help from "./modals/help";
-import SplashScreen from "./splashScreen.jsx";
 
 const windowWidth = Dimensions.get("window").width;
 const BUTTON_WIDTH = Math.min(350, windowWidth - 40);
@@ -67,47 +65,12 @@ function PlayerButton({ label, onPress }) {
     );
 }
 
-export default function Main() {
+export default function Main({ background, stars }) {
     const [helpVisible, setHelpVisible] = useState(false);
-    const [bgReady, setBgReady] = useState(false);
     const router = useRouter();
 
-    // Preload background image
-    useEffect(() => {
-        async function preload() {
-            await Asset.fromModule(
-                require("../../assets/images/Background3.png")
-            ).downloadAsync();
-            setBgReady(true);
-        }
-        preload();
-    }, []);
-
-    const starSources = [
-        require("../../assets/images/star1.png"),
-        require("../../assets/images/star2.png"),
-        require("../../assets/images/star3.png"),
-        require("../../assets/images/star4.png"),
-    ];
-
-    const stars = [
-        { source: starSources[0], top: "8%", left: "10%", size: 25 },
-        { source: starSources[1], top: "20%", left: "80%", size: 35 },
-        { source: starSources[2], top: "35%", left: "15%", size: 30 },
-        { source: starSources[3], top: "50%", left: "75%", size: 28 },
-        { source: starSources[0], top: "65%", left: "12%", size: 32 },
-        { source: starSources[1], top: "78%", left: "85%", size: 40 },
-    ];
-
-    if (!bgReady) {
-        return <SplashScreen />;
-    }
-
     return (
-        <ImageBackground
-            source={require("../../assets/images/Background3.png")}
-            style={styles.container}
-        >
+        <ImageBackground source={{ uri: background }} style={styles.container}>
             {/* Stars Layer */}
             {stars.map((star, idx) => (
                 <Image
