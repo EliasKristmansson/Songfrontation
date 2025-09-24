@@ -37,6 +37,68 @@ async function fetchRandomiTunesTrack() {
   }
 }
 
+function playerObject () {
+  int playerId;
+  var playerIcon;
+
+  int currentPoints;
+  int currentWonRounds;
+  int currentAvaliableGuesses;
+  int currentTimeout;
+  var currentGuess;
+
+  bool correctGuess;
+  bool hasWonRound;
+  bool hasWonMatch;
+  
+} 
+
+function songObject () {
+  int songId;
+  var songGenre;
+  var songFile;
+  var songTitle;
+  var songArtist;
+  var songDuration;
+  var songArtistAlternatives[];
+
+  var currentTimeLeft;
+  bool hasWonSong;
+  var songWinnerId;
+
+} 
+
+function roundObject () {
+  int roundId;
+  string roundGenre;
+  var songObjects[];
+  var currentSong;
+  int pointsToWinRound;
+  var roundWinnerId;
+
+} 
+
+function matchObject () {
+  int currentRound;
+  var players[];
+  bool hasMatchWinner;
+  var matchSettingObject;
+  bool rematch;
+  var matchWinnerId;
+
+} 
+
+function matchSettingObject () {
+  int nrOfPlayers;
+  var selectionOfGenre;
+  int nrOfSongsToWinRound;
+  int nrOfRoundsToWinMatch;
+  int songDuration;
+  int nrOfGuessesOnBoard;
+
+}
+
+
 export default function Match() {
   const router = useRouter();
   const [sound, setSound] = useState(null);
