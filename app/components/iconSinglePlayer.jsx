@@ -1,4 +1,5 @@
 import * as ImagePicker from "expo-image-picker";
+import PreGameMenuHeader from "./preGameMenuHeader";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -93,21 +94,14 @@ export default function Icon() {
             source={require("../../assets/images/Background3.png")}
             style={styles.container}
         >
-            {/* Back Button */}
-            <TouchableOpacity
-                onPress={() => router.push("/")}
-                style={styles.backButton}
-            >
-                <Text style={styles.backArrow}>←</Text>
-            </TouchableOpacity>
 
-            {/* Game Settings Button */}
-            <TouchableOpacity
-                style={styles.settingsButton}
-                onPress={() => router.push("../components/matchSettings")}
-            >
-                <Text style={styles.settingsText}>⚙️</Text>
-            </TouchableOpacity>
+            {/* Header at the top */}
+            <PreGameMenuHeader
+                title="Icon Select"
+                onBack={() => router.push("../components/main")}
+                onProceed={() => router.push("../components/matchSettings")}
+                canProceed={selected1 !== null}
+            />
 
             {/* Player 1 Half */}
             <View style={styles.half}>
@@ -138,10 +132,11 @@ export default function Icon() {
 
 const styles = StyleSheet.create({
     container: {
-        flexDirection: "row",
         flex: 1,
         height: "100%",
         position: "relative",
+        flexDirection: "column", // Make sure the layout is vertical
+        backgroundColor: "#000", // Optional: fallback background
     },
     settingsButton: {
         position: "absolute",

@@ -12,7 +12,7 @@ export default function PreGameMenuHeader({
         <View style={styles.headerContainer}>
             {/* Back Button */}
             <TouchableOpacity onPress={onBack} style={styles.sideButton}>
-                <Text style={styles.backText}>Back</Text>
+                <Text style={styles.backText}>←</Text>
             </TouchableOpacity>
 
             {/* Title */}
@@ -45,7 +45,6 @@ const styles = StyleSheet.create({
         paddingTop: 10,
         paddingHorizontal: 16,
         paddingBottom: 10,
-        backgroundColor: "#222B45",
     },
     sideButton: {
         padding: 8,
@@ -53,7 +52,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     backText: {
-        fontSize: 18,
+        fontSize: 28,
         color: "#fff",
         fontWeight: "bold",
 
