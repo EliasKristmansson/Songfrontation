@@ -65,7 +65,7 @@ function PlayerButton({ label, onPress }) {
     );
 }
 
-export default function Main({ background, stars }) {
+export default function Main({ background, stars=[] }) {
     const [helpVisible, setHelpVisible] = useState(false);
     const router = useRouter();
 

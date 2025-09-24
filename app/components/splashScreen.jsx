@@ -1,40 +1,53 @@
 import { Asset } from "expo-asset";
+import * as Font from "expo-font";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 import Main from "./main";
 
 export default function SplashScreen() {
     const [ready, setReady] = useState(false);
-    const [assets, setAssets] = useState(null); // ✅ keep naming consistent
+    const [assets, setAssets] = useState(null);
 
     useEffect(() => {
         async function preload() {
-            // Preload background
-            const bg = Asset.fromModule(
-                require("../../assets/images/Background3.png")
-            );
-            await bg.downloadAsync();
+            try {
+                // Preload background
+                const bg = Asset.fromModule(
+                    require("../../assets/images/Background3.png")
+                );
+                await bg.downloadAsync();
 
-            // Preload stars
-            const starSources = [
-                require("../../assets/images/star1.png"),
-                require("../../assets/images/star2.png"),
-                require("../../assets/images/star3.png"),
-                require("../../assets/images/star4.png"),
-            ];
-            const stars = [
-                { source: starSources[0], top: "8%", left: "10%", size: 25 },
-                { source: starSources[1], top: "20%", left: "80%", size: 35 },
-                { source: starSources[2], top: "35%", left: "15%", size: 30 },
-                { source: starSources[3], top: "50%", left: "75%", size: 28 },
-                { source: starSources[0], top: "65%", left: "12%", size: 32 },
-                { source: starSources[1], top: "78%", left: "85%", size: 40 },
-            ];
+                // Preload stars
+                const starSources = [
+                    require("../../assets/images/star1.png"),
+                    require("../../assets/images/star2.png"),
+                    require("../../assets/images/star3.png"),
+                    require("../../assets/images/star4.png"),
+                ];
+                const stars = [
+                    { source: starSources[0], top: "8%", left: "10%", size: 25 },
+                    { source: starSources[1], top: "20%", left: "80%", size: 35 },
+                    { source: starSources[2], top: "35%", left: "15%", size: 30 },
+                    { source: starSources[3], top: "50%", left: "75%", size: 28 },
+                    { source: starSources[0], top: "65%", left: "12%", size: 32 },
+                    { source: starSources[1], top: "78%", left: "85%", size: 40 },
+                ];
 
-            // ✅ actually set into `assets`
-            setAssets({ bg: bg.localUri || bg.uri, stars });
-            setReady(true);
+                // Preload fonts (the ones you use: OutfitBold, OutfitLight, OutfitRegular)
+                await Font.loadAsync({
+                    OutfitBold: require("../../assets/fonts/Outfit/Outfit-Bold.ttf"),
+                    OutfitLight: require("../../assets/fonts/Outfit/Outfit-Light.ttf"),
+                    OutfitRegular: require("../../assets/fonts/Outfit/Outfit-Regular.ttf"),
+                });
+
+                // Save preloaded assets
+                setAssets({ bg: bg.localUri || bg.uri, stars });
+                setReady(true);
+            } catch (err) {
+                console.warn("Asset loading failed", err);
+            }
         }
+
         preload();
     }, []);
 
@@ -61,7 +74,7 @@ export default function SplashScreen() {
         );
     }
 
-    // ✅ Now `assets` is defined
+    // Only show Main when everything is loaded
     return <Main background={assets.bg} stars={assets.stars} />;
 }
 
@@ -70,6 +83,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: "white", // ✅ no flicker to black
     },
     iconBox: {
         width: 120,
