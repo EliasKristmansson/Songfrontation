@@ -1,8 +1,9 @@
 import * as ImagePicker from "expo-image-picker";
-import PreGameMenuHeader from "./preGameMenuHeader";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import ShaderBackground from "./backgroundShader";
+import PreGameMenuHeader from "./preGameMenuHeader";
 
 const ICONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -101,10 +102,20 @@ export default function Icon() {
     };
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/Background3.png")}
-            style={{ flex: 1 }}
-        >
+        <View style={styles.container}>  
+            {/* Web-only shader */}
+                {Platform.OS === "web" && (
+                    <ShaderBackground
+                    color1={[0.255, 0.184, 0.494]}
+                    color2={[0.455, 0.294, 0.549]}
+                    color3={[0.718, 0.459, 0.525]}
+                    color4={[0.455, 0.294, 0.549]}
+                    speed={0.2}
+                    scale={3.0}
+                    dividerPos={0.5}
+                    style={styles.webShader}
+                    />
+                )}
             {/* Header at the top */}
             <PreGameMenuHeader
                 title="Icon Select"
@@ -168,7 +179,7 @@ export default function Icon() {
                     </ScrollView>
                 </View>
             </View>
-        </ImageBackground>
+        </View>
     );
 }
 
@@ -176,6 +187,12 @@ const styles = StyleSheet.create({
     mainRow: {
         flex: 1,
         flexDirection: "row",
+    },
+    webShader: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 0,
+        position: "absolute",
+        backgroundColor: "transparent"
     },
     container: {
         flex: 1,

@@ -1,23 +1,24 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import {
     Animated,
     Dimensions,
-    Image,
-    ImageBackground,
+    Platform,
     Pressable,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
+import ShaderBackground from "./backgroundShader";
+import { BackgroundShaderContext } from "./backgroundShaderContext";
 import Help from "./modals/help";
 
 const windowWidth = Dimensions.get("window").width;
 const BUTTON_WIDTH = Math.min(350, windowWidth - 40);
-
-function PlayerButton({ label, onPress }) {
+ 
+    function PlayerButton({ label, onPress }) {
     const opacity = new Animated.Value(0);
 
     const handlePressIn = () => {
@@ -35,6 +36,9 @@ function PlayerButton({ label, onPress }) {
             useNativeDriver: true,
         }).start();
     };
+
+    //Shaders från Layout_ funkar bara på mobilen, enkom lösning för webben
+    
 
     return (
         <Pressable
@@ -66,12 +70,15 @@ function PlayerButton({ label, onPress }) {
 }
 
 export default function Main({ background, stars=[] }) {
+    const { setDividerPos } = useContext(BackgroundShaderContext);
     const [helpVisible, setHelpVisible] = useState(false);
     const router = useRouter();
 
     return (
+        
+        /* PNG background image setup
         <ImageBackground source={{ uri: background }} style={styles.container}>
-            {/* Stars Layer */}
+            
             {stars.map((star, idx) => (
                 <Image
                     key={idx}
@@ -86,92 +93,112 @@ export default function Main({ background, stars=[] }) {
                         },
                     ]}
                 />
-            ))}
+            ))} */
 
-            <View style={styles.titleContainer}>
-                <Text style={styles.title}>Welcome to Songfrontation!</Text>
+            <View style={styles.container}>
+                {/* Web-only shader */}
+                    {Platform.OS === "web" && (
+                        <ShaderBackground
+                        color1={[0.255, 0.184, 0.494]}
+                        color2={[0.455, 0.294, 0.549]}
+                        color3={[0.718, 0.459, 0.525]}
+                        color4={[0.455, 0.294, 0.549]}
+                        speed={0.2}
+                        scale={3.0}
+                        style={styles.webShader}
+                        />
+                    )}
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>Welcome to Songfrontation!</Text>
 
-                <View style={styles.topRightButtons}>
-                    <TouchableOpacity
-                        style={styles.settingsButton}
-                        onPress={() => setHelpVisible(true)}
-                    >
-                        <Text style={styles.settingsText}>❔</Text>
-                    </TouchableOpacity>
+                    <View style={styles.topRightButtons}>
+                        <TouchableOpacity
+                            style={styles.settingsButton}
+                            onPress={() => setHelpVisible(true)}
+                        >
+                            <Text style={styles.settingsText}>❔</Text>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.settingsButton}
-                        onPress={() => router.push("../components/settings")}
-                    >
-                        <Text style={styles.settingsText}>⚙️</Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.settingsButton}
+                            onPress={() => router.push("../components/settings")}
+                        >
+                            <Text style={styles.settingsText}>⚙️</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
+
+                {/* Center Content */}
+                <View style={styles.centerContent}>
+                    <View
+                        style={{
+                            width: BUTTON_WIDTH,
+                            alignItems: "flex-start",
+                            paddingLeft: 10,
+                        }}
+                    >
+                        <Text style={styles.sectionLabel}>Quick Match</Text>
+                    </View>
+                    <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
+                        <LinearGradient
+                            colors={["#412F7E", "#5663C4", "#896DA3", "#B77586"]}
+                            start={[0.1, 0]}
+                            end={[0.9, 1]}
+                            style={styles.buttonRow}
+                        >
+                            <PlayerButton
+                                label="1 Player"
+                                onPress={() => router.push("../components/match")}
+                            />
+                            <View style={styles.divider} />
+                            <PlayerButton
+                                label="2 Players"
+                                onPress={() => router.push("../components/match")}
+                            />
+                        </LinearGradient>
+                    </View>
+
+                    <View
+                        style={{
+                            width: BUTTON_WIDTH,
+                            alignItems: "flex-start",
+                            paddingLeft: 10,
+                            marginTop: 30,
+                        }}
+                    >
+                        <Text style={styles.sectionLabel}>Custom Match</Text>
+                    </View>
+                    <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
+                        <LinearGradient
+                            colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
+                            start={[0.1, 0]}
+                            end={[0.9, 1]}
+                            style={styles.buttonRow}
+                        >
+                            <PlayerButton
+                                label="1 Player"
+                                onPress={() =>
+                                    router.push("../components/iconSinglePlayer")
+                                }
+                            />
+                            <View style={styles.divider} />
+                            <PlayerButton
+                                label="2 Players"
+                                onPress={() => {
+                                    setDividerPos(0.5); // update shader
+                                    router.push("../components/icon"); // navigate
+                                }} 
+                            />
+                        </LinearGradient>
+                    </View>
+                </View>
+
+                <Help visible={helpVisible} onClose={() => setHelpVisible(false)} />
             </View>
 
-            {/* Center Content */}
-            <View style={styles.centerContent}>
-                <View
-                    style={{
-                        width: BUTTON_WIDTH,
-                        alignItems: "flex-start",
-                        paddingLeft: 10,
-                    }}
-                >
-                    <Text style={styles.sectionLabel}>Quick Match</Text>
-                </View>
-                <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
-                    <LinearGradient
-                        colors={["#412F7E", "#5663C4", "#896DA3", "#B77586"]}
-                        start={[0.1, 0]}
-                        end={[0.9, 1]}
-                        style={styles.buttonRow}
-                    >
-                        <PlayerButton
-                            label="1 Player"
-                            onPress={() => router.push("../components/match")}
-                        />
-                        <View style={styles.divider} />
-                        <PlayerButton
-                            label="2 Players"
-                            onPress={() => router.push("../components/match")}
-                        />
-                    </LinearGradient>
-                </View>
-
-                <View
-                    style={{
-                        width: BUTTON_WIDTH,
-                        alignItems: "flex-start",
-                        paddingLeft: 10,
-                        marginTop: 30,
-                    }}
-                >
-                    <Text style={styles.sectionLabel}>Custom Match</Text>
-                </View>
-                <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
-                    <LinearGradient
-                        colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
-                        start={[0.1, 0]}
-                        end={[0.9, 1]}
-                        style={styles.buttonRow}
-                    >
-                        <PlayerButton
-                            label="1 Player"
-                            onPress={() =>
-                                router.push("../components/iconSinglePlayer")
-                            }
-                        />
-                        <View style={styles.divider} />
-                        <PlayerButton
-                            label="2 Players"
-                            onPress={() => router.push("../components/icon")}
-                        />
-                    </LinearGradient>
-                </View>
-            </View>
-
-            <Help visible={helpVisible} onClose={() => setHelpVisible(false)} />
-        </ImageBackground>
+        
+        
+        
     );
 }
 
@@ -181,6 +208,13 @@ const styles = StyleSheet.create({
         paddingTop: 40,
         alignItems: "center",
         justifyContent: "flex-start",
+        backgroundColor: "transparent",
+    },
+    webShader: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 0,
+        position: "absolute",
+        backgroundColor: "transparent"
     },
     star: {
         position: "absolute",
