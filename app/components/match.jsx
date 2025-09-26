@@ -9,6 +9,73 @@ const SEARCH_TERMS = [
   "dream", "light", "girl", "boy", "rock", "pop", "life"
 ];
 
+// --- Game Engine/Logic Classes ---
+
+class Player {
+  constructor({ playerId, playerIcon }) {
+    this.playerId = playerId;
+    this.playerIcon = playerIcon;
+    this.currentPoints = 0;
+    this.currentWonRounds = 0;
+    this.currentAvaliableGuesses = 0;
+    this.currentTimeout = 0;
+    this.currentGuess = null;
+    this.correctGuess = false;
+    this.hasWonRound = false;
+    this.hasWonMatch = false;
+  }
+}
+
+class Song {
+  constructor({ songId, songGenre, songFile, songTitle, songArtist, songDuration, songArtistAlternatives }) {
+    this.songId = songId;
+    this.songGenre = songGenre;
+    this.songFile = songFile;
+    this.songTitle = songTitle;
+    this.songArtist = songArtist;
+    this.songDuration = songDuration;
+    this.songArtistAlternatives = songArtistAlternatives || [];
+    this.currentTimeLeft = songDuration;
+    this.hasWonSong = false;
+    this.songWinnerId = null;
+  }
+}
+
+class Round {
+  constructor({ roundId, roundGenre, songObjects, pointsToWinRound }) {
+    this.roundId = roundId;
+    this.roundGenre = roundGenre;
+    this.songObjects = songObjects || [];
+    this.currentSong = null;
+    this.pointsToWinRound = pointsToWinRound;
+    this.roundWinnerId = null;
+  }
+}
+
+class MatchSettings {
+  constructor({ nrOfPlayers, selectionOfGenre, nrOfSongsToWinRound, nrOfRoundsToWinMatch, songDuration, nrOfGuessesOnBoard }) {
+    this.nrOfPlayers = nrOfPlayers;
+    this.selectionOfGenre = selectionOfGenre || [];
+    this.nrOfSongsToWinRound = nrOfSongsToWinRound;
+    this.nrOfRoundsToWinMatch = nrOfRoundsToWinMatch;
+    this.songDuration = songDuration;
+    this.nrOfGuessesOnBoard = nrOfGuessesOnBoard;
+  }
+}
+
+class Match {
+  constructor({ players, matchSettings }) {
+    this.currentRound = 0;
+    this.players = players || [];
+    this.hasMatchWinner = false;
+    this.matchSettings = matchSettings;
+    this.rematch = false;
+    this.matchWinnerId = null;
+  }
+}
+
+// --- End Game Engine/Logic Classes ---
+
 // Fetch random track from iTunes
 async function fetchRandomiTunesTrack() {
   try {
@@ -37,66 +104,6 @@ async function fetchRandomiTunesTrack() {
   }
 }
 
-function playerObject () {
-  int playerId;
-  var playerIcon;
-
-  int currentPoints;
-  int currentWonRounds;
-  int currentAvaliableGuesses;
-  int currentTimeout;
-  var currentGuess;
-
-  bool correctGuess;
-  bool hasWonRound;
-  bool hasWonMatch;
-  
-} 
-
-function songObject () {
-  int songId;
-  var songGenre;
-  var songFile;
-  var songTitle;
-  var songArtist;
-  var songDuration;
-  var songArtistAlternatives[];
-
-  var currentTimeLeft;
-  bool hasWonSong;
-  var songWinnerId;
-
-} 
-
-function roundObject () {
-  int roundId;
-  string roundGenre;
-  var songObjects[];
-  var currentSong;
-  int pointsToWinRound;
-  var roundWinnerId;
-
-} 
-
-function matchObject () {
-  int currentRound;
-  var players[];
-  bool hasMatchWinner;
-  var matchSettingObject;
-  bool rematch;
-  var matchWinnerId;
-
-} 
-
-function matchSettingObject () {
-  int nrOfPlayers;
-  var selectionOfGenre;
-  int nrOfSongsToWinRound;
-  int nrOfRoundsToWinMatch;
-  int songDuration;
-  int nrOfGuessesOnBoard;
-
-}
 
 
 export default function Match() {
