@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import PreGameMenuHeader from "./preGameMenuHeader";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground } from "react-native";
 
 const DARK_BLUE = "#1a237e";
 const BUTTON_BG = "#232b4d";
@@ -34,26 +35,22 @@ export default function GenreSelect() {
     };
 
     return (
+
+        <ImageBackground
+                    source={require("../../assets/images/Background3.png")}
+                    style={{ flex: 1 }}
+                >
+            
+            <PreGameMenuHeader
+                title="Genre Select"
+                onBack={() => router.push("../components/matchSettings")}
+                onProceed={onStartMatch}
+                canProceed={selected.size > 0}
+                proceedLabel="Start Match"
+            />
+
         <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.headerRow}>
-                <TouchableOpacity
-                    style={styles.roundedButton}
-                    onPress={() => router.push("../components/matchSettings")}
-                >
-                    <Text style={styles.buttonText}>Back</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.headerText}>Select Genres</Text>
-
-                <TouchableOpacity
-                    style={[styles.roundedButton, selected.size === 0 && styles.buttonDisabled]}
-                    onPress={onStartMatch}
-                    disabled={selected.size === 0}
-                >
-                    <Text style={styles.buttonText}>Match</Text>
-                </TouchableOpacity>
-            </View>
+           
 
             {/* Skriver ut vilka genres som valts*/}
             <Text style={styles.subHeader}>
@@ -87,6 +84,7 @@ export default function GenreSelect() {
                 })}
             </ScrollView>
         </View>
+        </ImageBackground>
     );
 }
 
