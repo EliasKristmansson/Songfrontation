@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     header: {
-        fontSize: 48,
+        fontSize: 36,
         fontFamily: "OutfitBold",
         textAlign: "center",
         color: "white",

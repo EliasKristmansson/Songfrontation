@@ -1,5 +1,4 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function PreGameMenuHeader({
     title,
@@ -58,9 +57,10 @@ const styles = StyleSheet.create({
 
     },
     proceedText: {
-        fontSize: 18,
-        color: "#4CAF50",
+        fontSize: 22,
+        color: "white",
         fontWeight: "bold",
+        fontFamily: "OutfitRegular"
     },
     disabledButton: {
         opacity: 0.5,
@@ -77,5 +77,6 @@ const styles = StyleSheet.create({
         fontSize: 22,
         color: "#fff",
         fontWeight: "bold",
+        fontFamily: "OutfitBold"
     },
 });
