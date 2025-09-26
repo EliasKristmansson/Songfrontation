@@ -1,7 +1,7 @@
 import { Audio } from "expo-av";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Button, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Button, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 // Common search terms for randomness
 const SEARCH_TERMS = [
@@ -213,7 +213,7 @@ export default function Match() {
   };
 
   return (
-    <View style={{ padding: 20 }}>
+    <ScrollView contentContainerStyle={{ padding: 20, flexGrow: 1 }}>
       <Text style={{ fontSize: 22, marginBottom: 20 }}>Song Quiz 🎵</Text>
 
       {currentTrack && (
@@ -288,6 +288,6 @@ export default function Match() {
           onPress={() => router.push("/")}
         />
       </View>
-    </View>
+    </ScrollView>
   );
 }
