@@ -1,7 +1,7 @@
 import { Audio } from "expo-av";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Button, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Button, Text, TouchableOpacity, View } from "react-native";
 
 // Common search terms for randomness
 const SEARCH_TERMS = [
@@ -63,7 +63,7 @@ class MatchSettings {
   }
 }
 
-class Match {
+class MatchGame {
   constructor({ players, matchSettings }) {
     this.currentRound = 0;
     this.players = players || [];
@@ -111,26 +111,68 @@ export default function Match() {
   const [sound, setSound] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
+  const [songOptions, setSongOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [correctPressed, setCorrectPressed] = useState(false);
 
+  // Fetch 25 random songs and pick 3 for the board
   const handlePlay = async () => {
     try {
+      setLoading(true);
+      setCorrectPressed(false);
       if (sound) {
         await sound.unloadAsync();
         setSound(null);
       }
 
-      const track = await fetchRandomiTunesTrack();
-      if (!track) {
+      const randomTerm = SEARCH_TERMS[Math.floor(Math.random() * SEARCH_TERMS.length)];
+      const res = await fetch(
+        `https://itunes.apple.com/search?term=${encodeURIComponent(randomTerm)}&entity=song&limit=25`
+      );
+      const data = await res.json();
+      if (!data.results || data.results.length === 0) {
         Alert.alert("No Preview", "Could not find a track with a preview.");
+        setLoading(false);
         return;
       }
 
-      setCurrentTrack(track);
+      // Pick a random track with a preview
+      const tracksWithPreview = data.results.filter(t => t.previewUrl);
+      if (tracksWithPreview.length < 3) {
+        Alert.alert("Not enough previews", "Could not find enough tracks with previews.");
+        setLoading(false);
+        return;
+      }
 
-      console.log(`▶️ Playing: ${track.title} - ${track.artist}`);
+      // Pick the correct song
+      const correctTrackIdx = Math.floor(Math.random() * tracksWithPreview.length);
+      const correctTrack = tracksWithPreview[correctTrackIdx];
+
+      // Pick 2 other random tracks (not the correct one)
+      let indices = [correctTrackIdx];
+      while (indices.length < 3) {
+        const idx = Math.floor(Math.random() * tracksWithPreview.length);
+        if (!indices.includes(idx)) indices.push(idx);
+      }
+      // Shuffle indices for randomness
+      indices.sort(() => Math.random() - 0.5);
+
+      const options = indices.map(idx => ({
+        title: tracksWithPreview[idx].trackName,
+        artist: tracksWithPreview[idx].artistName,
+        previewUrl: tracksWithPreview[idx].previewUrl,
+        isCorrect: idx === correctTrackIdx,
+      }));
+
+      setSongOptions(options);
+      setCurrentTrack({
+        title: correctTrack.trackName,
+        artist: correctTrack.artistName,
+        previewUrl: correctTrack.previewUrl,
+      });
 
       const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: track.previewUrl },
+        { uri: correctTrack.previewUrl },
         { shouldPlay: true }
       );
 
@@ -144,10 +186,29 @@ export default function Match() {
           setSound(null);
         }
       });
+      setLoading(false);
     } catch (err) {
       console.error("Error playing preview:", err);
       Alert.alert("Error", "Failed to play preview");
       setIsPlaying(false);
+      setLoading(false);
+    }
+  };
+
+  // Handle answer selection
+  const handleGuess = async (isCorrect) => {
+    if (isCorrect) {
+      setCorrectPressed(true);
+      if (sound) {
+        await sound.unloadAsync();
+        setSound(null);
+        setIsPlaying(false);
+      }
+      Alert.alert("Correct!", "You guessed the right song!", [
+        { text: "OK", onPress: () => router.push("/") }
+      ]);
+    } else {
+      Alert.alert("Wrong!", "Try again!");
     }
   };
 
@@ -164,10 +225,64 @@ export default function Match() {
       <Button
         title="Play Random Song Preview"
         onPress={handlePlay}
-        disabled={isPlaying}
+        disabled={isPlaying || loading}
       />
 
-      <View style={{ marginTop: 20 }}>
+      {loading && (
+        <ActivityIndicator size="large" color="#5C66C5" style={{ marginTop: 20 }} />
+      )}
+
+      {/* Game Board */}
+      {songOptions.length === 3 && (
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 30 }}>
+          {/* Player 1 */}
+          <View style={{ flex: 1, alignItems: "center" }}>
+            <Text style={{ fontWeight: "bold", marginBottom: 10 }}>Player 1</Text>
+            {songOptions.map((option, idx) => (
+              <TouchableOpacity
+                key={`p1-${idx}`}
+                style={{
+                  backgroundColor: "#5C66C5",
+                  padding: 12,
+                  borderRadius: 10,
+                  marginVertical: 6,
+                  width: 180,
+                }}
+                onPress={() => handleGuess(option.isCorrect)}
+                disabled={correctPressed || !isPlaying}
+              >
+                <Text style={{ color: "white", textAlign: "center" }}>
+                  {option.title}{"\n"}<Text style={{ fontSize: 12, color: "#e0e0e0" }}>{option.artist}</Text>
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {/* Player 2 */}
+          <View style={{ flex: 1, alignItems: "center" }}>
+            <Text style={{ fontWeight: "bold", marginBottom: 10 }}>Player 2</Text>
+            {songOptions.map((option, idx) => (
+              <TouchableOpacity
+                key={`p2-${idx}`}
+                style={{
+                  backgroundColor: "#5C66C5",
+                  padding: 12,
+                  borderRadius: 10,
+                  marginVertical: 6,
+                  width: 180,
+                }}
+                onPress={() => handleGuess(option.isCorrect)}
+                disabled={correctPressed || !isPlaying}
+              >
+                <Text style={{ color: "white", textAlign: "center" }}>
+                  {option.title}{"\n"}<Text style={{ fontSize: 12, color: "#e0e0e0" }}>{option.artist}</Text>
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      <View style={{ marginTop: 30 }}>
         <Button
           title="Go to Front Page"
           onPress={() => router.push("/")}
