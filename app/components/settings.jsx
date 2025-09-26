@@ -2,12 +2,11 @@ import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ImageBackground,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 
 export default function Settings() {
@@ -17,10 +16,7 @@ export default function Settings() {
     const [music, setMusic] = useState(50);
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/Background3.png")}
-            style={styles.container}
-        >
+        <View>
             {/* Simple Back Arrow */}
             <TouchableOpacity
                 onPress={() => router.push("/")}
@@ -62,7 +58,8 @@ export default function Settings() {
                     })}
                 </View>
             </ScrollView>
-        </ImageBackground>
+        </View>
+
     );
 }
 

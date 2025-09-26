@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import PreGameMenuHeader from "./preGameMenuHeader";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground } from "react-native";
 
 const DARK_BLUE = "#1a237e";
 const BUTTON_BG = "#232b4d";
@@ -36,11 +36,7 @@ export default function GenreSelect() {
 
     return (
 
-        <ImageBackground
-                    source={require("../../assets/images/Background3.png")}
-                    style={{ flex: 1 }}
-                >
-            
+        <View>
             <PreGameMenuHeader
                 title="Genre Select"
                 onBack={() => router.push("../components/matchSettings")}
@@ -49,42 +45,44 @@ export default function GenreSelect() {
                 proceedLabel="Start Match"
             />
 
-        <View style={styles.container}>
-           
+            <View style={styles.container}>
 
-            {/* Skriver ut vilka genres som valts*/}
-            <Text style={styles.subHeader}>
-                {selected.size > 0 ? `Selected: ${selectedList.join(", ")}` : "Choose one or more"}
-            </Text>
 
-            {/* Skrollbar väljare */}
-            <ScrollView contentContainerStyle={styles.iconList}>
-                {GENRES.map((g) => {
-                    const isSelected = selected.has(g);
-                    return (
-                        <TouchableOpacity
-                            key={g}
-                            onPress={() => toggleGenre(g)}
-                            style={styles.iconWrapper}
-                            activeOpacity={0.8}
-                        >
-                            <View
-                                style={[
-                                    styles.icon,
-                                    { backgroundColor: ALT_BG },
-                                    isSelected && styles.selectedIcon
-                                ]}
+                {/* Skriver ut vilka genres som valts*/}
+                <Text style={styles.subHeader}>
+                    {selected.size > 0 ? `Selected: ${selectedList.join(", ")}` : "Choose one or more"}
+                </Text>
+
+                {/* Skrollbar väljare */}
+                <ScrollView contentContainerStyle={styles.iconList}>
+                    {GENRES.map((g) => {
+                        const isSelected = selected.has(g);
+                        return (
+                            <TouchableOpacity
+                                key={g}
+                                onPress={() => toggleGenre(g)}
+                                style={styles.iconWrapper}
+                                activeOpacity={0.8}
                             >
-                                <Text style={[styles.iconText, isSelected && styles.iconTextSelected]}>
-                                    {g}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    );
-                })}
-            </ScrollView>
+                                <View
+                                    style={[
+                                        styles.icon,
+                                        { backgroundColor: ALT_BG },
+                                        isSelected && styles.selectedIcon
+                                    ]}
+                                >
+                                    <Text style={[styles.iconText, isSelected && styles.iconTextSelected]}>
+                                        {g}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+            </View>
         </View>
-        </ImageBackground>
+
+
     );
 }
 

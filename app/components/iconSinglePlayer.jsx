@@ -1,8 +1,8 @@
 import * as ImagePicker from "expo-image-picker";
-import PreGameMenuHeader from "./preGameMenuHeader";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import PreGameMenuHeader from "./preGameMenuHeader";
 
 const ICONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -90,10 +90,7 @@ export default function Icon() {
     };
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/Background3.png")}
-            style={styles.container}
-        >
+        <View style={styles.container}>
 
             {/* Header at the top */}
             <PreGameMenuHeader
@@ -126,7 +123,7 @@ export default function Icon() {
                     {ICONS.map((icon, idx) => renderIcon(idx))}
                 </ScrollView>
             </View>
-        </ImageBackground>
+        </View>
     );
 }
 

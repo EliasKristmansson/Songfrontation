@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import PreGameMenuHeader from "./preGameMenuHeader";
-import { StyleSheet, Text, TouchableOpacity, View, ImageBackground } from "react-native";
 
 const DARK_BLUE = "#1a237e";
 const BUTTON_BG = "#232b4d";
@@ -21,13 +21,7 @@ export default function Icon() {
     const [selectedGenre, setSelectedGenre] = useState(null);
 
     return (
-
-        <ImageBackground
-                    source={require("../../assets/images/Background3.png")}
-                    style={{ flex: 1 }}
-                >
-            
-            
+        <View>
             <PreGameMenuHeader
                 title="Genre Select"
                 onBack={() => router.push("../components/matchSettings")}
@@ -35,29 +29,31 @@ export default function Icon() {
                 canProceed={!!selectedGenre}
                 proceedLabel="Start Match"
             />
-            
+
             <View style={styles.container}>
-            {/* Knappar osm visar tre genres */}
-            <View style={styles.genreButtonRow}>
-                {randomGenres.map((genre) => (
-                    <TouchableOpacity
-                        key={genre}
-                        style={[
-                            styles.genreButton,
-                            selectedGenre === genre && styles.genreButtonSelected
-                        ]}
-                        onPress={() => setSelectedGenre(genre)}
-                    >
-                        <Text style={selectedGenre === genre ? styles.genreTextSelected : styles.genreText}>
-                            {genre}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
+                {/* Knappar osm visar tre genres */}
+                <View style={styles.genreButtonRow}>
+                    {randomGenres.map((genre) => (
+                        <TouchableOpacity
+                            key={genre}
+                            style={[
+                                styles.genreButton,
+                                selectedGenre === genre && styles.genreButtonSelected
+                            ]}
+                            onPress={() => setSelectedGenre(genre)}
+                        >
+                            <Text style={selectedGenre === genre ? styles.genreTextSelected : styles.genreText}>
+                                {genre}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
         </View>
 
-        </ImageBackground>
-        
+
+
+
     );
 }
 

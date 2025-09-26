@@ -3,73 +3,73 @@ import { useEffect, useRef } from "react";
 import { AppState, Platform, StyleSheet, View } from "react-native";
 
 export default function ShaderBackground({
-  children,
-  style,
-  disableMotion = false,
-  speed = 0.2,
-  scale = 3.0,
-  color1 = [1.2, 0.3, 0.8],
-  color2 = [1.0, 0.5, 0.2],
-  color3 = [0.8, 0.2, 0.3],
-  color4 = [0.2, 0.8, 0.5],
-  dividerPos = 1.0,
+    children,
+    style,
+    disableMotion = false,
+    speed = 0.2,
+    scale = 3.0,
+    color1 = [1.2, 0.3, 0.8],
+    color2 = [1.0, 0.5, 0.2],
+    color3 = [0.8, 0.2, 0.3],
+    color4 = [0.2, 0.8, 0.5],
+    dividerPos = 1.0,
 }) {
-  const startTime = useRef(Date.now());
-  const glRef = useRef(null);
-  const animationRef = useRef(null);
+    const startTime = useRef(Date.now());
+    const glRef = useRef(null);
+    const animationRef = useRef(null);
 
-  const renderLoop = (gl, uniforms) => {
-    const {
-      timeUniform,
-      resUniform,
-      motionUniform,
-      speedUniform,
-      scaleUniform,
-      color1Uniform,
-      color2Uniform,
-      color3Uniform,
-      color4Uniform,
-      dividerUniform,
-    } = uniforms;
+    const renderLoop = (gl, uniforms) => {
+        const {
+            timeUniform,
+            resUniform,
+            motionUniform,
+            speedUniform,
+            scaleUniform,
+            color1Uniform,
+            color2Uniform,
+            color3Uniform,
+            color4Uniform,
+            dividerUniform,
+        } = uniforms;
 
-    const render = () => {
-      const elapsed = (Date.now() - startTime.current) / 1000.0;
+        const render = () => {
+            const elapsed = (Date.now() - startTime.current) / 1000.0;
 
-      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+            gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-      gl.uniform1f(timeUniform, elapsed);
-      gl.uniform2f(resUniform, gl.drawingBufferWidth, gl.drawingBufferHeight);
-      gl.uniform1f(motionUniform, disableMotion ? 0.0 : 1.0);
-      gl.uniform1f(speedUniform, speed);
-      gl.uniform1f(scaleUniform, scale);
-      gl.uniform1f(dividerUniform, dividerPos);
-      gl.uniform3f(color1Uniform, color1[0], color1[1], color1[2]);
-      gl.uniform3f(color2Uniform, color2[0], color2[1], color2[2]);
-      gl.uniform3f(color3Uniform, color3[0], color3[1], color3[2]);
-      gl.uniform3f(color4Uniform, color4[0], color4[1], color4[2]);
+            gl.uniform1f(timeUniform, elapsed);
+            gl.uniform2f(resUniform, gl.drawingBufferWidth, gl.drawingBufferHeight);
+            gl.uniform1f(motionUniform, disableMotion ? 0.0 : 1.0);
+            gl.uniform1f(speedUniform, speed);
+            gl.uniform1f(scaleUniform, scale);
+            gl.uniform1f(dividerUniform, dividerPos);
+            gl.uniform3f(color1Uniform, color1[0], color1[1], color1[2]);
+            gl.uniform3f(color2Uniform, color2[0], color2[1], color2[2]);
+            gl.uniform3f(color3Uniform, color3[0], color3[1], color3[2]);
+            gl.uniform3f(color4Uniform, color4[0], color4[1], color4[2]);
 
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
 
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-      gl.flush();
-      gl.endFrameEXP();
+            gl.flush();
+            gl.endFrameEXP();
 
-      animationRef.current = requestAnimationFrame(render);
+            animationRef.current = requestAnimationFrame(render);
+        };
+
+        render();
     };
 
-    render();
-  };
-
-  const onContextCreate = async (gl) => {
-    // Shader setup (same as before)
-    const vertShaderSource = `
+    const onContextCreate = async (gl) => {
+        // Shader setup (same as before)
+        const vertShaderSource = `
       attribute vec4 position;
       void main() { gl_Position = position; }
     `;
 
-    const fragShaderSource = `
+        const fragShaderSource = `
       precision mediump float;
 
       uniform float u_time;
@@ -111,81 +111,81 @@ export default function ShaderBackground({
       }
     `;
 
-    const vertShader = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vertShader, vertShaderSource);
-    gl.compileShader(vertShader);
+        const vertShader = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vertShader, vertShaderSource);
+        gl.compileShader(vertShader);
 
-    const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragShader, fragShaderSource);
-    gl.compileShader(fragShader);
+        const fragShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fragShader, fragShaderSource);
+        gl.compileShader(fragShader);
 
-    const program = gl.createProgram();
-    gl.attachShader(program, vertShader);
-    gl.attachShader(program, fragShader);
-    gl.linkProgram(program);
-    gl.useProgram(program);
+        const program = gl.createProgram();
+        gl.attachShader(program, vertShader);
+        gl.attachShader(program, fragShader);
+        gl.linkProgram(program);
+        gl.useProgram(program);
 
-    const vertices = new Float32Array([
-      -1.0, -1.0,
-       1.0, -1.0,
-      -1.0,  1.0,
-       1.0,  1.0,
-    ]);
+        const vertices = new Float32Array([
+            -1.0, -1.0,
+            1.0, -1.0,
+            -1.0, 1.0,
+            1.0, 1.0,
+        ]);
 
-    const vertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-    const positionAttrib = gl.getAttribLocation(program, "position");
-    gl.enableVertexAttribArray(positionAttrib);
-    gl.vertexAttribPointer(positionAttrib, 2, gl.FLOAT, false, 0, 0);
+        const positionAttrib = gl.getAttribLocation(program, "position");
+        gl.enableVertexAttribArray(positionAttrib);
+        gl.vertexAttribPointer(positionAttrib, 2, gl.FLOAT, false, 0, 0);
 
-    const uniforms = {
-      timeUniform: gl.getUniformLocation(program, "u_time"),
-      resUniform: gl.getUniformLocation(program, "u_resolution"),
-      motionUniform: gl.getUniformLocation(program, "u_motionEnabled"),
-      speedUniform: gl.getUniformLocation(program, "u_speed"),
-      scaleUniform: gl.getUniformLocation(program, "u_scale"),
-      color1Uniform: gl.getUniformLocation(program, "u_color1"),
-      color2Uniform: gl.getUniformLocation(program, "u_color2"),
-      color3Uniform: gl.getUniformLocation(program, "u_color3"),
-      color4Uniform: gl.getUniformLocation(program, "u_color4"),
-      dividerUniform: gl.getUniformLocation(program, "u_dividerPos"),
+        const uniforms = {
+            timeUniform: gl.getUniformLocation(program, "u_time"),
+            resUniform: gl.getUniformLocation(program, "u_resolution"),
+            motionUniform: gl.getUniformLocation(program, "u_motionEnabled"),
+            speedUniform: gl.getUniformLocation(program, "u_speed"),
+            scaleUniform: gl.getUniformLocation(program, "u_scale"),
+            color1Uniform: gl.getUniformLocation(program, "u_color1"),
+            color2Uniform: gl.getUniformLocation(program, "u_color2"),
+            color3Uniform: gl.getUniformLocation(program, "u_color3"),
+            color4Uniform: gl.getUniformLocation(program, "u_color4"),
+            dividerUniform: gl.getUniformLocation(program, "u_dividerPos"),
+        };
+
+        glRef.current = { gl, ...uniforms };
+
+        renderLoop(gl, glRef.current);
     };
 
-    glRef.current = { gl, ...uniforms };
+    // Lifecycle pause/resume
+    useEffect(() => {
+        const sub = AppState.addEventListener("change", (state) => {
+            if (state === "active" && glRef.current) {
+                renderLoop(glRef.current.gl, glRef.current);
+            } else if (state.match(/inactive|background/)) {
+                if (animationRef.current) cancelAnimationFrame(animationRef.current);
+            }
+        });
+        return () => sub.remove();
+    }, []);
 
-    renderLoop(gl, glRef.current);
-  };
-
-  // Lifecycle pause/resume
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active" && glRef.current) {
-        renderLoop(glRef.current.gl, glRef.current);
-      } else if (state.match(/inactive|background/)) {
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      }
-    });
-    return () => sub.remove();
-  }, []);
-
-  return (
-    <View style={[styles.container, style]}>
-      <GLView
-        style={StyleSheet.absoluteFill}
-        onContextCreate={onContextCreate}
-        pointerEvents="none" // allows touches to pass through
-        backgroundColor={Platform.OS === 'android' ? 'black' : 'transparent'}
-      />
-      {children}
-    </View>
-  );
+    return (
+        <View style={[styles.container, style]}>
+            <GLView
+                style={StyleSheet.absoluteFill}
+                onContextCreate={onContextCreate}
+                pointerEvents="none" // allows touches to pass through
+                backgroundColor={Platform.OS === 'android' ? 'black' : 'transparent'}
+            />
+            {children}
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    position: 'relative',
-  },
+    container: {
+        flex: 1,
+        position: 'relative',
+    },
 });

@@ -1,8 +1,8 @@
 import Slider from "@react-native-community/slider";
-import PreGameMenuHeader from "./preGameMenuHeader";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Button, ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import PreGameMenuHeader from "./preGameMenuHeader";
 
 const BUTTON_BG = "#232b4d";
 
@@ -25,10 +25,7 @@ export default function Icon() {
     };
 
     return (
-        <ImageBackground
-            source={require("../../assets/images/Background3.png")}
-            style={{ flex: 1 }}
-        >
+        <View>
             {/* Header at the top */}
             <PreGameMenuHeader
                 title="Match Settings"
@@ -140,7 +137,8 @@ export default function Icon() {
                     ))}
                 </View>
             </ScrollView>
-        </ImageBackground>
+        </View>
+
     );
 }
 
