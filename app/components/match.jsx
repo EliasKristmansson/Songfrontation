@@ -1,17 +1,20 @@
 import { Audio } from "expo-av";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Animated,
     Button,
+    Dimensions,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
-import PreGameMenuHeader from "./preGameMenuHeader";
+
+const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 // Common search terms for randomness
 const SEARCH_TERMS = [
@@ -19,8 +22,7 @@ const SEARCH_TERMS = [
     "dream", "light", "girl", "boy", "rock", "pop", "life"
 ];
 
-// --- Game Engine/Logic Classes ---
-
+// --- Game Engine/Logic Classes (unchanged) ---
 class Player {
     constructor({ playerId, playerIcon }) {
         this.playerId = playerId;
@@ -83,7 +85,6 @@ class MatchGame {
         this.matchWinnerId = null;
     }
 }
-
 // --- End Game Engine/Logic Classes ---
 
 export default function Match() {
@@ -91,7 +92,7 @@ export default function Match() {
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrack, setCurrentTrack] = useState(null);
-    const [currentSongObj, setCurrentSongObj] = useState(null); // Song class instance
+    const [currentSongObj, setCurrentSongObj] = useState(null);
     const [songOptions, setSongOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [correctPressed, setCorrectPressed] = useState(false);
@@ -103,7 +104,7 @@ export default function Match() {
     const [player2Points, setPlayer2Points] = useState(0);
     const [roundWinner, setRoundWinner] = useState(null);
 
-    // Match settings: first to 3 points wins the round, first to 1 round wins the match
+    // Match settings
     const matchSettings = new MatchSettings({
         nrOfPlayers: 2,
         selectionOfGenre: [],
@@ -114,7 +115,17 @@ export default function Match() {
     });
     const matchGame = new MatchGame({ players: [player1, player2], matchSettings });
 
-    // Helper to reset points for new round
+    // UI state for countdown overlay
+    const [initialCountdown, setInitialCountdown] = useState(3);
+    const [showInitialCountdown, setShowInitialCountdown] = useState(true);
+
+    // timer display on divider
+    const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
+    const dividerTimerRef = useRef(null);
+
+    // Bubble animation refs
+    const bubbleScalesRef = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]);
+
     const resetRound = () => {
         setPlayer1Points(0);
         setPlayer2Points(0);
@@ -125,10 +136,11 @@ export default function Match() {
         setIsPlaying(false);
         setLoading(false);
         setRoundWinner(null);
+        setDividerTimer(matchSettings.songDuration);
     };
 
-    // Fetch 25 random songs and pick 3 for the board
-    const handlePlay = async () => {
+    // Core play logic
+    const handlePlayCore = async () => {
         try {
             setLoading(true);
             setCorrectPressed(false);
@@ -148,7 +160,6 @@ export default function Match() {
                 return;
             }
 
-            // Pick a random track with a preview
             const tracksWithPreview = data.results.filter(t => t.previewUrl);
             if (tracksWithPreview.length < 3) {
                 Alert.alert("Not enough previews", "Could not find enough tracks with previews.");
@@ -156,11 +167,9 @@ export default function Match() {
                 return;
             }
 
-            // Pick the correct song
             const correctTrackIdx = Math.floor(Math.random() * tracksWithPreview.length);
             const correctTrack = tracksWithPreview[correctTrackIdx];
 
-            // Create Song class instance for the correct song
             const songObj = new Song({
                 songId: correctTrack.trackId,
                 songGenre: correctTrack.primaryGenreName,
@@ -172,13 +181,11 @@ export default function Match() {
             });
             setCurrentSongObj(songObj);
 
-            // Pick 2 other random tracks (not the correct one)
             let indices = [correctTrackIdx];
             while (indices.length < 3) {
                 const idx = Math.floor(Math.random() * tracksWithPreview.length);
                 if (!indices.includes(idx)) indices.push(idx);
             }
-            // Shuffle indices for randomness
             indices.sort(() => Math.random() - 0.5);
 
             const options = indices.map(idx => ({
@@ -203,11 +210,24 @@ export default function Match() {
             setSound(newSound);
             setIsPlaying(true);
 
+            setDividerTimer(matchSettings.songDuration);
+            if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+            dividerTimerRef.current = setInterval(() => {
+                setDividerTimer(prev => {
+                    if (prev <= 1) {
+                        clearInterval(dividerTimerRef.current);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
             newSound.setOnPlaybackStatusUpdate(status => {
                 if (status.didJustFinish) {
                     setIsPlaying(false);
                     newSound.unloadAsync();
                     setSound(null);
+                    if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
                 }
             });
             setLoading(false);
@@ -219,7 +239,25 @@ export default function Match() {
         }
     };
 
-    // Handle answer selection
+    useEffect(() => {
+        let mounted = true;
+        const runInitialCountdown = async () => {
+            setShowInitialCountdown(true);
+            let count = 3;
+            setInitialCountdown(count);
+            while (count > 0 && mounted) {
+                await new Promise(res => setTimeout(res, 900));
+                count -= 1;
+                setInitialCountdown(count);
+            }
+            if (!mounted) return;
+            setShowInitialCountdown(false);
+            handlePlayCore();
+        };
+        runInitialCountdown();
+        return () => { mounted = false; };
+    }, []);
+
     const handleGuess = async (isCorrect, playerNum) => {
         if (isCorrect) {
             setCorrectPressed(true);
@@ -227,13 +265,12 @@ export default function Match() {
                 await sound.unloadAsync();
                 setSound(null);
                 setIsPlaying(false);
+                if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
             }
-            // Update Song object state
             if (currentSongObj) {
                 currentSongObj.hasWonSong = true;
                 currentSongObj.songWinnerId = playerNum;
             }
-            // Update player score
             if (playerNum === 1) {
                 const newPoints = player1Points + 1;
                 setPlayer1Points(newPoints);
@@ -244,7 +281,7 @@ export default function Match() {
                     ]);
                 } else {
                     Alert.alert("Correct!", `Player 1 scored!`, [
-                        { text: "Next Song", onPress: resetRound }
+                        { text: "Next Song", onPress: () => handlePlayCore() }
                     ]);
                 }
             } else {
@@ -257,7 +294,7 @@ export default function Match() {
                     ]);
                 } else {
                     Alert.alert("Correct!", `Player 2 scored!`, [
-                        { text: "Next Song", onPress: resetRound }
+                        { text: "Next Song", onPress: () => handlePlayCore() }
                     ]);
                 }
             }
@@ -266,156 +303,281 @@ export default function Match() {
         }
     };
 
-    return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <PreGameMenuHeader title="Song Quiz" style={styles.header} />
+    const BubbleOption = ({ option, onPress, disabled, animatedIndex }) => {
+        const scale = bubbleScalesRef.current[animatedIndex] || new Animated.Value(1);
+        return (
+            <Animated.View style={{ transform: [{ scale }], marginVertical: 8 }}>
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={onPress}
+                    disabled={disabled}
+                    style={[styles.bubbleOption, disabled && styles.bubbleDisabled]}
+                >
+                    <Text style={styles.optionText}>{option.title}</Text>
+                    <Text style={styles.optionArtist}>{option.artist}</Text>
+                </TouchableOpacity>
+            </Animated.View>
+        );
+    };
 
-            {/* Scoreboard & Rounds */}
-            <View style={styles.scoreboard}>
-                <View style={styles.playerColumn}>
-                    <Text style={styles.playerIcon}>{player1.playerIcon}</Text>
-                    <Text style={styles.playerName}>Player 1</Text>
-                    <Text>Score: {player1Points} / {matchSettings.nrOfSongsToWinRound}</Text>
-                </View>
-                <View style={styles.playerColumn}>
-                    <Text style={styles.playerIcon}>{player2.playerIcon}</Text>
-                    <Text style={styles.playerName}>Player 2</Text>
-                    <Text>Score: {player2Points} / {matchSettings.nrOfSongsToWinRound}</Text>
-                </View>
+    const PointsRow = ({ points }) => {
+        const circles = [0, 1, 2];
+        return (
+            <View style={styles.pointsRow}>
+                {circles.map(i => (
+                    <View key={i} style={[styles.pointCircle, points > i ? styles.pointCircleFilled : null]} />
+                ))}
             </View>
-            <Text style={styles.instructions}>
-                First to {matchSettings.nrOfSongsToWinRound} points wins the match!
-            </Text>
+        );
+    };
 
-            {currentTrack && (
-                <Text style={styles.nowPlaying}>
-                    🎶 Now Playing: {currentTrack.title} - {currentTrack.artist}
-                </Text>
-            )}
+    return (
+        <View style={{ flex: 1 }}>
+            <ScrollView contentContainerStyle={styles.container}>
 
-            <Button
-                title="Play Random Song Preview"
-                onPress={handlePlay}
-                disabled={isPlaying || loading || !!roundWinner}
-            />
+                {/* HEADER (icons + dividerBlock + line) */}
+                <View style={styles.headerRow}>
+                    {/* LEFT SIDE: points + mic */}
+                    <View style={styles.sideRow}>
+                        <PointsRow points={player1Points} />
+                        <View style={styles.largeIconCircle}>
+                            <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
+                        </View>
+                    </View>
 
-            {loading && <ActivityIndicator size="large" color="#5C66C5" style={styles.loader} />}
+                    {/* DIVIDER (block + vertical line) */}
+                    <View style={styles.dividerContainer}>
+                        <View style={styles.dividerBlock}>
+                            <Text style={styles.dividerTimerText}>{dividerTimer}</Text>
+                        </View>
+                    </View>
 
-            {/* Game Board */}
-            {songOptions.length === 3 && !roundWinner && (
-                <View style={styles.gameBoard}>
-                    {/* Player 1 */}
-                    <View style={styles.playerGuessColumn}>
-                        <Text style={styles.playerGuessLabel}>Player 1</Text>
+                    {/* RIGHT SIDE: guitar + points */}
+                    <View style={styles.sideRow}>
+                        <View style={styles.largeIconCircle}>
+                            <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
+                        </View>
+                        <PointsRow points={player2Points} />
+                    </View>
+                </View>
+
+
+
+                <View style={styles.playArea}>
+                    {/* LEFT SIDE */}
+                    <View style={styles.sideColumn}>
                         {songOptions.map((option, idx) => (
-                            <TouchableOpacity
+                            <BubbleOption
                                 key={`p1-${idx}`}
-                                style={styles.optionButton}
+                                option={option}
                                 onPress={() => handleGuess(option.isCorrect, 1)}
                                 disabled={correctPressed || !isPlaying}
-                            >
-                                <Text style={styles.optionText}>
-                                    {option.title}{"\n"}
-                                    <Text style={styles.optionArtist}>{option.artist}</Text>
-                                </Text>
-                            </TouchableOpacity>
+                                animatedIndex={idx}
+                            />
                         ))}
                     </View>
-                    {/* Player 2 */}
-                    <View style={styles.playerGuessColumn}>
-                        <Text style={styles.playerGuessLabel}>Player 2</Text>
+
+                    {/* Vertical Divider (absolute in middle) */}
+                    <View style={styles.playDividerLine} />
+
+                    {/* RIGHT SIDE */}
+                    <View style={styles.sideColumn}>
                         {songOptions.map((option, idx) => (
-                            <TouchableOpacity
+                            <BubbleOption
                                 key={`p2-${idx}`}
-                                style={styles.optionButton}
+                                option={option}
                                 onPress={() => handleGuess(option.isCorrect, 2)}
                                 disabled={correctPressed || !isPlaying}
-                            >
-                                <Text style={styles.optionText}>
-                                    {option.title}{"\n"}
-                                    <Text style={styles.optionArtist}>{option.artist}</Text>
-                                </Text>
-                            </TouchableOpacity>
+                                animatedIndex={idx}
+                            />
                         ))}
                     </View>
                 </View>
-            )}
 
-            <View style={styles.footer}>
-                <Button
-                    title="Go to Front Page"
-                    onPress={() => router.push("/")}
-                />
-            </View>
-        </ScrollView>
+
+                {loading && <ActivityIndicator size="large" color="#5C66C5" style={styles.loader} />}
+
+                <View style={styles.footer}>
+                    <Button title="Play Random Song Preview" onPress={() => handlePlayCore()} disabled={isPlaying || loading || !!roundWinner} />
+                    <View style={{ height: 10 }} />
+                    <Button title="Reset Round" onPress={resetRound} />
+                    <View style={{ height: 12 }} />
+                    <Button title="Go to Front Page" onPress={() => router.push("/")} />
+                </View>
+            </ScrollView>
+
+            {showInitialCountdown && (
+                <View style={styles.countdownOverlay} pointerEvents="none">
+                    <View style={styles.countdownBubble}>
+                        <Text style={styles.countdownText}>{initialCountdown > 0 ? initialCountdown : 'Go!'}</Text>
+                    </View>
+                </View>
+            )}
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        padding: 20,
-        flexGrow: 1,
+        paddingHorizontal: 12,
+        paddingBottom: 40,
+        minHeight: WINDOW_HEIGHT - 40,
     },
     header: {
-        fontSize: 22,
-        marginBottom: 20,
-        fontFamily: "OutfitBold",
-        color:"white",
-    },
-    scoreboard: {
         flexDirection: "row",
         justifyContent: "space-between",
-        marginBottom: 20,
+        alignItems: "flex-start",
+        marginBottom: 12,
     },
-    playerColumn: {
+    headerSide: {
+        paddingTop: 4,
+        flexDirection: "row",
         alignItems: "center",
+    },
+    headerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center", // keep all tight in the middle
+    },
+    sideRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginHorizontal: 8, // small breathing room
+
+    },
+    playArea: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        position: "relative", // important for absolute divider
+    },
+
+    sideColumn: {
+        width: (WINDOW_WIDTH - 2) / 2, // subtract 2px divider
+        alignItems: "center",
+    },
+
+    playDividerLine: {
+        position: "absolute",
+        left: WINDOW_WIDTH / 2-13, // center minus half of divider width
+        top: 0,
+        width: 2,
+        height: WINDOW_HEIGHT, // full height of playArea
+        backgroundColor: "white",
+        zIndex: 5,
+    },
+
+    largeIconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 24,
+        backgroundColor: "#111827",
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 2,
+        marginHorizontal: 6,
+        borderColor: "white",
+    },
+    largeIconText: {
+        fontSize: 26,
+    },
+    pointsRow: {
+        flexDirection: "row",
+    },
+    pointCircle: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 1.5,
+        borderColor: "#9CA3AF",
+        marginHorizontal: 4,
+        backgroundColor: 'transparent',
+    },
+    pointCircleFilled: {
+        backgroundColor: "#5C66C5",
+        borderColor: "#5C66C5",
+    },
+    dividerContainer: {
+        width: 80,
+        alignItems: "center",
+    },
+    dividerBlock: {
+        width: 80,
+        height: 46,
+        backgroundColor: "white",
+        borderBottomLeftRadius: 10,
+        borderBottomRightRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 3,
+    },
+    dividerLine: {
+        width: 2,
         flex: 1,
+        backgroundColor: "white",
     },
-    playerIcon: {
-        fontSize: 28,
+    dividerTimerText: {
+        color: "black",
+        fontSize: 18,
     },
-    playerName: {
-        fontWeight: "bold",
+    bubbleOption: {
+        width: 180,
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderRadius: 999,
+        backgroundColor: '#111827',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.04)',
+        shadowColor: '#000',
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 4,
+        marginVertical: 8,
     },
-    instructions: {
-        textAlign: "center",
-        marginBottom: 10,
+    bubbleDisabled: {
+        opacity: 0.5,
     },
-    nowPlaying: {
-        marginBottom: 10,
+    optionText: {
+        color: 'white',
+        textAlign: 'center',
+        fontWeight: '600',
+    },
+    optionArtist: {
+        fontSize: 12,
+        color: '#9CA3AF',
+        marginTop: 4,
     },
     loader: {
         marginTop: 20,
     },
-    gameBoard: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 30,
-    },
-    playerGuessColumn: {
-        flex: 1,
-        alignItems: "center",
-    },
-    playerGuessLabel: {
-        fontWeight: "bold",
-        marginBottom: 10,
-    },
-    optionButton: {
-        backgroundColor: "#5C66C5",
-        padding: 12,
-        borderRadius: 10,
-        marginVertical: 6,
-        width: 180,
-    },
-    optionText: {
-        color: "white",
-        textAlign: "center",
-    },
-    optionArtist: {
-        fontSize: 12,
-        color: "#e0e0e0",
-    },
     footer: {
-        marginTop: 30,
+        marginTop: 22,
+        alignItems: 'center',
     },
+    countdownOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.45)'
+    },
+    countdownBubble: {
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 6,
+        borderColor: '#5C66C5',
+    },
+    countdownText: {
+        color: 'white',
+        fontSize: 48,
+        fontWeight: '800',
+    }
 });

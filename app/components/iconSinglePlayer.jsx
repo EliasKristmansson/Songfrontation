@@ -133,7 +133,6 @@ const styles = StyleSheet.create({
         height: "100%",
         position: "relative",
         flexDirection: "column", // Make sure the layout is vertical
-        backgroundColor: "#000", // Optional: fallback background
     },
     settingsButton: {
         position: "absolute",
