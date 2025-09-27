@@ -1,4 +1,5 @@
 import { Audio } from "expo-av";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -7,7 +8,6 @@ import {
     Animated,
     Button,
     Dimensions,
-    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -22,7 +22,7 @@ const SEARCH_TERMS = [
     "dream", "light", "girl", "boy", "rock", "pop", "life"
 ];
 
-// --- Game Engine/Logic Classes (unchanged) ---
+// --- Game Engine/Logic Classes ---
 class Player {
     constructor({ playerId, playerIcon }) {
         this.playerId = playerId;
@@ -126,6 +126,10 @@ export default function Match() {
     // Bubble animation refs
     const bubbleScalesRef = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]);
 
+    // Randomized vertical positions for each player's bubbles
+    const [player1Offsets, setPlayer1Offsets] = useState([]);
+    const [player2Offsets, setPlayer2Offsets] = useState([]);
+
     const resetRound = () => {
         setPlayer1Points(0);
         setPlayer2Points(0);
@@ -137,6 +141,8 @@ export default function Match() {
         setLoading(false);
         setRoundWinner(null);
         setDividerTimer(matchSettings.songDuration);
+        setPlayer1Offsets([]);
+        setPlayer2Offsets([]);
     };
 
     // Core play logic
@@ -230,6 +236,11 @@ export default function Match() {
                     if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
                 }
             });
+
+            // Random vertical positions for bubbles (between 20 and 300 px)
+            setPlayer1Offsets(options.map(() => 20 + Math.random() * 280));
+            setPlayer2Offsets(options.map(() => 20 + Math.random() * 280));
+
             setLoading(false);
         } catch (err) {
             console.error("Error playing preview:", err);
@@ -303,18 +314,27 @@ export default function Match() {
         }
     };
 
-    const BubbleOption = ({ option, onPress, disabled, animatedIndex }) => {
+    const BubbleOption = ({ option, onPress, disabled, animatedIndex, offsetY }) => {
         const scale = bubbleScalesRef.current[animatedIndex] || new Animated.Value(1);
+
         return (
-            <Animated.View style={{ transform: [{ scale }], marginVertical: 8 }}>
+            <Animated.View style={{ transform: [{ scale }], marginVertical: 6, top: offsetY, position: 'absolute' }}>
                 <TouchableOpacity
                     activeOpacity={0.8}
                     onPress={onPress}
                     disabled={disabled}
                     style={[styles.bubbleOption, disabled && styles.bubbleDisabled]}
                 >
-                    <Text style={styles.optionText}>{option.title}</Text>
-                    <Text style={styles.optionArtist}>{option.artist}</Text>
+                    {/* Gradient content */}
+                    <LinearGradient
+                        colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.bubbleOptionInner}
+                    >
+                        <Text style={styles.optionText}>{option.title}</Text>
+                        <Text style={styles.optionArtist}>{option.artist}</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
             </Animated.View>
         );
@@ -333,7 +353,7 @@ export default function Match() {
 
     return (
         <View style={{ flex: 1 }}>
-            <ScrollView contentContainerStyle={styles.container}>
+            <View contentContainerStyle={styles.container}>
 
                 {/* HEADER (icons + dividerBlock + line) */}
                 <View style={styles.headerRow}>
@@ -361,8 +381,6 @@ export default function Match() {
                     </View>
                 </View>
 
-
-
                 <View style={styles.playArea}>
                     {/* LEFT SIDE */}
                     <View style={styles.sideColumn}>
@@ -373,6 +391,7 @@ export default function Match() {
                                 onPress={() => handleGuess(option.isCorrect, 1)}
                                 disabled={correctPressed || !isPlaying}
                                 animatedIndex={idx}
+                                offsetY={player1Offsets[idx] || idx * 60}
                             />
                         ))}
                     </View>
@@ -389,11 +408,11 @@ export default function Match() {
                                 onPress={() => handleGuess(option.isCorrect, 2)}
                                 disabled={correctPressed || !isPlaying}
                                 animatedIndex={idx}
+                                offsetY={player2Offsets[idx] || idx * 60}
                             />
                         ))}
                     </View>
                 </View>
-
 
                 {loading && <ActivityIndicator size="large" color="#5C66C5" style={styles.loader} />}
 
@@ -404,7 +423,7 @@ export default function Match() {
                     <View style={{ height: 12 }} />
                     <Button title="Go to Front Page" onPress={() => router.push("/")} />
                 </View>
-            </ScrollView>
+            </View>
 
             {showInitialCountdown && (
                 <View style={styles.countdownOverlay} pointerEvents="none">
@@ -423,50 +442,37 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
         minHeight: WINDOW_HEIGHT - 40,
     },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 12,
-    },
-    headerSide: {
-        paddingTop: 4,
-        flexDirection: "row",
-        alignItems: "center",
-    },
     headerRow: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center", // keep all tight in the middle
+        justifyContent: "center",
     },
     sideRow: {
         flexDirection: "row",
         alignItems: "center",
-        marginHorizontal: 8, // small breathing room
-
+        marginHorizontal: 8,
     },
     playArea: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "flex-start",
-        position: "relative", // important for absolute divider
+        position: "relative",
     },
-
     sideColumn: {
-        width: (WINDOW_WIDTH - 2) / 2, // subtract 2px divider
-        alignItems: "center",
+        width: (WINDOW_WIDTH - 2) / 2,
+        alignItems: 'center',
+        height: 320, // container height for random bubble positions
+        position: 'relative'
     },
-
     playDividerLine: {
         position: "absolute",
-        left: WINDOW_WIDTH / 2-13, // center minus half of divider width
+        left: WINDOW_WIDTH / 2,
         top: 0,
         width: 2,
-        height: WINDOW_HEIGHT, // full height of playArea
+        height: WINDOW_HEIGHT,
         backgroundColor: "white",
         zIndex: 5,
     },
-
     largeIconCircle: {
         width: 40,
         height: 40,
@@ -478,12 +484,8 @@ const styles = StyleSheet.create({
         marginHorizontal: 6,
         borderColor: "white",
     },
-    largeIconText: {
-        fontSize: 26,
-    },
-    pointsRow: {
-        flexDirection: "row",
-    },
+    largeIconText: { fontSize: 26 },
+    pointsRow: { flexDirection: "row" },
     pointCircle: {
         width: 20,
         height: 20,
@@ -497,10 +499,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#5C66C5",
         borderColor: "#5C66C5",
     },
-    dividerContainer: {
-        width: 80,
-        alignItems: "center",
-    },
+    dividerContainer: { width: 80, alignItems: "center" },
     dividerBlock: {
         width: 80,
         height: 46,
@@ -511,51 +510,35 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         zIndex: 3,
     },
-    dividerLine: {
-        width: 2,
-        flex: 1,
-        backgroundColor: "white",
-    },
-    dividerTimerText: {
-        color: "black",
-        fontSize: 18,
-    },
+    dividerTimerText: { color: "black", fontSize: 18 },
     bubbleOption: {
-        width: 180,
-        paddingVertical: 14,
-        paddingHorizontal: 12,
-        borderRadius: 999,
-        backgroundColor: '#111827',
+        width: 120,
+        height: 120,
+        borderRadius: 60,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.04)',
-        shadowColor: '#000',
-        shadowOpacity: 0.25,
-        shadowRadius: 6,
-        elevation: 4,
-        marginVertical: 8,
+        shadowColor: 'white',
+        shadowOpacity: 1,
+        shadowRadius: 8,
+        elevation: 6,
+        borderWidth: 2,
+        borderColor: '#896DA3',
+        overflow: 'hidden',
+        backgroundColor: '#412F7E',
     },
-    bubbleDisabled: {
-        opacity: 0.5,
-    },
-    optionText: {
-        color: 'white',
-        textAlign: 'center',
-        fontWeight: '600',
-    },
-    optionArtist: {
-        fontSize: 12,
-        color: '#9CA3AF',
-        marginTop: 4,
-    },
-    loader: {
-        marginTop: 20,
-    },
-    footer: {
-        marginTop: 22,
+    bubbleOptionInner: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        borderRadius: 60,
         alignItems: 'center',
+        justifyContent: 'center',
     },
+    bubbleDisabled: { opacity: 0.5 },
+    optionText: { color: 'white', fontWeight: '700', fontSize: 14, textAlign: 'center' },
+    optionArtist: { fontSize: 11, color: '#D1D5DB' },
+    loader: { marginTop: 20 },
+    footer: { marginTop: 22, alignItems: 'center' },
     countdownOverlay: {
         position: 'absolute',
         top: 0,
@@ -564,7 +547,8 @@ const styles = StyleSheet.create({
         bottom: 0,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.45)'
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        zIndex: 1000,
     },
     countdownBubble: {
         width: 160,
