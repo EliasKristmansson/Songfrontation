@@ -126,10 +126,6 @@ export default function Match() {
     // Bubble animation refs
     const bubbleScalesRef = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]);
 
-    // Randomized vertical positions for each player's bubbles
-    const [player1Offsets, setPlayer1Offsets] = useState([]);
-    const [player2Offsets, setPlayer2Offsets] = useState([]);
-
     const resetRound = () => {
         setPlayer1Points(0);
         setPlayer2Points(0);
@@ -141,8 +137,6 @@ export default function Match() {
         setLoading(false);
         setRoundWinner(null);
         setDividerTimer(matchSettings.songDuration);
-        setPlayer1Offsets([]);
-        setPlayer2Offsets([]);
     };
 
     // Core play logic
@@ -237,10 +231,6 @@ export default function Match() {
                 }
             });
 
-            // Random vertical positions for bubbles (between 20 and 300 px)
-            setPlayer1Offsets(options.map(() => 20 + Math.random() * 280));
-            setPlayer2Offsets(options.map(() => 20 + Math.random() * 280));
-
             setLoading(false);
         } catch (err) {
             console.error("Error playing preview:", err);
@@ -314,18 +304,31 @@ export default function Match() {
         }
     };
 
-    const BubbleOption = ({ option, onPress, disabled, animatedIndex, offsetY }) => {
+    // Triangle positions (fixed, not random)
+    const getTrianglePosition = (idx, isLeft) => {
+        if (isLeft) {
+            if (idx === 0) return { top: 0, right: 0 };
+            if (idx === 1) return { top: 120, left: 0 };
+            if (idx === 2) return { bottom: 0, right: 0 };
+        } else {
+            if (idx === 0) return { top: 0, left: 0 };
+            if (idx === 1) return { top: 120, right: 0 };
+            if (idx === 2) return { bottom: 0, left: 0 };
+        }
+        return {};
+    };
+
+    const BubbleOption = ({ option, onPress, disabled, animatedIndex, positionStyle }) => {
         const scale = bubbleScalesRef.current[animatedIndex] || new Animated.Value(1);
 
         return (
-            <Animated.View style={{ transform: [{ scale }], marginVertical: 6, top: offsetY, position: 'absolute' }}>
+            <Animated.View style={[{ transform: [{ scale }] }, styles.bubbleWrapper, positionStyle]}>
                 <TouchableOpacity
                     activeOpacity={0.8}
                     onPress={onPress}
                     disabled={disabled}
                     style={[styles.bubbleOption, disabled && styles.bubbleDisabled]}
                 >
-                    {/* Gradient content */}
                     <LinearGradient
                         colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
                         start={{ x: 0, y: 0 }}
@@ -355,7 +358,7 @@ export default function Match() {
         <View style={{ flex: 1 }}>
             <View contentContainerStyle={styles.container}>
 
-                {/* HEADER (icons + dividerBlock + line) */}
+                {/* HEADER */}
                 <View style={styles.headerRow}>
                     {/* LEFT SIDE: points + mic */}
                     <View style={styles.sideRow}>
@@ -365,7 +368,7 @@ export default function Match() {
                         </View>
                     </View>
 
-                    {/* DIVIDER (block + vertical line) */}
+                    {/* DIVIDER */}
                     <View style={styles.dividerContainer}>
                         <View style={styles.dividerBlock}>
                             <Text style={styles.dividerTimerText}>{dividerTimer}</Text>
@@ -391,12 +394,12 @@ export default function Match() {
                                 onPress={() => handleGuess(option.isCorrect, 1)}
                                 disabled={correctPressed || !isPlaying}
                                 animatedIndex={idx}
-                                offsetY={player1Offsets[idx] || idx * 60}
+                                positionStyle={getTrianglePosition(idx, true)}
                             />
                         ))}
                     </View>
 
-                    {/* Vertical Divider (absolute in middle) */}
+                    {/* Divider Line */}
                     <View style={styles.playDividerLine} />
 
                     {/* RIGHT SIDE */}
@@ -408,7 +411,7 @@ export default function Match() {
                                 onPress={() => handleGuess(option.isCorrect, 2)}
                                 disabled={correctPressed || !isPlaying}
                                 animatedIndex={idx}
-                                offsetY={player2Offsets[idx] || idx * 60}
+                                positionStyle={getTrianglePosition(idx, false)}
                             />
                         ))}
                     </View>
@@ -461,8 +464,8 @@ const styles = StyleSheet.create({
     sideColumn: {
         width: (WINDOW_WIDTH - 2) / 2,
         alignItems: 'center',
-        height: 320, // container height for random bubble positions
-        position: 'relative'
+        height: 320,
+        position: 'relative',
     },
     playDividerLine: {
         position: "absolute",
@@ -511,10 +514,13 @@ const styles = StyleSheet.create({
         zIndex: 3,
     },
     dividerTimerText: { color: "black", fontSize: 18 },
+    bubbleWrapper: {
+        position: "absolute",
+    },
     bubbleOption: {
-        width: 120,
+        width: 120,         // bigger bubble
         height: 120,
-        borderRadius: 60,
+        borderRadius: 80,
         alignItems: 'center',
         justifyContent: 'center',
         shadowColor: 'white',
@@ -525,14 +531,21 @@ const styles = StyleSheet.create({
         borderColor: '#896DA3',
         overflow: 'hidden',
         backgroundColor: '#412F7E',
+        margin: 20,         // adds breathing room between edge & neighbors
     },
     bubbleOptionInner: {
         flex: 1,
         width: '100%',
         height: '100%',
-        borderRadius: 60,
+        borderRadius: 80,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    bubbleColumn: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: 20, // space top/bottom
+        paddingHorizontal: 10, // space left/right
     },
     bubbleDisabled: { opacity: 0.5 },
     optionText: { color: 'white', fontWeight: '700', fontSize: 14, textAlign: 'center' },
