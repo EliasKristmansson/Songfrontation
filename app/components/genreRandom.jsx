@@ -1,14 +1,13 @@
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
 const PURPLE = "#44317f";
 
-// Hur vi nu ska definiera genres / search queries
 const GENRES = [
-  "Pop", "Rock", "Hip-Hop", "Jazz", "EDM", "Classical",
-  "Country", "Metal", "Indie", "Folk", "R&B"
+  "Pop","Rock","Hip-Hop","Jazz","EDM","Classical",
+  "Country","Metal","Indie","Folk","R&B"
 ];
 
 function getRandomGenre(list) {
@@ -17,6 +16,9 @@ function getRandomGenre(list) {
 
 export default function Icon() {
   const router = useRouter();
+  const { rounds, duration, guesses, points } = useLocalSearchParams();
+
+  // Slumpa genre
   const randomGenre = useMemo(() => getRandomGenre(GENRES), []);
 
   return (
@@ -28,7 +30,12 @@ export default function Icon() {
           router.push({
             pathname: "../components/match",
             params: {
+              // Skicka med alla valda inställningar till match
               genre: randomGenre,
+              rounds: String(rounds ?? ""),
+              duration: String(duration ?? ""),
+              guesses: String(guesses ?? ""),
+              points: String(points ?? ""),
             },
           });
         }}
@@ -36,7 +43,6 @@ export default function Icon() {
         proceedLabel="Start"
       />
 
-      {/* Visar samma genre som valdes */}
       <View style={styles.genreWrapper}>
         <Text style={styles.genreLabel}>Your genre:</Text>
         <Text style={styles.genreText}>{randomGenre}</Text>
@@ -50,6 +56,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PURPLE,
     paddingHorizontal: 10,
+    minHeight: Platform.OS === "web" ? "100vh" : undefined,
   },
   genreWrapper: {
     flex: 1,

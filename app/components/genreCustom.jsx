@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import PreGameMenuHeader from "./preGameMenuHeader";
@@ -10,15 +10,26 @@ const GENRES = [
   "Pop","Rock","Hip-Hop","Jazz","EDM","Classical","Country","Metal","Indie","Folk","R&B","Random"
 ];
 
+// Hjälp: expo-router kan ge string | string[]
+const asStr = (v) => (Array.isArray(v) ? v[0] : v ?? "");
+
 export default function GenreSelect() {
   const router = useRouter();
+  const { rounds, duration, guesses, points } = useLocalSearchParams();
+
   const [selected, setSelected] = useState(new Set());
   const selectedList = useMemo(() => Array.from(selected), [selected]);
 
+  // Max 3 val av genre just nu
   const toggleGenre = (g) => {
-    setSelected(prev => {
+    setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(g)) next.delete(g); else next.add(g);
+      if (next.has(g)) {
+        next.delete(g);
+      } else {
+        if (next.size >= 3) return prev; // blockera fler än 3
+        next.add(g);
+      }
       return next;
     });
   };
@@ -26,7 +37,14 @@ export default function GenreSelect() {
   const onStartMatch = () => {
     router.push({
       pathname: "../components/match",
-      params: { genres: JSON.stringify(selectedList) },
+      params: {
+        // Skickar vidare vald genre + tidigar einställningar från MatchSettings
+        genres: JSON.stringify(selectedList),
+        rounds: String(asStr(rounds)),
+        duration: String(asStr(duration)),
+        guesses: String(asStr(guesses)),
+        points: String(asStr(points)),
+      },
     });
   };
 
@@ -36,36 +54,33 @@ export default function GenreSelect() {
         title="Selection of Genre"
         onBack={() => router.push("../components/matchSettings")}
         onProceed={onStartMatch}
-        canProceed={selected.size > 0}
+        canProceed={selected.size > 0}   // minst ett val
         proceedLabel="Start"
       />
 
       <View style={styles.content}>
         {/* Valda genres / instruktion */}
         <Text style={styles.subHeader}>
-          {selected.size > 0 ? `Selected: ${selectedList.join(", ")}` : "Choose one or more"}
+          {selected.size > 0
+            ? `Selected (${selected.size}/3): ${selectedList.join(", ")}`
+            : "Choose up to 3"}
         </Text>
 
         {/* Skrollbar grid */}
         <ScrollView contentContainerStyle={styles.iconList}>
           {GENRES.map((g) => {
             const isSelected = selected.has(g);
+            const isDisabled = !isSelected && selected.size >= 3; // nått max
             return (
               <TouchableOpacity
                 key={g}
                 onPress={() => toggleGenre(g)}
-                style={styles.iconWrapper}
+                style={[styles.iconWrapper, isDisabled && styles.disabledWrapper]}
                 activeOpacity={0.85}
+                disabled={isDisabled}
               >
-                <View
-                  style={[
-                    styles.icon,
-                    isSelected && styles.selectedIcon
-                  ]}
-                >
-                  <Text style={styles.iconText}>
-                    {g}
-                  </Text>
+                <View style={[styles.icon, isSelected && styles.selectedIcon]}>
+                  <Text style={styles.iconText}>{g}</Text>
                 </View>
               </TouchableOpacity>
             );
@@ -109,6 +124,9 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     alignItems: "center",
     justifyContent: "center",
+  },
+  disabledWrapper: {
+    opacity: 0.6,
   },
 
   icon: {
