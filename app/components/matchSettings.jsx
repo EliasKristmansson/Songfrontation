@@ -1,5 +1,5 @@
 import Slider from "@react-native-community/slider";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
     Platform,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
+
 export default function MatchSettings() {
     const router = useRouter();
     const [genre, setGenre] = useState("Choose");
@@ -18,6 +19,7 @@ export default function MatchSettings() {
     const [duration, setDuration] = useState(5);
     const [guesses, setGuesses] = useState(3);
     const [points, setPoints] = useState(3);
+    const { from } = useLocalSearchParams();
 
     // Next button logic + params
     const getSelectedMatchMode = () => {
@@ -31,8 +33,14 @@ export default function MatchSettings() {
         <View style={styles.container}>
             <PreGameMenuHeader
                 title="Match Settings"
-                onBack={() => router.push("../components/icon")}
-                proceedLabel={null}   // hides it if your header checks truthiness
+                onBack={() => {
+                    if (from === "iconSinglePlayer") {
+                        router.push("../components/iconSinglePlayer");
+                    } else {
+                        router.push("../components/icon");
+                    }
+                }}
+                proceedLabel={null}
             />
 
             <ScrollView
