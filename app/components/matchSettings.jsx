@@ -1,253 +1,312 @@
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import PreGameMenuHeader from "./preGameMenuHeader";
-
-const PURPLE = "#44317f";
+import {
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 export default function MatchSettings() {
-  const router = useRouter();
-  const [genre, setGenre] = useState("Choose");
-  const [rounds, setRounds] = useState(1);
-  const [duration, setDuration] = useState(5);
-  const [guesses, setGuesses] = useState(3);
-  const [points, setPoints] = useState(3);
+    const router = useRouter();
+    const [genre, setGenre] = useState("Choose");
+    const [rounds, setRounds] = useState(1);
+    const [duration, setDuration] = useState(5);
+    const [guesses, setGuesses] = useState(3);
+    const [points, setPoints] = useState(3);
 
-  // Next-knappens routinglogik + skicka med parametrar
-  const getSelectedMatchMode = () => {
-    if (genre === "Random") return "../components/genreRandom";
-    if (genre === "Alternatives") return "../components/genreAlternatives";
-    if (genre === "Custom") return "../components/genreCustom";
-    return null;
-  };
+    // Next button logic + params
+    const getSelectedMatchMode = () => {
+        if (genre === "Random") return "../components/genreRandom";
+        if (genre === "Alternatives") return "../components/genreAlternatives";
+        if (genre === "Custom") return "../components/genreCustom";
+        return null;
+    };
 
-  return (
-    <View style={styles.container}>
-      <PreGameMenuHeader
-        title="Match Settings"
-        onBack={() => router.push("../components/icon")}
-        onProceed={() => {
-          const nextPath = getSelectedMatchMode();
-          if (nextPath) {
-            const params = {
-              genre,
-              rounds: String(rounds),
-              duration: String(duration),
-              guesses: String(guesses),
-              points: String(points),
-            };
-            router.push({ pathname: nextPath, params });
-          }
-        }}
-        canProceed={!!getSelectedMatchMode()}
-      />
-
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        {/* Selection of Genre */}
-        <View style={styles.genreRow}>
-          <Text style={styles.genreLabelInline}>Selection of Genre</Text>
-          {["Random", "Alternatives", "Custom"].map((option) => (
+    return (
+        <View style={styles.container}>
+            {/* Back Arrow */}
             <TouchableOpacity
-              key={option}
-              style={[styles.toggleButton, genre === option && styles.toggleButtonSelected]}
-              onPress={() => setGenre(option)}
+                onPress={() => router.push("../components/icon")}
+                style={styles.backButton}
             >
-              <Text style={genre === option ? styles.toggleTextSelected : styles.toggleText}>
-                {option}
-              </Text>
+                <Text style={styles.backArrow}>←</Text>
             </TouchableOpacity>
-          ))}
-        </View>
 
-        {/* Number of rounds */}
-        <View style={styles.genreRow}>
-          <Text style={styles.genreLabelInline}>Number of rounds</Text>
-          {[1, 2, 3].map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[styles.toggleButton, rounds === option && styles.toggleButtonSelected]}
-              onPress={() => setRounds(option)}
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
             >
-              <Text style={rounds === option ? styles.toggleTextSelected : styles.toggleText}>
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+                <View style={styles.cardsColumn}>
+                    {/* Genre Selection */}
+                    <View style={styles.card}>
+                        <Text style={styles.cardLabel}>Selection of Genre</Text>
+                        <View style={styles.optionsRow}>
+                            {["Random", "Alternatives", "Custom"].map((option) => (
+                                <TouchableOpacity
+                                    key={option}
+                                    style={[
+                                        styles.optionButton,
+                                        genre === option && styles.optionButtonSelected,
+                                    ]}
+                                    onPress={() => setGenre(option)}
+                                >
+                                    <Text
+                                        style={
+                                            genre === option
+                                                ? styles.optionTextSelected
+                                                : styles.optionText
+                                        }
+                                    >
+                                        {option}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
 
-        {/* Round duration (slider) */}
-        <View style={styles.genreRow}>
-          <Text style={styles.genreLabelInline}>Round duration</Text>
-          <Text style={styles.sliderLabel}>5 s</Text>
-          <Slider
-            style={{ flex: 1, marginHorizontal: 10 }}
-            minimumValue={5}
-            maximumValue={29}
-            step={1}
-            value={duration}
-            onValueChange={setDuration}
-            minimumTrackTintColor={"#fff"}
-            maximumTrackTintColor="#bbb"
-            thumbTintColor={"#fff"}
-          />
-          <Text style={styles.sliderLabel}>29 s</Text>
-          <Text style={styles.durationValue}>{duration} s</Text>
-        </View>
+                    {/* Number of Rounds */}
+                    <View style={styles.card}>
+                        <Text style={styles.cardLabel}>Number of Rounds</Text>
+                        <View style={styles.optionsRow}>
+                            {[1, 2, 3].map((option) => (
+                                <TouchableOpacity
+                                    key={option}
+                                    style={[
+                                        styles.optionButton,
+                                        rounds === option && styles.optionButtonSelected,
+                                    ]}
+                                    onPress={() => setRounds(option)}
+                                >
+                                    <Text
+                                        style={
+                                            rounds === option
+                                                ? styles.optionTextSelected
+                                                : styles.optionText
+                                        }
+                                    >
+                                        {option}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
 
-        {/* Guesses on board */}
-        <View style={styles.genreRow}>
-          <Text style={styles.genreLabelInline}>Guesses on board</Text>
-          {[2, 3, 4].map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[styles.toggleButton, guesses === option && styles.toggleButtonSelected]}
-              onPress={() => setGuesses(option)}
-            >
-              <Text style={guesses === option ? styles.toggleTextSelected : styles.toggleText}>
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+                    {/* Round Duration */}
+                    <View style={styles.card}>
+                        <Text style={styles.cardLabel}>Round Duration</Text>
+                        <View style={styles.sliderRow}>
+                            <Text style={styles.sliderLabel}>5s</Text>
+                            <Slider
+                                style={styles.slider}
+                                minimumValue={5}
+                                maximumValue={29}
+                                step={1}
+                                value={duration}
+                                onValueChange={setDuration}
+                                minimumTrackTintColor="#fff"
+                                maximumTrackTintColor="rgba(255,255,255,0.3)"
+                                thumbTintColor="white"
+                            />
+                            <Text style={styles.sliderLabel}>29s</Text>
+                        </View>
+                        <Text style={styles.sliderInfo}>{duration} seconds</Text>
+                    </View>
 
-        {/* Points to win round */}
-        <View style={styles.genreRow}>
-          <Text style={styles.genreLabelInline}>Points to win round</Text>
-          {[1, 3, 5].map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[styles.toggleButton, points === option && styles.toggleButtonSelected]}
-              onPress={() => setPoints(option)}
-            >
-              <Text style={points === option ? styles.toggleTextSelected : styles.toggleText}>
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                    {/* Guesses on Board */}
+                    <View style={styles.card}>
+                        <Text style={styles.cardLabel}>Guesses on Board</Text>
+                        <View style={styles.optionsRow}>
+                            {[2, 3, 4].map((option) => (
+                                <TouchableOpacity
+                                    key={option}
+                                    style={[
+                                        styles.optionButton,
+                                        guesses === option && styles.optionButtonSelected,
+                                    ]}
+                                    onPress={() => setGuesses(option)}
+                                >
+                                    <Text
+                                        style={
+                                            guesses === option
+                                                ? styles.optionTextSelected
+                                                : styles.optionText
+                                        }
+                                    >
+                                        {option}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* Points to Win Round */}
+                    <View style={styles.card}>
+                        <Text style={styles.cardLabel}>Points to Win Round</Text>
+                        <View style={styles.optionsRow}>
+                            {[1, 3, 5].map((option) => (
+                                <TouchableOpacity
+                                    key={option}
+                                    style={[
+                                        styles.optionButton,
+                                        points === option && styles.optionButtonSelected,
+                                    ]}
+                                    onPress={() => setPoints(option)}
+                                >
+                                    <Text
+                                        style={
+                                            points === option
+                                                ? styles.optionTextSelected
+                                                : styles.optionText
+                                        }
+                                    >
+                                        {option}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* Proceed Button */}
+                    <TouchableOpacity
+                        disabled={!getSelectedMatchMode()}
+                        onPress={() => {
+                            const nextPath = getSelectedMatchMode();
+                            if (nextPath) {
+                                const params = {
+                                    genre,
+                                    rounds: String(rounds),
+                                    duration: String(duration),
+                                    guesses: String(guesses),
+                                    points: String(points),
+                                };
+                                router.push({ pathname: nextPath, params });
+                            }
+                        }}
+                        style={[
+                            styles.proceedButton,
+                            !getSelectedMatchMode() && styles.proceedButtonDisabled,
+                        ]}
+                    >
+                        <Text style={styles.proceedText}>Next →</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
         </View>
-      </ScrollView>
-    </View>
-  );
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: PURPLE,
-    minHeight: Platform.OS === "web" ? "100vh" : undefined,
-    paddingHorizontal: 10,
-  },
-
-  scroll: {
-    flex: 1,
-  },
-
-  scrollContent: {
-    paddingBottom: 40,
-  },
-
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 30,
-    borderRadius: 18,
-    paddingVertical: 16,
-    paddingHorizontal: 10,
-  },
-
-  headerText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    letterSpacing: 1,
-  },
-
-  roundedButton: {
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    minWidth: 100,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-
-  buttonText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
-    letterSpacing: 0.5,
-  },
-
-
-  genreRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 22,
-    marginBottom: 10,
-    gap: 10,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-
-  genreLabelInline: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
-    marginRight: 10,
-    minWidth: 120,
-  },
-
-  toggleButton: {
-    backgroundColor: "rgba(0,0,0,0)",
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 22,
-    marginHorizontal: 2,
-    borderWidth: 2,
-    borderColor: "transparent",
-    minWidth: 48,
-    alignItems: "center",
-  },
-
-  toggleButtonSelected: {
-    backgroundColor: "rgba(0,0,0,0)",
-    borderColor: "#fff",
-  },
-
-  toggleText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-
-  toggleTextSelected: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  sliderLabel: {
-    fontSize: 16,
-    color: "#fff",
-    marginHorizontal: 2,
-  },
-  
-  durationValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff",
-    marginLeft: 10,
-    minWidth: 48,
-    textAlign: "right",
-  },
+    container: {
+        flex: 1,
+        minHeight: Platform.OS === "web" ? "100vh" : undefined,
+    },
+    scrollContent: {
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingBottom: 40,
+        paddingTop: 60,
+    },
+    backButton: {
+        position: "absolute",
+        top: 20,
+        left: 20,
+        zIndex: 10,
+        padding: 8,
+    },
+    backArrow: {
+        color: "white",
+        fontSize: 28,
+    },
+    cardsColumn: {
+        width: "100%",
+        alignItems: "center",
+    },
+    card: {
+        backgroundColor: "rgba(0,0,0,0.35)",
+        borderRadius: 14,
+        padding: 16,
+        marginVertical: 12,
+        width: "95%",
+        maxWidth: 500,
+        alignItems: "center",
+    },
+    cardLabel: {
+        fontSize: 16,
+        fontFamily: "OutfitBold",
+        color: "#fff",
+        marginBottom: 10,
+        letterSpacing: 0.5,
+        textAlign: "center",
+    },
+    optionsRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: 10,
+    },
+    optionButton: {
+        borderRadius: 20,
+        paddingVertical: 8,
+        paddingHorizontal: 20,
+        margin: 4,
+        borderWidth: 2,
+        borderColor: "transparent",
+        backgroundColor: "rgba(255,255,255,0.05)",
+    },
+    optionButtonSelected: {
+        borderColor: "#fff",
+        backgroundColor: "rgba(255,255,255,0.15)",
+    },
+    optionText: {
+        color: "#fff",
+        fontSize: 15,
+        fontFamily: "OutfitRegular",
+    },
+    optionTextSelected: {
+        color: "#fff",
+        fontSize: 15,
+        fontFamily: "OutfitBold",
+    },
+    sliderRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%",
+    },
+    slider: {
+        flex: 1,
+        marginHorizontal: 8,
+        height: 8,
+    },
+    sliderLabel: {
+        fontSize: 12,
+        fontFamily: "OutfitRegular",
+        color: "#ddd",
+        width: 32,
+        textAlign: "center",
+    },
+    sliderInfo: {
+        fontSize: 14,
+        fontFamily: "OutfitBold",
+        color: "white",
+        marginTop: 6,
+    },
+    proceedButton: {
+        marginTop: 20,
+        backgroundColor: "white",
+        paddingVertical: 12,
+        paddingHorizontal: 28,
+        borderRadius: 25,
+    },
+    proceedButtonDisabled: {
+        opacity: 0.4,
+    },
+    proceedText: {
+        color: "#000",
+        fontFamily: "OutfitBold",
+        fontSize: 16,
+    },
 });
