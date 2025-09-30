@@ -213,12 +213,31 @@ export default function Match() {
                 const newVal = prev + 1;
                 // Check for match win
                 if (newVal >= matchSettings.nrOfRoundsToWinMatch) {
+                    setPlayer1(prevPlayer => {
+                        const updated = { ...prevPlayer, hasWonMatch: true };
+                        return Object.setPrototypeOf(updated, Player.prototype);
+                    });
                     Alert.alert("Match Over", "Player 1 wins the match!", [
                         { text: "OK", onPress: () => router.push("/") }
                     ]);
                 } else {
+                    // Start next round with countdown
                     Alert.alert("Round Over", `Player 1 wins the round!`, [
-                        { text: "Next Round", onPress: () => resetRound() }
+                        { text: "Next Round", onPress: () => {
+                            setShowInitialCountdown(true);
+                            let count = 3;
+                            setInitialCountdown(count);
+                            const countdown = setInterval(() => {
+                                count -= 1;
+                                setInitialCountdown(count);
+                                if (count <= 0) {
+                                    clearInterval(countdown);
+                                    setShowInitialCountdown(false);
+                                    resetRound();
+                                    setTimeout(() => handlePlayCore(), 100);
+                                }
+                            }, 900);
+                        }}
                     ]);
                 }
                 return newVal;
@@ -228,12 +247,31 @@ export default function Match() {
                 const newVal = prev + 1;
                 // Check for match win
                 if (newVal >= matchSettings.nrOfRoundsToWinMatch) {
+                    setPlayer2(prevPlayer => {
+                        const updated = { ...prevPlayer, hasWonMatch: true };
+                        return Object.setPrototypeOf(updated, Player.prototype);
+                    });
                     Alert.alert("Match Over", "Player 2 wins the match!", [
                         { text: "OK", onPress: () => router.push("/") }
                     ]);
                 } else {
+                    // Start next round with countdown
                     Alert.alert("Round Over", `Player 2 wins the round!`, [
-                        { text: "Next Round", onPress: () => resetRound() }
+                        { text: "Next Round", onPress: () => {
+                            setShowInitialCountdown(true);
+                            let count = 3;
+                            setInitialCountdown(count);
+                            const countdown = setInterval(() => {
+                                count -= 1;
+                                setInitialCountdown(count);
+                                if (count <= 0) {
+                                    clearInterval(countdown);
+                                    setShowInitialCountdown(false);
+                                    resetRound();
+                                    setTimeout(() => handlePlayCore(), 100);
+                                }
+                            }, 900);
+                        }}
                     ]);
                 }
                 return newVal;
