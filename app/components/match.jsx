@@ -2,13 +2,13 @@ import { Audio } from "expo-av";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Button,
-    Dimensions,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Button,
+  Dimensions,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import GuessBubble from "../components/guessBubble.jsx"; // ⬅️ NEW
 
@@ -125,6 +125,7 @@ class MatchGame {
 }
 // --- End Game Engine/Logic Classes ---
 
+
 export default function Match() {
     const router = useRouter();
     const [sound, setSound] = useState(null);
@@ -145,6 +146,14 @@ export default function Match() {
     const [player1Points, setPlayer1Points] = useState(0);
     const [player2Points, setPlayer2Points] = useState(0);
     const [roundWinner, setRoundWinner] = useState(null);
+
+    // --- Cooldown state ---
+    const [player1Cooldown, setPlayer1Cooldown] = useState(false);
+    const [player2Cooldown, setPlayer2Cooldown] = useState(false);
+    const [player1CooldownTime, setPlayer1CooldownTime] = useState(0);
+    const [player2CooldownTime, setPlayer2CooldownTime] = useState(0);
+    const player1CooldownTimer = useRef(null);
+    const player2CooldownTimer = useRef(null);
 
     // Match settings
     const matchSettings = new MatchSettings({
@@ -176,6 +185,12 @@ export default function Match() {
         setLoading(false);
         setRoundWinner(null);
         setDividerTimer(matchSettings.songDuration);
+        setPlayer1Cooldown(false);
+        setPlayer2Cooldown(false);
+        setPlayer1CooldownTime(0);
+        setPlayer2CooldownTime(0);
+        if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
+        if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
     };
 
     // Core play logic
@@ -339,6 +354,40 @@ export default function Match() {
                 }
             }
         } else {
+            // --- Cooldown logic ---
+            if (playerNum === 1) {
+                if (!player1Cooldown) {
+                    setPlayer1Cooldown(true);
+                    setPlayer1CooldownTime(2);
+                    if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
+                    player1CooldownTimer.current = setInterval(() => {
+                        setPlayer1CooldownTime(prev => {
+                            if (prev <= 1) {
+                                clearInterval(player1CooldownTimer.current);
+                                setPlayer1Cooldown(false);
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                }
+            } else if (playerNum === 2) {
+                if (!player2Cooldown) {
+                    setPlayer2Cooldown(true);
+                    setPlayer2CooldownTime(2);
+                    if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
+                    player2CooldownTimer.current = setInterval(() => {
+                        setPlayer2CooldownTime(prev => {
+                            if (prev <= 1) {
+                                clearInterval(player2CooldownTimer.current);
+                                setPlayer2Cooldown(false);
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                }
+            }
             Alert.alert("Wrong!", "Try again!");
         }
     };
@@ -388,6 +437,22 @@ export default function Match() {
 
     return (
         <View style={{ flex: 1 }}>
+            {/* Player 1 Cooldown Overlay */}
+            {player1Cooldown && (
+                <View style={[styles.cooldownOverlay, styles.cooldownOverlayLeft]} pointerEvents="none">
+                    <View style={styles.cooldownBubble}>
+                        <Text style={styles.cooldownTextBig}>{player1CooldownTime}</Text>
+                    </View>
+                </View>
+            )}
+            {/* Player 2 Cooldown Overlay */}
+            {player2Cooldown && (
+                <View style={[styles.cooldownOverlay, styles.cooldownOverlayRight]} pointerEvents="none">
+                    <View style={styles.cooldownBubble}>
+                        <Text style={styles.cooldownTextBig}>{player2CooldownTime}</Text>
+                    </View>
+                </View>
+            )}
             <View contentContainerStyle={styles.container}>
                 {/* HEADER */}
                 <View style={styles.headerRow}>
@@ -424,7 +489,7 @@ export default function Match() {
                                 key={`p1-${idx}`}
                                 option={option}
                                 onPress={() => handleGuess(option.isCorrect, 1)}
-                                disabled={correctPressed || !isPlaying}
+                                disabled={correctPressed || !isPlaying || player1Cooldown}
                                 animatedIndex={idx}
                                 positionStyle={LEFT_BUBBLE_POSITIONS[idx] || {}}
                             />
@@ -441,7 +506,7 @@ export default function Match() {
                                 key={`p2-${idx}`}
                                 option={option}
                                 onPress={() => handleGuess(option.isCorrect, 2)}
-                                disabled={correctPressed || !isPlaying}
+                                disabled={correctPressed || !isPlaying || player2Cooldown}
                                 animatedIndex={idx}
                                 positionStyle={RIGHT_BUBBLE_POSITIONS[idx] || {}}
                             />
@@ -485,6 +550,43 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingBottom: 40,
         minHeight: WINDOW_HEIGHT - 40,
+    },
+    // Remove old cooldownIndicator and cooldownText styles
+    cooldownOverlay: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        width: '50%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(248,113,113,0.25)', // semi-transparent red
+        zIndex: 100,
+    },
+    cooldownOverlayLeft: {
+        left: 0,
+        borderTopRightRadius: 40,
+        borderBottomRightRadius: 40,
+    },
+    cooldownOverlayRight: {
+        right: 0,
+        borderTopLeftRadius: 40,
+        borderBottomLeftRadius: 40,
+    },
+    cooldownBubble: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#F87171',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 4,
+        borderColor: '#fff',
+        marginBottom: 20,
+    },
+    cooldownTextBig: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 54,
     },
     headerRow: {
         flexDirection: "row",
