@@ -71,8 +71,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 1,
         shadowRadius: 8,
         elevation: 6,
-        borderWidth: 2,
-        borderColor: "#896DA3",
         overflow: "hidden",
         backgroundColor: "#412F7E",
         margin: 20, // breathing room

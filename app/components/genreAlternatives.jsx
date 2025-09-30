@@ -1,9 +1,8 @@
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
-const PURPLE = "#44317f";
 const DARKER_PURPLE = "#3a2a6b";
 
 const GENRES = [
@@ -72,7 +71,6 @@ export default function Icon() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: PURPLE,
     minHeight: Platform.OS === "web" ? "100vh" : undefined,
     paddingHorizontal: 10,
   },
