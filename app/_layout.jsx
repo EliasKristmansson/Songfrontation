@@ -13,7 +13,7 @@ export default function RootLayout() {
         <FontProvider>
             <BackgroundShaderContext.Provider value={{ dividerPos, setDividerPos }}>
                 <ShaderBackground
-                    color1={[0.976, 0.710, 0.780]}
+                    color1={[0.255, 0.184, 0.494]}
                     color2={[0.439, 0.506, 1.000]}
 
                     color3={[0.337, 0.388, 0.769]}
