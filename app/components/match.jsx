@@ -126,6 +126,7 @@ class MatchGame {
 // --- End Game Engine/Logic Classes ---
 
 
+
 export default function Match() {
     const router = useRouter();
     const [sound, setSound] = useState(null);
@@ -146,6 +147,9 @@ export default function Match() {
     const [player1Points, setPlayer1Points] = useState(0);
     const [player2Points, setPlayer2Points] = useState(0);
     const [roundWinner, setRoundWinner] = useState(null);
+    // Track rounds won per player
+    const [player1RoundsWon, setPlayer1RoundsWon] = useState(0);
+    const [player2RoundsWon, setPlayer2RoundsWon] = useState(0);
 
     // --- Cooldown state ---
     const [player1Cooldown, setPlayer1Cooldown] = useState(false);
@@ -174,6 +178,7 @@ export default function Match() {
     const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
     const dividerTimerRef = useRef(null);
 
+    // Helper to reset round state
     const resetRound = () => {
         setPlayer1Points(0);
         setPlayer2Points(0);
@@ -191,6 +196,41 @@ export default function Match() {
         setPlayer2CooldownTime(0);
         if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
         if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
+    };
+
+    // Helper to handle end of round and check for match win
+    const handleEndOfRound = (winningPlayerNum) => {
+        if (winningPlayerNum === 1) {
+            setPlayer1RoundsWon(prev => {
+                const newVal = prev + 1;
+                // Check for match win
+                if (newVal >= matchSettings.nrOfRoundsToWinMatch) {
+                    Alert.alert("Match Over", "Player 1 wins the match!", [
+                        { text: "OK", onPress: () => router.push("/") }
+                    ]);
+                } else {
+                    Alert.alert("Round Over", `Player 1 wins the round!`, [
+                        { text: "Next Round", onPress: () => resetRound() }
+                    ]);
+                }
+                return newVal;
+            });
+        } else if (winningPlayerNum === 2) {
+            setPlayer2RoundsWon(prev => {
+                const newVal = prev + 1;
+                // Check for match win
+                if (newVal >= matchSettings.nrOfRoundsToWinMatch) {
+                    Alert.alert("Match Over", "Player 2 wins the match!", [
+                        { text: "OK", onPress: () => router.push("/") }
+                    ]);
+                } else {
+                    Alert.alert("Round Over", `Player 2 wins the round!`, [
+                        { text: "Next Round", onPress: () => resetRound() }
+                    ]);
+                }
+                return newVal;
+            });
+        }
     };
 
     // Core play logic
@@ -331,9 +371,8 @@ export default function Match() {
                 setPlayer1Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) {
                     setRoundWinner(1);
-                    Alert.alert("Game Over", "Player 1 wins the match!", [
-                        { text: "OK", onPress: () => router.push("/") }
-                    ]);
+                    // Player 1 wins the round
+                    handleEndOfRound(1);
                 } else {
                     Alert.alert("Correct!", `Player 1 scored!`, [
                         { text: "Next Song", onPress: () => handlePlayCore() }
@@ -344,9 +383,8 @@ export default function Match() {
                 setPlayer2Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) {
                     setRoundWinner(2);
-                    Alert.alert("Game Over", "Player 2 wins the match!", [
-                        { text: "OK", onPress: () => router.push("/") }
-                    ]);
+                    // Player 2 wins the round
+                    handleEndOfRound(2);
                 } else {
                     Alert.alert("Correct!", `Player 2 scored!`, [
                         { text: "Next Song", onPress: () => handlePlayCore() }
@@ -462,6 +500,8 @@ export default function Match() {
                         <View style={styles.largeIconCircle}>
                             <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
                         </View>
+                        {/* Rounds won display */}
+                        <Text style={styles.roundsWonText}>Rounds: {player1RoundsWon}</Text>
                     </View>
 
                     {/* DIVIDER */}
@@ -477,6 +517,8 @@ export default function Match() {
                             <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
                         </View>
                         <PointsRow points={player2Points} />
+                        {/* Rounds won display */}
+                        <Text style={styles.roundsWonText}>Rounds: {player2RoundsWon}</Text>
                     </View>
                 </View>
 
