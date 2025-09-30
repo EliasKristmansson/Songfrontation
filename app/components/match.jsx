@@ -1,25 +1,48 @@
 import { Audio } from "expo-av";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
-    Animated,
     Button,
     Dimensions,
     StyleSheet,
     Text,
-    TouchableOpacity,
-    View
+    View,
 } from "react-native";
+import GuessBubble from "../components/guessBubble.jsx"; // ⬅️ NEW
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 // Common search terms for randomness
 const SEARCH_TERMS = [
-    "love", "dance", "night", "fire", "heart", "baby", "party",
-    "dream", "light", "girl", "boy", "rock", "pop", "life"
+    "love",
+    "dance",
+    "night",
+    "fire",
+    "heart",
+    "baby",
+    "party",
+    "dream",
+    "light",
+    "girl",
+    "boy",
+    "rock",
+    "pop",
+    "life",
+];
+
+// Absolute positions for bubbles
+const LEFT_BUBBLE_POSITIONS = [
+    { top: 5, left: 200 },
+    { top: 160, left: 160 },
+    { top: 50, left: 50 },
+];
+
+const RIGHT_BUBBLE_POSITIONS = [
+    { top: 5, right: 200 },
+    { top: 160, right: 160 },
+    { top: 50, right: 50 },
 ];
 
 // --- Game Engine/Logic Classes ---
@@ -39,7 +62,15 @@ class Player {
 }
 
 class Song {
-    constructor({ songId, songGenre, songFile, songTitle, songArtist, songDuration, songArtistAlternatives }) {
+    constructor({
+        songId,
+        songGenre,
+        songFile,
+        songTitle,
+        songArtist,
+        songDuration,
+        songArtistAlternatives,
+    }) {
         this.songId = songId;
         this.songGenre = songGenre;
         this.songFile = songFile;
@@ -65,7 +96,14 @@ class Round {
 }
 
 class MatchSettings {
-    constructor({ nrOfPlayers, selectionOfGenre, nrOfSongsToWinRound, nrOfRoundsToWinMatch, songDuration, nrOfGuessesOnBoard }) {
+    constructor({
+        nrOfPlayers,
+        selectionOfGenre,
+        nrOfSongsToWinRound,
+        nrOfRoundsToWinMatch,
+        songDuration,
+        nrOfGuessesOnBoard,
+    }) {
         this.nrOfPlayers = nrOfPlayers;
         this.selectionOfGenre = selectionOfGenre || [];
         this.nrOfSongsToWinRound = nrOfSongsToWinRound;
@@ -98,8 +136,12 @@ export default function Match() {
     const [correctPressed, setCorrectPressed] = useState(false);
 
     // Score and round state
-    const [player1, setPlayer1] = useState(new Player({ playerId: 1, playerIcon: "🎤" }));
-    const [player2, setPlayer2] = useState(new Player({ playerId: 2, playerIcon: "🎸" }));
+    const [player1, setPlayer1] = useState(
+        new Player({ playerId: 1, playerIcon: "🎤" })
+    );
+    const [player2, setPlayer2] = useState(
+        new Player({ playerId: 2, playerIcon: "🎸" })
+    );
     const [player1Points, setPlayer1Points] = useState(0);
     const [player2Points, setPlayer2Points] = useState(0);
     const [roundWinner, setRoundWinner] = useState(null);
@@ -122,9 +164,6 @@ export default function Match() {
     // timer display on divider
     const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
     const dividerTimerRef = useRef(null);
-
-    // Bubble animation refs
-    const bubbleScalesRef = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]);
 
     const resetRound = () => {
         setPlayer1Points(0);
@@ -304,20 +343,6 @@ export default function Match() {
         }
     };
 
-    // Triangle positions (fixed, not random)
-    const getTrianglePosition = (idx, isLeft) => {
-        if (isLeft) {
-            if (idx === 0) return { top: 0, right: 0 };
-            if (idx === 1) return { top: 120, left: 0 };
-            if (idx === 2) return { bottom: 0, right: 0 };
-        } else {
-            if (idx === 0) return { top: 0, left: 0 };
-            if (idx === 1) return { top: 120, right: 0 };
-            if (idx === 2) return { bottom: 0, left: 0 };
-        }
-        return {};
-    };
-
     const BubbleOption = ({ option, onPress, disabled, animatedIndex, positionStyle }) => {
         const scale = bubbleScalesRef.current[animatedIndex] || new Animated.Value(1);
 
@@ -343,12 +368,19 @@ export default function Match() {
         );
     };
 
+    // Small helper for score circles
     const PointsRow = ({ points }) => {
         const circles = [0, 1, 2];
         return (
             <View style={styles.pointsRow}>
-                {circles.map(i => (
-                    <View key={i} style={[styles.pointCircle, points > i ? styles.pointCircleFilled : null]} />
+                {circles.map((i) => (
+                    <View
+                        key={i}
+                        style={[
+                            styles.pointCircle,
+                            points > i ? styles.pointCircleFilled : null,
+                        ]}
+                    />
                 ))}
             </View>
         );
@@ -357,10 +389,9 @@ export default function Match() {
     return (
         <View style={{ flex: 1 }}>
             <View contentContainerStyle={styles.container}>
-
                 {/* HEADER */}
                 <View style={styles.headerRow}>
-                    {/* LEFT SIDE: points + mic */}
+                    {/* LEFT SIDE */}
                     <View style={styles.sideRow}>
                         <PointsRow points={player1Points} />
                         <View style={styles.largeIconCircle}>
@@ -375,7 +406,7 @@ export default function Match() {
                         </View>
                     </View>
 
-                    {/* RIGHT SIDE: guitar + points */}
+                    {/* RIGHT SIDE */}
                     <View style={styles.sideRow}>
                         <View style={styles.largeIconCircle}>
                             <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
@@ -384,17 +415,18 @@ export default function Match() {
                     </View>
                 </View>
 
+                {/* PLAY AREA */}
                 <View style={styles.playArea}>
                     {/* LEFT SIDE */}
                     <View style={styles.sideColumn}>
                         {songOptions.map((option, idx) => (
-                            <BubbleOption
+                            <GuessBubble
                                 key={`p1-${idx}`}
                                 option={option}
                                 onPress={() => handleGuess(option.isCorrect, 1)}
                                 disabled={correctPressed || !isPlaying}
                                 animatedIndex={idx}
-                                positionStyle={getTrianglePosition(idx, true)}
+                                positionStyle={LEFT_BUBBLE_POSITIONS[idx] || {}}
                             />
                         ))}
                     </View>
@@ -405,22 +437,28 @@ export default function Match() {
                     {/* RIGHT SIDE */}
                     <View style={styles.sideColumn}>
                         {songOptions.map((option, idx) => (
-                            <BubbleOption
+                            <GuessBubble
                                 key={`p2-${idx}`}
                                 option={option}
                                 onPress={() => handleGuess(option.isCorrect, 2)}
                                 disabled={correctPressed || !isPlaying}
                                 animatedIndex={idx}
-                                positionStyle={getTrianglePosition(idx, false)}
+                                positionStyle={RIGHT_BUBBLE_POSITIONS[idx] || {}}
                             />
                         ))}
                     </View>
                 </View>
 
-                {loading && <ActivityIndicator size="large" color="#5C66C5" style={styles.loader} />}
+                {loading && (
+                    <ActivityIndicator size="large" color="#5C66C5" style={styles.loader} />
+                )}
 
                 <View style={styles.footer}>
-                    <Button title="Play Random Song Preview" onPress={() => handlePlayCore()} disabled={isPlaying || loading || !!roundWinner} />
+                    <Button
+                        title="Play Random Song Preview"
+                        onPress={() => handlePlayCore()}
+                        disabled={isPlaying || loading || !!roundWinner}
+                    />
                     <View style={{ height: 10 }} />
                     <Button title="Reset Round" onPress={resetRound} />
                     <View style={{ height: 12 }} />
@@ -428,10 +466,13 @@ export default function Match() {
                 </View>
             </View>
 
+            {/* Countdown */}
             {showInitialCountdown && (
                 <View style={styles.countdownOverlay} pointerEvents="none">
                     <View style={styles.countdownBubble}>
-                        <Text style={styles.countdownText}>{initialCountdown > 0 ? initialCountdown : 'Go!'}</Text>
+                        <Text style={styles.countdownText}>
+                            {initialCountdown > 0 ? initialCountdown : "Go!"}
+                        </Text>
                     </View>
                 </View>
             )}
@@ -463,9 +504,9 @@ const styles = StyleSheet.create({
     },
     sideColumn: {
         width: (WINDOW_WIDTH - 2) / 2,
-        alignItems: 'center',
+        alignItems: "center",
         height: 320,
-        position: 'relative',
+        position: "relative",
     },
     playDividerLine: {
         position: "absolute",
@@ -496,7 +537,7 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         borderColor: "#9CA3AF",
         marginHorizontal: 4,
-        backgroundColor: 'transparent',
+        backgroundColor: "transparent",
     },
     pointCircleFilled: {
         backgroundColor: "#5C66C5",
@@ -514,67 +555,31 @@ const styles = StyleSheet.create({
         zIndex: 3,
     },
     dividerTimerText: { color: "black", fontSize: 18 },
-    bubbleWrapper: {
-        position: "absolute",
-    },
-    bubbleOption: {
-        width: 120,         // bigger bubble
-        height: 120,
-        borderRadius: 80,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: 'white',
-        shadowOpacity: 1,
-        shadowRadius: 8,
-        elevation: 6,
-        borderWidth: 2,
-        borderColor: '#896DA3',
-        overflow: 'hidden',
-        backgroundColor: '#412F7E',
-        margin: 20,         // adds breathing room between edge & neighbors
-    },
-    bubbleOptionInner: {
-        flex: 1,
-        width: '100%',
-        height: '100%',
-        borderRadius: 80,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    bubbleColumn: {
-        flex: 1,
-        alignItems: 'center',
-        paddingVertical: 20, // space top/bottom
-        paddingHorizontal: 10, // space left/right
-    },
-    bubbleDisabled: { opacity: 0.5 },
-    optionText: { color: 'white', fontWeight: '700', fontSize: 14, textAlign: 'center' },
-    optionArtist: { fontSize: 11, color: '#D1D5DB' },
     loader: { marginTop: 20 },
-    footer: { marginTop: 22, alignItems: 'center' },
+    footer: { marginTop: 22, alignItems: "center" },
     countdownOverlay: {
-        position: 'absolute',
+        position: "absolute",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.45)',
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(0,0,0,0.45)",
         zIndex: 1000,
     },
     countdownBubble: {
         width: 160,
         height: 160,
         borderRadius: 80,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: "center",
+        justifyContent: "center",
         borderWidth: 6,
-        borderColor: '#5C66C5',
+        borderColor: "#5C66C5",
     },
     countdownText: {
-        color: 'white',
+        color: "white",
         fontSize: 48,
-        fontWeight: '800',
-    }
+        fontWeight: "800",
+    },
 });
