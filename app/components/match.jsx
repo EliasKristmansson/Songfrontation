@@ -2,13 +2,13 @@ import { Audio } from "expo-av";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Button,
-    Dimensions,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Button,
+  Dimensions,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import GuessBubble from "../components/guessBubble.jsx"; // ⬅️ NEW
 
@@ -125,8 +125,13 @@ class MatchGame {
 }
 // --- End Game Engine/Logic Classes ---
 
+
+
+import { useLocalSearchParams } from "expo-router";
+
 export default function Match() {
     const router = useRouter();
+    const params = useLocalSearchParams();
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrack, setCurrentTrack] = useState(null);
@@ -145,15 +150,26 @@ export default function Match() {
     const [player1Points, setPlayer1Points] = useState(0);
     const [player2Points, setPlayer2Points] = useState(0);
     const [roundWinner, setRoundWinner] = useState(null);
+    // Track rounds won per player
+    const [player1RoundsWon, setPlayer1RoundsWon] = useState(0);
+    const [player2RoundsWon, setPlayer2RoundsWon] = useState(0);
 
-    // Match settings
+    // --- Cooldown state ---
+    const [player1Cooldown, setPlayer1Cooldown] = useState(false);
+    const [player2Cooldown, setPlayer2Cooldown] = useState(false);
+    const [player1CooldownTime, setPlayer1CooldownTime] = useState(0);
+    const [player2CooldownTime, setPlayer2CooldownTime] = useState(0);
+    const player1CooldownTimer = useRef(null);
+    const player2CooldownTimer = useRef(null);
+
+    // Match settings: use params if present (from Custom Game), else fallback to defaults
     const matchSettings = new MatchSettings({
-        nrOfPlayers: 2,
-        selectionOfGenre: [],
-        nrOfSongsToWinRound: 3,
-        nrOfRoundsToWinMatch: 1,
-        songDuration: 30,
-        nrOfGuessesOnBoard: 3,
+        nrOfPlayers: params.nrOfPlayers ? parseInt(params.nrOfPlayers) : 2,
+        selectionOfGenre: params.genre ? [params.genre] : [],
+        nrOfSongsToWinRound: params.points ? parseInt(params.points) : 3,
+        nrOfRoundsToWinMatch: params.rounds ? parseInt(params.rounds) : 1,
+        songDuration: params.duration ? parseInt(params.duration) : 30,
+        nrOfGuessesOnBoard: params.guesses ? parseInt(params.guesses) : 3,
     });
     const matchGame = new MatchGame({ players: [player1, player2], matchSettings });
 
@@ -165,6 +181,7 @@ export default function Match() {
     const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
     const dividerTimerRef = useRef(null);
 
+    // Helper to reset round state
     const resetRound = () => {
         setPlayer1Points(0);
         setPlayer2Points(0);
@@ -176,6 +193,47 @@ export default function Match() {
         setLoading(false);
         setRoundWinner(null);
         setDividerTimer(matchSettings.songDuration);
+        setPlayer1Cooldown(false);
+        setPlayer2Cooldown(false);
+        setPlayer1CooldownTime(0);
+        setPlayer2CooldownTime(0);
+        if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
+        if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
+    };
+
+    // Helper to handle end of round and check for match win
+    const handleEndOfRound = (winningPlayerNum) => {
+        if (winningPlayerNum === 1) {
+            setPlayer1RoundsWon(prev => {
+                const newVal = prev + 1;
+                // Check for match win
+                if (newVal >= matchSettings.nrOfRoundsToWinMatch) {
+                    Alert.alert("Match Over", "Player 1 wins the match!", [
+                        { text: "OK", onPress: () => router.push("/") }
+                    ]);
+                } else {
+                    Alert.alert("Round Over", `Player 1 wins the round!`, [
+                        { text: "Next Round", onPress: () => resetRound() }
+                    ]);
+                }
+                return newVal;
+            });
+        } else if (winningPlayerNum === 2) {
+            setPlayer2RoundsWon(prev => {
+                const newVal = prev + 1;
+                // Check for match win
+                if (newVal >= matchSettings.nrOfRoundsToWinMatch) {
+                    Alert.alert("Match Over", "Player 2 wins the match!", [
+                        { text: "OK", onPress: () => router.push("/") }
+                    ]);
+                } else {
+                    Alert.alert("Round Over", `Player 2 wins the round!`, [
+                        { text: "Next Round", onPress: () => resetRound() }
+                    ]);
+                }
+                return newVal;
+            });
+        }
     };
 
     // Core play logic
@@ -316,9 +374,8 @@ export default function Match() {
                 setPlayer1Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) {
                     setRoundWinner(1);
-                    Alert.alert("Game Over", "Player 1 wins the match!", [
-                        { text: "OK", onPress: () => router.push("/") }
-                    ]);
+                    // Player 1 wins the round
+                    handleEndOfRound(1);
                 } else {
                     Alert.alert("Correct!", `Player 1 scored!`, [
                         { text: "Next Song", onPress: () => handlePlayCore() }
@@ -329,9 +386,8 @@ export default function Match() {
                 setPlayer2Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) {
                     setRoundWinner(2);
-                    Alert.alert("Game Over", "Player 2 wins the match!", [
-                        { text: "OK", onPress: () => router.push("/") }
-                    ]);
+                    // Player 2 wins the round
+                    handleEndOfRound(2);
                 } else {
                     Alert.alert("Correct!", `Player 2 scored!`, [
                         { text: "Next Song", onPress: () => handlePlayCore() }
@@ -339,6 +395,40 @@ export default function Match() {
                 }
             }
         } else {
+            // --- Cooldown logic ---
+            if (playerNum === 1) {
+                if (!player1Cooldown) {
+                    setPlayer1Cooldown(true);
+                    setPlayer1CooldownTime(2);
+                    if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
+                    player1CooldownTimer.current = setInterval(() => {
+                        setPlayer1CooldownTime(prev => {
+                            if (prev <= 1) {
+                                clearInterval(player1CooldownTimer.current);
+                                setPlayer1Cooldown(false);
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                }
+            } else if (playerNum === 2) {
+                if (!player2Cooldown) {
+                    setPlayer2Cooldown(true);
+                    setPlayer2CooldownTime(2);
+                    if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
+                    player2CooldownTimer.current = setInterval(() => {
+                        setPlayer2CooldownTime(prev => {
+                            if (prev <= 1) {
+                                clearInterval(player2CooldownTimer.current);
+                                setPlayer2Cooldown(false);
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                }
+            }
             Alert.alert("Wrong!", "Try again!");
         }
     };
@@ -388,6 +478,22 @@ export default function Match() {
 
     return (
         <View style={{ flex: 1 }}>
+            {/* Player 1 Cooldown Overlay */}
+            {player1Cooldown && (
+                <View style={[styles.cooldownOverlay, styles.cooldownOverlayLeft]} pointerEvents="none">
+                    <View style={styles.cooldownBubble}>
+                        <Text style={styles.cooldownTextBig}>{player1CooldownTime}</Text>
+                    </View>
+                </View>
+            )}
+            {/* Player 2 Cooldown Overlay */}
+            {player2Cooldown && (
+                <View style={[styles.cooldownOverlay, styles.cooldownOverlayRight]} pointerEvents="none">
+                    <View style={styles.cooldownBubble}>
+                        <Text style={styles.cooldownTextBig}>{player2CooldownTime}</Text>
+                    </View>
+                </View>
+            )}
             <View contentContainerStyle={styles.container}>
                 {/* HEADER */}
                 <View style={styles.headerRow}>
@@ -397,6 +503,8 @@ export default function Match() {
                         <View style={styles.largeIconCircle}>
                             <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
                         </View>
+                        {/* Rounds won display */}
+                        <Text style={styles.roundsWonText}>Rounds: {player1RoundsWon}</Text>
                     </View>
 
                     {/* DIVIDER */}
@@ -412,6 +520,8 @@ export default function Match() {
                             <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
                         </View>
                         <PointsRow points={player2Points} />
+                        {/* Rounds won display */}
+                        <Text style={styles.roundsWonText}>Rounds: {player2RoundsWon}</Text>
                     </View>
                 </View>
 
@@ -424,7 +534,7 @@ export default function Match() {
                                 key={`p1-${idx}`}
                                 option={option}
                                 onPress={() => handleGuess(option.isCorrect, 1)}
-                                disabled={correctPressed || !isPlaying}
+                                disabled={correctPressed || !isPlaying || player1Cooldown}
                                 animatedIndex={idx}
                                 positionStyle={LEFT_BUBBLE_POSITIONS[idx] || {}}
                             />
@@ -441,7 +551,7 @@ export default function Match() {
                                 key={`p2-${idx}`}
                                 option={option}
                                 onPress={() => handleGuess(option.isCorrect, 2)}
-                                disabled={correctPressed || !isPlaying}
+                                disabled={correctPressed || !isPlaying || player2Cooldown}
                                 animatedIndex={idx}
                                 positionStyle={RIGHT_BUBBLE_POSITIONS[idx] || {}}
                             />
@@ -485,6 +595,43 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingBottom: 40,
         minHeight: WINDOW_HEIGHT - 40,
+    },
+    // Remove old cooldownIndicator and cooldownText styles
+    cooldownOverlay: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        width: '50%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(248,113,113,0.25)', // semi-transparent red
+        zIndex: 100,
+    },
+    cooldownOverlayLeft: {
+        left: 0,
+        borderTopRightRadius: 40,
+        borderBottomRightRadius: 40,
+    },
+    cooldownOverlayRight: {
+        right: 0,
+        borderTopLeftRadius: 40,
+        borderBottomLeftRadius: 40,
+    },
+    cooldownBubble: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#F87171',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 4,
+        borderColor: '#fff',
+        marginBottom: 20,
+    },
+    cooldownTextBig: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 54,
     },
     headerRow: {
         flexDirection: "row",
