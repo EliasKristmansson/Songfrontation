@@ -2,13 +2,13 @@ import { Audio } from "expo-av";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Button,
-  Dimensions,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Button,
+    Dimensions,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import GuessBubble from "../components/guessBubble.jsx"; // ⬅️ NEW
 
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
         borderBottomRightRadius: 10,
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 3,
+        zIndex: 1000,
     },
     dividerTimerText: { color: "black", fontSize: 18 },
     loader: { marginTop: 20 },
