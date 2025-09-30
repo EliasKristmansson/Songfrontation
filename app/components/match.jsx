@@ -127,8 +127,11 @@ class MatchGame {
 
 
 
+import { useLocalSearchParams } from "expo-router";
+
 export default function Match() {
     const router = useRouter();
+    const params = useLocalSearchParams();
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrack, setCurrentTrack] = useState(null);
@@ -159,14 +162,14 @@ export default function Match() {
     const player1CooldownTimer = useRef(null);
     const player2CooldownTimer = useRef(null);
 
-    // Match settings
+    // Match settings: use params if present (from Custom Game), else fallback to defaults
     const matchSettings = new MatchSettings({
-        nrOfPlayers: 2,
-        selectionOfGenre: [],
-        nrOfSongsToWinRound: 3,
-        nrOfRoundsToWinMatch: 1,
-        songDuration: 30,
-        nrOfGuessesOnBoard: 3,
+        nrOfPlayers: params.nrOfPlayers ? parseInt(params.nrOfPlayers) : 2,
+        selectionOfGenre: params.genre ? [params.genre] : [],
+        nrOfSongsToWinRound: params.points ? parseInt(params.points) : 3,
+        nrOfRoundsToWinMatch: params.rounds ? parseInt(params.rounds) : 1,
+        songDuration: params.duration ? parseInt(params.duration) : 30,
+        nrOfGuessesOnBoard: params.guesses ? parseInt(params.guesses) : 3,
     });
     const matchGame = new MatchGame({ players: [player1, player2], matchSettings });
 
