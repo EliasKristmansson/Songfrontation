@@ -139,6 +139,9 @@ export default function Match() {
     const [songOptions, setSongOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [correctPressed, setCorrectPressed] = useState(false);
+    // Last guess phase state
+    const [lastGuessPhase, setLastGuessPhase] = useState(false);
+    const [lastGuessUsed, setLastGuessUsed] = useState({ 1: false, 2: false });
 
     // Score and round state
     const [player1, setPlayer1] = useState(
@@ -197,6 +200,8 @@ export default function Match() {
         setPlayer2Cooldown(false);
         setPlayer1CooldownTime(0);
         setPlayer2CooldownTime(0);
+        setLastGuessPhase(false);
+        setLastGuessUsed({ 1: false, 2: false });
         if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
         if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
     };
@@ -241,6 +246,8 @@ export default function Match() {
         try {
             setLoading(true);
             setCorrectPressed(false);
+            setLastGuessPhase(false);
+            setLastGuessUsed({ 1: false, 2: false });
             if (sound) {
                 await sound.unloadAsync();
                 setSound(null);
@@ -313,6 +320,14 @@ export default function Match() {
                 setDividerTimer(prev => {
                     if (prev <= 1) {
                         clearInterval(dividerTimerRef.current);
+                        // Timer ran out, enter last guess phase
+                        setIsPlaying(false);
+                        setLastGuessPhase(true);
+                        setLastGuessUsed({ 1: false, 2: false });
+                        if (newSound) {
+                            newSound.unloadAsync();
+                            setSound(null);
+                        }
                         return 0;
                     }
                     return prev - 1;
@@ -357,6 +372,50 @@ export default function Match() {
     }, []);
 
     const handleGuess = async (isCorrect, playerNum) => {
+        if (lastGuessPhase) {
+            // Only allow one guess per player in last guess phase
+            if (lastGuessUsed[playerNum]) return;
+            setLastGuessUsed(prev => ({ ...prev, [playerNum]: true }));
+            if (isCorrect) {
+                // First correct guess gets the point and ends the round
+                setCorrectPressed(true);
+                if (currentSongObj) {
+                    currentSongObj.hasWonSong = true;
+                    currentSongObj.songWinnerId = playerNum;
+                }
+                if (playerNum === 1) {
+                    const newPoints = player1Points + 1;
+                    setPlayer1Points(newPoints);
+                    setRoundWinner(1);
+                    handleEndOfRound(1);
+                } else {
+                    const newPoints = player2Points + 1;
+                    setPlayer2Points(newPoints);
+                    setRoundWinner(2);
+                    handleEndOfRound(2);
+                }
+            } else {
+                // Wrong guess in last guess phase: opponent gets the point and round
+                setCorrectPressed(true);
+                if (currentSongObj) {
+                    currentSongObj.hasWonSong = true;
+                    currentSongObj.songWinnerId = playerNum === 1 ? 2 : 1;
+                }
+                if (playerNum === 1) {
+                    const newPoints = player2Points + 1;
+                    setPlayer2Points(newPoints);
+                    setRoundWinner(2);
+                    handleEndOfRound(2);
+                } else {
+                    const newPoints = player1Points + 1;
+                    setPlayer1Points(newPoints);
+                    setRoundWinner(1);
+                    handleEndOfRound(1);
+                }
+            }
+            return;
+        }
+
         if (isCorrect) {
             setCorrectPressed(true);
             if (sound) {
@@ -494,6 +553,14 @@ export default function Match() {
                     </View>
                 </View>
             )}
+            {/* Last guess phase overlay */}
+            {lastGuessPhase && (
+                <View style={styles.lastGuessOverlay} pointerEvents="box-none">
+                    <View style={styles.lastGuessBubble} pointerEvents="none">
+                        <Text style={styles.lastGuessText}>Last Guess!</Text>
+                    </View>
+                </View>
+            )}
             <View contentContainerStyle={styles.container}>
                 {/* HEADER */}
                 <View style={styles.headerRow}>
@@ -534,7 +601,12 @@ export default function Match() {
                                 key={`p1-${idx}`}
                                 option={option}
                                 onPress={() => handleGuess(option.isCorrect, 1)}
-                                disabled={correctPressed || !isPlaying || player1Cooldown}
+                                disabled={
+                                    correctPressed ||
+                                    (lastGuessPhase
+                                        ? lastGuessUsed[1]
+                                        : (!isPlaying || player1Cooldown))
+                                }
                                 animatedIndex={idx}
                                 positionStyle={LEFT_BUBBLE_POSITIONS[idx] || {}}
                             />
@@ -551,7 +623,12 @@ export default function Match() {
                                 key={`p2-${idx}`}
                                 option={option}
                                 onPress={() => handleGuess(option.isCorrect, 2)}
-                                disabled={correctPressed || !isPlaying || player2Cooldown}
+                                disabled={
+                                    correctPressed ||
+                                    (lastGuessPhase
+                                        ? lastGuessUsed[2]
+                                        : (!isPlaying || player2Cooldown))
+                                }
                                 animatedIndex={idx}
                                 positionStyle={RIGHT_BUBBLE_POSITIONS[idx] || {}}
                             />
@@ -704,6 +781,33 @@ const styles = StyleSheet.create({
     dividerTimerText: { color: "black", fontSize: 18 },
     loader: { marginTop: 20 },
     footer: { marginTop: 22, alignItems: "center" },
+    lastGuessOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.35)',
+        zIndex: 1100,
+    },
+    lastGuessBubble: {
+        width: 200,
+        height: 100,
+        borderRadius: 20,
+        backgroundColor: '#F87171',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 4,
+        borderColor: '#fff',
+        marginBottom: 20,
+    },
+    lastGuessText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 36,
+    },
     countdownOverlay: {
         position: "absolute",
         top: 0,
