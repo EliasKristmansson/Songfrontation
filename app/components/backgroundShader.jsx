@@ -110,10 +110,13 @@ export default function ShaderBackground({
         vec2 uv = gl_FragCoord.xy / u_resolution.xy;
 
         // sine wave pulse
-        float pulse = sin(u_time * u_speed) * 0.5 + 0.5;
+        float pulse = sin(u_time * u_speed * -2.0 + uv.y * 2.0) * 0.3 + 0.2;
+
+        vec2 perlinUV = uv * u_scale + vec2(0.0, u_time * 0.01);
+
 
         // sample perlin and grain
-        vec4 perlinSample = texture2D(u_perlinTex, uv * u_scale);
+        vec4 perlinSample = texture2D(u_perlinTex, perlinUV);
         vec4 grainSample = texture2D(u_grainTex, uv * 4.0);
 
         // use perlin.r modulated by pulse as blend factor
