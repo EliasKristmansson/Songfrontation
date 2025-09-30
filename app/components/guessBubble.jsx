@@ -1,6 +1,6 @@
 // components/GuessBubble.jsx
 import { LinearGradient } from "expo-linear-gradient";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, TouchableOpacity } from "react-native";
 
 export default function GuessBubble({
@@ -9,28 +9,39 @@ export default function GuessBubble({
     disabled,
     animatedIndex,
     positionStyle,
+    flashRed = false, // NEW
 }) {
     const scaleRef = useRef(new Animated.Value(1)).current;
+    const glowRef = useRef(new Animated.Value(0)).current; // 0 = no red, 1 = full red
+
+    useEffect(() => {
+        if (flashRed) {
+            glowRef.setValue(1);
+            Animated.timing(glowRef, {
+                toValue: 0,
+                duration: 400, // flash duration
+                useNativeDriver: false,
+            }).start();
+        }
+    }, [flashRed]);
 
     const handlePressIn = () => {
-        Animated.spring(scaleRef, {
-            toValue: 0.92,
-            useNativeDriver: true,
-        }).start();
+        Animated.spring(scaleRef, { toValue: 0.92, useNativeDriver: true }).start();
     };
 
     const handlePressOut = () => {
-        Animated.spring(scaleRef, {
-            toValue: 1,
-            friction: 4,
-            useNativeDriver: true,
-        }).start();
+        Animated.spring(scaleRef, { toValue: 1, friction: 4, useNativeDriver: true }).start();
     };
+
+    const borderColor = glowRef.interpolate({
+        inputRange: [0, 1],
+        outputRange: ["transparent", "#F87171"], // red glow
+    });
 
     return (
         <Animated.View
             style={[
-                { transform: [{ scale: scaleRef }] },
+                { transform: [{ scale: scaleRef }], borderColor, borderWidth: 4 },
                 styles.bubbleWrapper,
                 positionStyle,
             ]}
@@ -60,6 +71,7 @@ export default function GuessBubble({
 const styles = StyleSheet.create({
     bubbleWrapper: {
         position: "absolute",
+        borderRadius: 80,
     },
     bubbleOption: {
         width: 120,
@@ -73,7 +85,7 @@ const styles = StyleSheet.create({
         elevation: 6,
         overflow: "hidden",
         backgroundColor: "#412F7E",
-        margin: 20, // breathing room
+        margin: 20,
     },
     bubbleOptionInner: {
         flex: 1,

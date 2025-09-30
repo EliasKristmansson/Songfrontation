@@ -1,13 +1,16 @@
 import { Audio } from "expo-av";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Animated,
     Button,
     Dimensions,
     StyleSheet,
     Text,
+    TouchableOpacity,
     View,
 } from "react-native";
 import GuessBubble from "../components/guessBubble.jsx"; // ⬅️ NEW
@@ -125,8 +128,6 @@ class MatchGame {
 }
 // --- End Game Engine/Logic Classes ---
 
-
-
 import { useLocalSearchParams } from "expo-router";
 
 export default function Match() {
@@ -184,6 +185,9 @@ export default function Match() {
     const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
     const dividerTimerRef = useRef(null);
 
+    // bubble scales ref (if your code expects it elsewhere)
+    const bubbleScalesRef = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]);
+
     // Helper to reset round state
     const resetRound = () => {
         setPlayer1Points(0);
@@ -206,77 +210,72 @@ export default function Match() {
         if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
     };
 
-    // Helper to handle end of round and check for match win
     const handleEndOfRound = (winningPlayerNum) => {
         if (winningPlayerNum === 1) {
             setPlayer1RoundsWon(prev => {
                 const newVal = prev + 1;
-                // Check for match win
+
+                // check if P1 has enough rounds to win the match
                 if (newVal >= matchSettings.nrOfRoundsToWinMatch) {
-                    setPlayer1(prevPlayer => {
-                        const updated = { ...prevPlayer, hasWonMatch: true };
-                        return Object.setPrototypeOf(updated, Player.prototype);
-                    });
-                    Alert.alert("Match Over", "Player 1 wins the match!", [
-                        { text: "OK", onPress: () => router.push("/") }
-                    ]);
+                    endMatch(1);
+                } else if (newVal + player2RoundsWon >= matchSettings.nrOfRoundsToWinMatch) {
+                    // all rounds played, higher count wins
+                    const winner = newVal > player2RoundsWon ? 1 : 2;
+                    endMatch(winner);
                 } else {
-                    // Start next round with countdown
-                    Alert.alert("Round Over", `Player 1 wins the round!`, [
-                        { text: "Next Round", onPress: () => {
-                            setShowInitialCountdown(true);
-                            let count = 3;
-                            setInitialCountdown(count);
-                            const countdown = setInterval(() => {
-                                count -= 1;
-                                setInitialCountdown(count);
-                                if (count <= 0) {
-                                    clearInterval(countdown);
-                                    setShowInitialCountdown(false);
-                                    resetRound();
-                                    setTimeout(() => handlePlayCore(), 100);
-                                }
-                            }, 900);
-                        }}
-                    ]);
+                    nextRound(1);
                 }
                 return newVal;
             });
         } else if (winningPlayerNum === 2) {
             setPlayer2RoundsWon(prev => {
                 const newVal = prev + 1;
-                // Check for match win
+
                 if (newVal >= matchSettings.nrOfRoundsToWinMatch) {
-                    setPlayer2(prevPlayer => {
-                        const updated = { ...prevPlayer, hasWonMatch: true };
-                        return Object.setPrototypeOf(updated, Player.prototype);
-                    });
-                    Alert.alert("Match Over", "Player 2 wins the match!", [
-                        { text: "OK", onPress: () => router.push("/") }
-                    ]);
+                    endMatch(2);
+                } else if (newVal + player1RoundsWon >= matchSettings.nrOfRoundsToWinMatch) {
+                    const winner = newVal > player1RoundsWon ? 2 : 1;
+                    endMatch(winner);
                 } else {
-                    // Start next round with countdown
-                    Alert.alert("Round Over", `Player 2 wins the round!`, [
-                        { text: "Next Round", onPress: () => {
-                            setShowInitialCountdown(true);
-                            let count = 3;
-                            setInitialCountdown(count);
-                            const countdown = setInterval(() => {
-                                count -= 1;
-                                setInitialCountdown(count);
-                                if (count <= 0) {
-                                    clearInterval(countdown);
-                                    setShowInitialCountdown(false);
-                                    resetRound();
-                                    setTimeout(() => handlePlayCore(), 100);
-                                }
-                            }, 900);
-                        }}
-                    ]);
+                    nextRound(2);
                 }
                 return newVal;
             });
         }
+    };
+
+    const endMatch = (winner) => {
+        if (winner === 1) {
+            Alert.alert("Match Over", "Player 1 wins the match!", [
+                { text: "OK", onPress: () => router.push("/") }
+            ]);
+        } else {
+            Alert.alert("Match Over", "Player 2 wins the match!", [
+                { text: "OK", onPress: () => router.push("/") }
+            ]);
+        }
+    };
+
+    const nextRound = (winner) => {
+        Alert.alert("Round Over", `Player ${winner} wins the round!`, [
+            {
+                text: "Next Round", onPress: () => {
+                    setShowInitialCountdown(true);
+                    let count = 3;
+                    setInitialCountdown(count);
+                    const countdown = setInterval(() => {
+                        count -= 1;
+                        setInitialCountdown(count);
+                        if (count <= 0) {
+                            clearInterval(countdown);
+                            setShowInitialCountdown(false);
+                            resetRound();
+                            setTimeout(() => handlePlayCore(), 100);
+                        }
+                    }, 900);
+                }
+            }
+        ]);
     };
 
     // Core play logic
@@ -409,7 +408,37 @@ export default function Match() {
         return () => { mounted = false; };
     }, []);
 
-    const handleGuess = async (isCorrect, playerNum) => {
+    const [wrongGlowIndices, setWrongGlowIndices] = useState({}); // { playerNum: [index, ...] }
+    const [correctGlowIndices, setCorrectGlowIndices] = useState({}); // { playerNum: [index, ...] }
+
+    // Helper to trigger red glow
+    const triggerRedGlow = (playerNum, bubbleIndex) => {
+        setWrongGlowIndices(prev => ({
+            ...prev,
+            [playerNum]: [...(prev[playerNum] || []), bubbleIndex],
+        }));
+        setTimeout(() => {
+            setWrongGlowIndices(prev => ({
+                ...prev,
+                [playerNum]: (prev[playerNum] || []).filter(i => i !== bubbleIndex),
+            }));
+        }, 300); // glow lasts 300ms
+    };
+
+    const triggerGreenGlow = (playerNum, bubbleIndex) => {
+        setCorrectGlowIndices(prev => ({
+            ...prev,
+            [playerNum]: [...(prev[playerNum] || []), bubbleIndex],
+        }));
+        setTimeout(() => {
+            setCorrectGlowIndices(prev => ({
+                ...prev,
+                [playerNum]: (prev[playerNum] || []).filter(i => i !== bubbleIndex),
+            }));
+        }, 300);
+    };
+
+    const handleGuess = async (isCorrect, playerNum, bubbleIndex) => {
         if (lastGuessPhase) {
             // Only allow one guess per player in last guess phase
             if (lastGuessUsed[playerNum]) return;
@@ -471,26 +500,21 @@ export default function Match() {
                 setPlayer1Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) {
                     setRoundWinner(1);
-                    // Player 1 wins the round
                     handleEndOfRound(1);
                 } else {
-                    Alert.alert("Correct!", `Player 1 scored!`, [
-                        { text: "Next Song", onPress: () => handlePlayCore() }
-                    ]);
+                    handlePlayCore(); // directly go to next song
                 }
             } else {
                 const newPoints = player2Points + 1;
                 setPlayer2Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) {
                     setRoundWinner(2);
-                    // Player 2 wins the round
                     handleEndOfRound(2);
                 } else {
-                    Alert.alert("Correct!", `Player 2 scored!`, [
-                        { text: "Next Song", onPress: () => handlePlayCore() }
-                    ]);
+                    handlePlayCore(); // directly go to next song
                 }
             }
+            triggerGreenGlow(playerNum, bubbleIndex);
         } else {
             // --- Cooldown logic ---
             if (playerNum === 1) {
@@ -526,7 +550,9 @@ export default function Match() {
                     }, 1000);
                 }
             }
-            Alert.alert("Wrong!", "Try again!");
+
+            // --- RED GLOW INSTEAD OF ALERT ---
+            triggerRedGlow(playerNum, bubbleIndex);
         }
     };
 
@@ -555,7 +581,7 @@ export default function Match() {
         );
     };
 
-    // Small helper for score circles
+    // Small helper for score circles (points)
     const PointsRow = ({ points }) => {
         const circles = [0, 1, 2];
         return (
@@ -566,6 +592,24 @@ export default function Match() {
                         style={[
                             styles.pointCircle,
                             points > i ? styles.pointCircleFilled : null,
+                        ]}
+                    />
+                ))}
+            </View>
+        );
+    };
+
+    // New helper for rounds visual indicator
+    const RoundsRow = ({ won, total, filledStyle }) => {
+        const arr = Array.from({ length: Math.max(1, total) });
+        return (
+            <View style={styles.roundsRow}>
+                {arr.map((_, i) => (
+                    <View
+                        key={i}
+                        style={[
+                            styles.roundCircle,
+                            i < won ? filledStyle : null,
                         ]}
                     />
                 ))}
@@ -608,8 +652,14 @@ export default function Match() {
                         <View style={styles.largeIconCircle}>
                             <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
                         </View>
-                        {/* Rounds won display */}
-                        <Text style={styles.roundsWonText}>Rounds: {player1RoundsWon}</Text>
+                        {/* Rounds won display (replaced text with circles) */}
+                        <View style={{ marginLeft: 8 }}>
+                            <RoundsRow
+                                won={player1RoundsWon}
+                                total={matchSettings.nrOfRoundsToWinMatch}
+                                filledStyle={styles.roundCircleFilledP1}
+                            />
+                        </View>
                     </View>
 
                     {/* DIVIDER */}
@@ -625,8 +675,14 @@ export default function Match() {
                             <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
                         </View>
                         <PointsRow points={player2Points} />
-                        {/* Rounds won display */}
-                        <Text style={styles.roundsWonText}>Rounds: {player2RoundsWon}</Text>
+                        {/* Rounds won display (replaced text with circles) */}
+                        <View style={{ marginLeft: 8 }}>
+                            <RoundsRow
+                                won={player2RoundsWon}
+                                total={matchSettings.nrOfRoundsToWinMatch}
+                                filledStyle={styles.roundCircleFilledP2}
+                            />
+                        </View>
                     </View>
                 </View>
 
@@ -638,7 +694,7 @@ export default function Match() {
                             <GuessBubble
                                 key={`p1-${idx}`}
                                 option={option}
-                                onPress={() => handleGuess(option.isCorrect, 1)}
+                                onPress={() => handleGuess(option.isCorrect, 1, idx)}
                                 disabled={
                                     correctPressed ||
                                     (lastGuessPhase
@@ -647,12 +703,17 @@ export default function Match() {
                                 }
                                 animatedIndex={idx}
                                 positionStyle={LEFT_BUBBLE_POSITIONS[idx] || {}}
+                                glowColor={
+                                    correctGlowIndices[1]?.includes(idx)
+                                        ? 'green'
+                                        : wrongGlowIndices[1]?.includes(idx)
+                                            ? 'red'
+                                            : null
+                                }
                             />
                         ))}
                     </View>
 
-                    {/* Divider Line */}
-                    <View style={styles.playDividerLine} />
 
                     {/* RIGHT SIDE */}
                     <View style={styles.sideColumn}>
@@ -660,7 +721,7 @@ export default function Match() {
                             <GuessBubble
                                 key={`p2-${idx}`}
                                 option={option}
-                                onPress={() => handleGuess(option.isCorrect, 2)}
+                                onPress={() => handleGuess(option.isCorrect, 2, idx)}
                                 disabled={
                                     correctPressed ||
                                     (lastGuessPhase
@@ -669,6 +730,13 @@ export default function Match() {
                                 }
                                 animatedIndex={idx}
                                 positionStyle={RIGHT_BUBBLE_POSITIONS[idx] || {}}
+                                glowColor={
+                                    correctGlowIndices[2]?.includes(idx)
+                                        ? 'green'
+                                        : wrongGlowIndices[2]?.includes(idx)
+                                            ? 'red'
+                                            : null
+                                }
                             />
                         ))}
                     </View>
@@ -724,13 +792,13 @@ const styles = StyleSheet.create({
     },
     cooldownOverlayLeft: {
         left: 0,
-        borderTopRightRadius: 40,
-        borderBottomRightRadius: 40,
+        borderTopLeftRadius: 40,
+        borderBottomLeftRadius: 40,
     },
     cooldownOverlayRight: {
         right: 0,
-        borderTopLeftRadius: 40,
-        borderBottomLeftRadius: 40,
+        borderTopRightRadius: 40,
+        borderBottomRightRadius: 40,
     },
     cooldownBubble: {
         width: 120,
@@ -805,6 +873,30 @@ const styles = StyleSheet.create({
         backgroundColor: "#5C66C5",
         borderColor: "#5C66C5",
     },
+
+    // NEW: rounds visuals
+    roundsRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    roundCircle: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        borderWidth: 1.5,
+        borderColor: "#9CA3AF",
+        marginHorizontal: 3,
+        backgroundColor: "transparent",
+    },
+    roundCircleFilledP1: {
+        backgroundColor: "#ff6b6b",
+        borderColor: "#ff6b6b",
+    },
+    roundCircleFilledP2: {
+        backgroundColor: "#4ecdc4",
+        borderColor: "#4ecdc4",
+    },
+
     dividerContainer: { width: 80, alignItems: "center" },
     dividerBlock: {
         width: 80,
