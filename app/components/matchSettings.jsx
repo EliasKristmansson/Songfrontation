@@ -16,7 +16,7 @@ export default function MatchSettings() {
     const router = useRouter();
     const [genre, setGenre] = useState("Choose");
     const [rounds, setRounds] = useState(1);
-    const [duration, setDuration] = useState(5);
+    const [duration, setDuration] = useState(30);
     const [guesses, setGuesses] = useState(3);
     const [points, setPoints] = useState(3);
     const { from } = useLocalSearchParams();
@@ -110,7 +110,7 @@ export default function MatchSettings() {
                             <Slider
                                 style={styles.slider}
                                 minimumValue={5}
-                                maximumValue={29}
+                                maximumValue={30}
                                 step={1}
                                 value={duration}
                                 onValueChange={setDuration}
@@ -118,7 +118,7 @@ export default function MatchSettings() {
                                 maximumTrackTintColor="rgba(255,255,255,0.3)"
                                 thumbTintColor="white"
                             />
-                            <Text style={styles.sliderLabel}>29s</Text>
+                            <Text style={styles.sliderLabel}>30s</Text>
                         </View>
                         <Text style={styles.sliderInfo}>{duration} seconds</Text>
                     </View>

@@ -14,6 +14,7 @@ import {
     View,
 } from "react-native";
 import GuessBubble from "../components/guessBubble.jsx"; // ⬅️ NEW
+import { useLocalSearchParams } from "expo-router";
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
@@ -127,9 +128,6 @@ class MatchGame {
     }
 }
 // --- End Game Engine/Logic Classes ---
-
-import { useLocalSearchParams } from "expo-router";
-
 export default function Match() {
     const router = useRouter();
     const params = useLocalSearchParams();
@@ -440,48 +438,62 @@ export default function Match() {
 
     const handleGuess = async (isCorrect, playerNum, bubbleIndex) => {
         if (lastGuessPhase) {
-            // Only allow one guess per player in last guess phase
             if (lastGuessUsed[playerNum]) return;
             setLastGuessUsed(prev => ({ ...prev, [playerNum]: true }));
+
+            let newPoints;
+            let winnerId;
+
             if (isCorrect) {
-                // First correct guess gets the point and ends the round
                 setCorrectPressed(true);
                 if (currentSongObj) {
                     currentSongObj.hasWonSong = true;
                     currentSongObj.songWinnerId = playerNum;
                 }
+
                 if (playerNum === 1) {
-                    const newPoints = player1Points + 1;
+                    newPoints = player1Points + 1;
                     setPlayer1Points(newPoints);
-                    setRoundWinner(1);
-                    handleEndOfRound(1);
+                    winnerId = 1;
                 } else {
-                    const newPoints = player2Points + 1;
+                    newPoints = player2Points + 1;
                     setPlayer2Points(newPoints);
-                    setRoundWinner(2);
-                    handleEndOfRound(2);
+                    winnerId = 2;
                 }
+
+                triggerGreenGlow(playerNum, bubbleIndex);
             } else {
-                // Wrong guess in last guess phase: opponent gets the point and round
                 setCorrectPressed(true);
                 if (currentSongObj) {
                     currentSongObj.hasWonSong = true;
                     currentSongObj.songWinnerId = playerNum === 1 ? 2 : 1;
                 }
+
                 if (playerNum === 1) {
-                    const newPoints = player2Points + 1;
+                    newPoints = player2Points + 1;
                     setPlayer2Points(newPoints);
-                    setRoundWinner(2);
-                    handleEndOfRound(2);
+                    winnerId = 2;
                 } else {
-                    const newPoints = player1Points + 1;
+                    newPoints = player1Points + 1;
                     setPlayer1Points(newPoints);
-                    setRoundWinner(1);
-                    handleEndOfRound(1);
+                    winnerId = 1;
                 }
+
+                triggerRedGlow(playerNum, bubbleIndex);
             }
+
+            // --- NEW: handle round end if points threshold is reached ---
+            if (newPoints >= matchSettings.nrOfSongsToWinRound) {
+                setRoundWinner(winnerId);
+                handleEndOfRound(winnerId);
+            } else {
+                // Otherwise, just proceed to next song
+                handlePlayCore();
+            }
+
             return;
         }
+
 
         if (isCorrect) {
             setCorrectPressed(true);
@@ -637,28 +649,50 @@ export default function Match() {
             )}
             {/* Last guess phase overlay */}
             {lastGuessPhase && (
-                <View style={styles.lastGuessOverlay} pointerEvents="box-none">
-                    <View style={styles.lastGuessBubble} pointerEvents="none">
-                        <Text style={styles.lastGuessText}>Last Guess!</Text>
-                    </View>
+                <View
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1100,
+                    }}
+                    pointerEvents="none"
+                >
+                    <Text style={styles.lastGuessText}>
+                        Time's up
+                    </Text>
+                    <Text style={styles.lastGuessText2}>
+
+                        Last Guess!
+                    </Text>
                 </View>
             )}
+
             <View contentContainerStyle={styles.container}>
                 {/* HEADER */}
                 <View style={styles.headerRow}>
                     {/* LEFT SIDE */}
                     <View style={styles.sideRow}>
-                        <PointsRow points={player1Points} />
+                        <View style={{ alignItems: "flex-end" }}>
+                            {/* Points row */}
+                            <PointsRow points={player1Points} />
+                            {/* Rounds won circles below */}
+                            <View style={{ marginTop: 4 }}>
+                                <RoundsRow
+                                    won={player1RoundsWon}
+                                    total={matchSettings.nrOfRoundsToWinMatch}
+                                    filledStyle={styles.roundCircleFilledP1}
+                                />
+                            </View>
+                        </View>
+
+                        {/* Player icon */}
                         <View style={styles.largeIconCircle}>
                             <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
-                        </View>
-                        {/* Rounds won display (replaced text with circles) */}
-                        <View style={{ marginLeft: 8 }}>
-                            <RoundsRow
-                                won={player1RoundsWon}
-                                total={matchSettings.nrOfRoundsToWinMatch}
-                                filledStyle={styles.roundCircleFilledP1}
-                            />
                         </View>
                     </View>
 
@@ -671,17 +705,22 @@ export default function Match() {
 
                     {/* RIGHT SIDE */}
                     <View style={styles.sideRow}>
+                        <View style={{ alignItems: "flex-start" }}>
+                            {/* Points row */}
+                            <PointsRow points={player2Points} />
+                            {/* Rounds won circles below */}
+                            <View style={{ marginTop: 4 }}>
+                                <RoundsRow
+                                    won={player2RoundsWon}
+                                    total={matchSettings.nrOfRoundsToWinMatch}
+                                    filledStyle={styles.roundCircleFilledP2}
+                                />
+                            </View>
+                        </View>
+
+                        {/* Player icon */}
                         <View style={styles.largeIconCircle}>
                             <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
-                        </View>
-                        <PointsRow points={player2Points} />
-                        {/* Rounds won display (replaced text with circles) */}
-                        <View style={{ marginLeft: 8 }}>
-                            <RoundsRow
-                                won={player2RoundsWon}
-                                total={matchSettings.nrOfRoundsToWinMatch}
-                                filledStyle={styles.roundCircleFilledP2}
-                            />
                         </View>
                     </View>
                 </View>
@@ -934,9 +973,15 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     lastGuessText: {
+        fontFamily: "OutfitBold",
+        color: 'white',
+        fontSize: 24,
+    },
+    lastGuessText2: {
         color: 'white',
         fontWeight: 'bold',
         fontSize: 36,
+        fontFamily: "OutfitBold",
     },
     countdownOverlay: {
         position: "absolute",

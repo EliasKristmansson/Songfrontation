@@ -9,21 +9,21 @@ export default function GuessBubble({
     disabled,
     animatedIndex,
     positionStyle,
-    flashRed = false, // NEW
+    glowColor = null, // "green" | "red" | null
 }) {
     const scaleRef = useRef(new Animated.Value(1)).current;
-    const glowRef = useRef(new Animated.Value(0)).current; // 0 = no red, 1 = full red
+    const glowRef = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        if (flashRed) {
+        if (glowColor) {
             glowRef.setValue(1);
             Animated.timing(glowRef, {
                 toValue: 0,
-                duration: 400, // flash duration
-                useNativeDriver: false,
+                duration: 400,
+                useNativeDriver: false, // borderColor = JS only
             }).start();
         }
-    }, [flashRed]);
+    }, [glowColor]);
 
     const handlePressIn = () => {
         Animated.spring(scaleRef, { toValue: 0.92, useNativeDriver: true }).start();
@@ -33,37 +33,46 @@ export default function GuessBubble({
         Animated.spring(scaleRef, { toValue: 1, friction: 4, useNativeDriver: true }).start();
     };
 
-    const borderColor = glowRef.interpolate({
-        inputRange: [0, 1],
-        outputRange: ["transparent", "#F87171"], // red glow
-    });
+    const animatedShadowStyle = {
+        shadowColor: glowColor === "green" ? "#4ADE80" : "#F87171",
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: glowRef,
+        shadowRadius: 12,
+        elevation: glowRef.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 8], // Android shadow
+        }),
+    };
+
 
     return (
         <Animated.View
             style={[
-                { transform: [{ scale: scaleRef }], borderColor, borderWidth: 4 },
                 styles.bubbleWrapper,
                 positionStyle,
+                animatedShadowStyle, // JS-driven glow here
             ]}
         >
-            <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={onPress}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                disabled={disabled}
-                style={[styles.bubbleOption, disabled && styles.bubbleDisabled]}
-            >
-                <LinearGradient
-                    colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.bubbleOptionInner}
+            <Animated.View style={{ transform: [{ scale: scaleRef }] }}>
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={onPress}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                    disabled={disabled}
+                    style={[styles.bubbleOption, disabled && styles.bubbleDisabled]}
                 >
-                    <Text style={styles.optionText}>{option.title}</Text>
-                    <Text style={styles.optionArtist}>{option.artist}</Text>
-                </LinearGradient>
-            </TouchableOpacity>
+                    <LinearGradient
+                        colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.bubbleOptionInner}
+                    >
+                        <Text style={styles.optionText}>{option.title}</Text>
+                        <Text style={styles.optionArtist}>{option.artist}</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </Animated.View>
         </Animated.View>
     );
 }
