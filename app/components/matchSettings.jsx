@@ -9,6 +9,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import PreGameMenuHeader from "./preGameMenuHeader";
 
 export default function MatchSettings() {
     const router = useRouter();
@@ -28,13 +29,11 @@ export default function MatchSettings() {
 
     return (
         <View style={styles.container}>
-            {/* Back Arrow */}
-            <TouchableOpacity
-                onPress={() => router.push("../components/icon")}
-                style={styles.backButton}
-            >
-                <Text style={styles.backArrow}>←</Text>
-            </TouchableOpacity>
+            <PreGameMenuHeader
+                title="Match Settings"
+                onBack={() => router.push("../components/icon")}
+                proceedLabel={null}   // hides it if your header checks truthiness
+            />
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -208,7 +207,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 16,
         paddingBottom: 40,
-        paddingTop: 60,
     },
     backButton: {
         position: "absolute",
@@ -238,7 +236,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: "OutfitBold",
         color: "#fff",
-        marginBottom: 10,
+        marginBottom: 8,
         letterSpacing: 0.5,
         textAlign: "center",
     },
