@@ -1,10 +1,12 @@
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useContext, useState } from "react";
+import { useContext, useState, useRef, useEffect } from "react";
 import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ShaderBackground from "./backgroundShader";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
 import PreGameMenuHeader from "./preGameMenuHeader";
+import { LinearGradient } from "expo-linear-gradient";
+import { Animated, Easing } from "react-native";
 
 const ICONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -38,6 +40,10 @@ export default function Icon() {
     const [customImage1, setCustomImage1] = useState(null);
     const [customImage2, setCustomImage2] = useState(null);
     const { dividerPos, setDividerPos } = useContext(BackgroundShaderContext);
+    const scrollY1 = useRef(new Animated.Value(0)).current;
+    const scrollY2 = useRef(new Animated.Value(0)).current;
+    const scrollRef1 = useRef(null);
+    const scrollRef2 = useRef(null);
 
     const takeSelfie = async (player) => {
         const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
@@ -62,6 +68,39 @@ export default function Icon() {
             }
         }
     };
+
+    useEffect(() => {
+        const bounce = (ref, animatedVal) => {
+            Animated.sequence([
+                Animated.timing(animatedVal, {
+                    toValue: 10,
+                    duration: 100,
+                    useNativeDriver: false,
+                    easing: Easing.out(Easing.quad), // ease out on the way down
+                }),
+                Animated.spring(animatedVal, {
+                    toValue: 0,
+                    friction: 10,   // lower = bouncier
+                    tension: 40,   // higher = snappier
+                    useNativeDriver: false,
+                }),
+            ]).start();
+
+            animatedVal.addListener(({ value }) => {
+                ref.current?.scrollTo({ y: value, animated: false });
+            });
+        };
+
+        setTimeout(() => {
+            bounce(scrollRef1, scrollY1);
+            bounce(scrollRef2, scrollY2);
+        }, 400);
+
+        return () => {
+            scrollY1.removeAllListeners();
+            scrollY2.removeAllListeners();
+        };
+    }, []);
 
     const renderIcon = (idx, player) => {
         if (idx === 0) {
@@ -104,10 +143,10 @@ export default function Icon() {
     };
 
     return (
-        <View style={styles.container}>  
+        <View style={styles.container}>
             {/* Web-only shader */}
-                {Platform.OS === "web" && (
-                    <ShaderBackground
+            {Platform.OS === "web" && (
+                <ShaderBackground
                     color1={[0.255, 0.184, 0.494]}
                     color2={[0.455, 0.294, 0.549]}
                     color3={[0.718, 0.459, 0.525]}
@@ -116,15 +155,15 @@ export default function Icon() {
                     scale={3.0}
                     dividerPos={0.5}
                     style={styles.webShader}
-                    />
-                )}
+                />
+            )}
             {/* Header at the top */}
             <PreGameMenuHeader
                 title="Icon Select"
                 onBack={() => {
-                                setDividerPos(1.1); // update shader
-                                router.push("../components/main"); // navigate
-                            }}
+                    setDividerPos(1.1); // update shader
+                    router.push("../components/main"); // navigate
+                }}
                 onProceed={() => router.push({ pathname: "../components/matchSettings", params: { from: "icon" } })}
                 canProceed={selected1 !== null && selected2 !== null}
             />
@@ -152,10 +191,25 @@ export default function Icon() {
                             </PlaceholderIcon>
                         )}
                     </View>
-                    <ScrollView contentContainerStyle={styles.iconList}>
-                        {ICONS.map((icon, idx) => renderIcon(idx, 1))}
-                    </ScrollView>
+
+                    <View style={{ flex: 1 }}>
+                        <ScrollView
+                            ref={scrollRef1}
+                            contentContainerStyle={styles.iconList}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {ICONS.map((icon, idx) => renderIcon(idx, 1))}
+                        </ScrollView>
+
+
+                        <LinearGradient
+                            colors={["transparent", "#20163B"]}
+                            style={styles.scrollFadeBottom}
+                            pointerEvents="none"
+                        />
+                    </View>
                 </View>
+
 
                 {/* Divider */}
                 <View style={styles.divider} />
@@ -179,10 +233,24 @@ export default function Icon() {
                             </PlaceholderIcon>
                         )}
                     </View>
-                    <ScrollView contentContainerStyle={styles.iconList}>
-                        {ICONS.map((icon, idx) => renderIcon(idx, 2))}
-                    </ScrollView>
+
+                    <View style={{ flex: 1 }}>
+                        <ScrollView
+                            ref={scrollRef2}
+                            contentContainerStyle={styles.iconList}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {ICONS.map((icon, idx) => renderIcon(idx, 2))}
+                        </ScrollView>
+
+                        <LinearGradient
+                            colors={["transparent", "#283059"]}
+                            style={styles.scrollFadeBottom}
+                            pointerEvents="none"
+                        />
+                    </View>
                 </View>
+
             </View>
         </View>
     );
@@ -219,13 +287,21 @@ const styles = StyleSheet.create({
     },
     half: {
         flex: 1,
-        padding: 10,
     },
     divider: {
         width: 2,
         backgroundColor: "#ccc",
         height: "100%",
     },
+    scrollFadeBottom: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 30,
+        zIndex: 5,
+    },
+
     headerRow: {
         flexDirection: "row",
         alignItems: "center",
@@ -268,7 +344,12 @@ const styles = StyleSheet.create({
         borderColor: "transparent",
     },
     selectedIcon: {
-        borderColor: "#007AFF",
+        shadowColor: "#FFFFFF",
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        elevation: 10,
+        borderWidth: 3,
+        borderColor: "white",
     },
     backButton: {
         position: "absolute",

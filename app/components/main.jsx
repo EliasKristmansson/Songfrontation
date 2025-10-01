@@ -212,16 +212,6 @@ const styles = StyleSheet.create({
         position: "absolute",
         backgroundColor: "transparent"
     },
-    star: {
-        position: "absolute",
-        resizeMode: "contain",
-        opacity: 0.6,
-        shadowColor: "white",
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.7,
-        shadowRadius: 3,
-        elevation: 8,
-    },
     titleContainer: {
         width: "100%",
         justifyContent: "center",
@@ -246,10 +236,18 @@ const styles = StyleSheet.create({
     settingsButton: {
         padding: 4,
         borderRadius: 50,
-        backgroundColor: "#5C66C5",
+        backgroundColor: "#6466bc",
+        borderWidth: 2,
+        borderColor: "white",
+        shadowColor: "#8e7cc3",
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        elevation: 10,
+
     },
     settingsText: {
         fontSize: 24,
+        
     },
     sectionLabel: {
         fontSize: 16,
