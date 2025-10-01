@@ -15,7 +15,7 @@ function getRandomGenre(list) {
 
 export default function Icon() {
     const router = useRouter();
-    const { rounds, duration, guesses, points } = useLocalSearchParams();
+    const { rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
 
     // Slumpa genre
     const randomGenre = useMemo(() => getRandomGenre(GENRES), []);
@@ -35,6 +35,7 @@ export default function Icon() {
                             duration: String(duration ?? ""),
                             guesses: String(guesses ?? ""),
                             points: String(points ?? ""),
+                            nrOfPlayers,
                         },
                     });
                 }}

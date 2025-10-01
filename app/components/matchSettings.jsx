@@ -182,6 +182,7 @@ export default function MatchSettings() {
                         disabled={!getSelectedMatchMode()}
                         onPress={() => {
                             const nextPath = getSelectedMatchMode();
+
                             if (nextPath) {
                                 const params = {
                                     genre,
@@ -189,7 +190,9 @@ export default function MatchSettings() {
                                     duration: String(duration),
                                     guesses: String(guesses),
                                     points: String(points),
+                                    nrOfPlayers: from === "iconSinglePlayer" ? 1 : 2,
                                 };
+
                                 router.push({ pathname: nextPath, params });
                             }
                         }}

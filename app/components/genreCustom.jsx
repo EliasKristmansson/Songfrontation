@@ -14,7 +14,7 @@ const asStr = (v) => (Array.isArray(v) ? v[0] : v ?? "");
 
 export default function GenreSelect() {
     const router = useRouter();
-    const { rounds, duration, guesses, points } = useLocalSearchParams();
+    const { rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
 
     const [selected, setSelected] = useState(new Set());
     const selectedList = useMemo(() => Array.from(selected), [selected]);
@@ -42,6 +42,7 @@ export default function GenreSelect() {
                 duration: String(asStr(duration)),
                 guesses: String(asStr(guesses)),
                 points: String(asStr(points)),
+                nrOfPlayers,
             },
         });
     };
@@ -132,13 +133,18 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         borderWidth: 2,
         borderColor: "transparent",
-        backgroundColor: DARKER_PURPLE,
+        backgroundColor: "#6466bc",
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 6,
     },
     selectedIcon: {
         borderColor: "#fff",
+        borderColor: "#fff",
+        shadowColor: "#8e7cc3",
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        elevation: 10,
     },
 
     iconText: {

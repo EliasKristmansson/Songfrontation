@@ -146,9 +146,11 @@ export default function Match() {
     const [player1, setPlayer1] = useState(
         new Player({ playerId: 1, playerIcon: "🎤" })
     );
+
     const [player2, setPlayer2] = useState(
-        new Player({ playerId: 2, playerIcon: "🎸" })
+        isSinglePlayer ? null : new Player({ playerId: 2, playerIcon: "🎸" })
     );
+
     const [player1Points, setPlayer1Points] = useState(0);
     const [player2Points, setPlayer2Points] = useState(0);
     const [roundWinner, setRoundWinner] = useState(null);
@@ -173,7 +175,12 @@ export default function Match() {
         songDuration: params.duration ? parseInt(params.duration) : 30,
         nrOfGuessesOnBoard: params.guesses ? parseInt(params.guesses) : 3,
     });
-    const matchGame = new MatchGame({ players: [player1, player2], matchSettings });
+    const isSinglePlayer = matchSettings.nrOfPlayers === 1;
+    const matchGame = new MatchGame({
+        players: isSinglePlayer ? [player1] : [player1, player2],
+        matchSettings,
+    });
+
 
     // UI state for countdown overlay
     const [initialCountdown, setInitialCountdown] = useState(3);
@@ -185,6 +192,8 @@ export default function Match() {
 
     // bubble scales ref (if your code expects it elsewhere)
     const bubbleScalesRef = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]);
+
+
 
     // Helper to reset round state
     const resetRound = () => {
@@ -450,7 +459,6 @@ export default function Match() {
                     currentSongObj.hasWonSong = true;
                     currentSongObj.songWinnerId = playerNum;
                 }
-
                 if (playerNum === 1) {
                     newPoints = player1Points + 1;
                     setPlayer1Points(newPoints);
@@ -703,26 +711,27 @@ export default function Match() {
                         </View>
                     </View>
 
-                    {/* RIGHT SIDE */}
-                    <View style={styles.sideRow}>
-                        <View style={{ alignItems: "flex-start" }}>
-                            {/* Points row */}
-                            <PointsRow points={player2Points} />
-                            {/* Rounds won circles below */}
-                            <View style={{ marginTop: 4 }}>
-                                <RoundsRow
-                                    won={player2RoundsWon}
-                                    total={matchSettings.nrOfRoundsToWinMatch}
-                                    filledStyle={styles.roundCircleFilledP2}
-                                />
+                    {!isSinglePlayer && (
+                        <View style={styles.sideRow}>
+                            {/* Player icon FIRST */}
+                            <View style={styles.largeIconCircle}>
+                                <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
+                            </View>
+
+                            <View style={{ alignItems: "flex-start" }}>
+                                {/* Points row */}
+                                <PointsRow points={player2Points} />
+                                {/* Rounds won circles below */}
+                                <View style={{ marginTop: 4 }}>
+                                    <RoundsRow
+                                        won={player2RoundsWon}
+                                        total={matchSettings.nrOfRoundsToWinMatch}
+                                        filledStyle={styles.roundCircleFilledP2}
+                                    />
+                                </View>
                             </View>
                         </View>
-
-                        {/* Player icon */}
-                        <View style={styles.largeIconCircle}>
-                            <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
-                        </View>
-                    </View>
+                    )}
                 </View>
 
                 {/* PLAY AREA */}
@@ -753,32 +762,35 @@ export default function Match() {
                         ))}
                     </View>
 
+                    {!isSinglePlayer && (
+                        // render Player 2’s UI
+                        < View style={styles.sideColumn}>
+                            {songOptions.map((option, idx) => (
+                                <GuessBubble
+                                    key={`p2-${idx}`}
+                                    option={option}
+                                    onPress={() => handleGuess(option.isCorrect, 2, idx)}
+                                    disabled={
+                                        correctPressed ||
+                                        (lastGuessPhase
+                                            ? lastGuessUsed[2]
+                                            : (!isPlaying || player2Cooldown))
+                                    }
+                                    animatedIndex={idx}
+                                    positionStyle={RIGHT_BUBBLE_POSITIONS[idx] || {}}
+                                    glowColor={
+                                        correctGlowIndices[2]?.includes(idx)
+                                            ? 'green'
+                                            : wrongGlowIndices[2]?.includes(idx)
+                                                ? 'red'
+                                                : null
+                                    }
+                                />
+                            ))}
+                        </View>
+                    )}
 
-                    {/* RIGHT SIDE */}
-                    <View style={styles.sideColumn}>
-                        {songOptions.map((option, idx) => (
-                            <GuessBubble
-                                key={`p2-${idx}`}
-                                option={option}
-                                onPress={() => handleGuess(option.isCorrect, 2, idx)}
-                                disabled={
-                                    correctPressed ||
-                                    (lastGuessPhase
-                                        ? lastGuessUsed[2]
-                                        : (!isPlaying || player2Cooldown))
-                                }
-                                animatedIndex={idx}
-                                positionStyle={RIGHT_BUBBLE_POSITIONS[idx] || {}}
-                                glowColor={
-                                    correctGlowIndices[2]?.includes(idx)
-                                        ? 'green'
-                                        : wrongGlowIndices[2]?.includes(idx)
-                                            ? 'red'
-                                            : null
-                                }
-                            />
-                        ))}
-                    </View>
+
                 </View>
 
                 {loading && (
@@ -799,16 +811,18 @@ export default function Match() {
             </View>
 
             {/* Countdown */}
-            {showInitialCountdown && (
-                <View style={styles.countdownOverlay} pointerEvents="none">
-                    <View style={styles.countdownBubble}>
-                        <Text style={styles.countdownText}>
-                            {initialCountdown > 0 ? initialCountdown : "Go!"}
-                        </Text>
+            {
+                showInitialCountdown && (
+                    <View style={styles.countdownOverlay} pointerEvents="none">
+                        <View style={styles.countdownBubble}>
+                            <Text style={styles.countdownText}>
+                                {initialCountdown > 0 ? initialCountdown : "Go!"}
+                            </Text>
+                        </View>
                     </View>
-                </View>
-            )}
-        </View>
+                )
+            }
+        </View >
     );
 }
 
@@ -877,15 +891,6 @@ const styles = StyleSheet.create({
         height: 320,
         position: "relative",
     },
-    playDividerLine: {
-        position: "absolute",
-        left: WINDOW_WIDTH / 2,
-        top: 0,
-        width: 2,
-        height: WINDOW_HEIGHT,
-        backgroundColor: "white",
-        zIndex: 5,
-    },
     largeIconCircle: {
         width: 40,
         height: 40,
@@ -950,28 +955,6 @@ const styles = StyleSheet.create({
     dividerTimerText: { color: "black", fontSize: 18 },
     loader: { marginTop: 20 },
     footer: { marginTop: 22, alignItems: "center" },
-    lastGuessOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.35)',
-        zIndex: 1100,
-    },
-    lastGuessBubble: {
-        width: 200,
-        height: 100,
-        borderRadius: 20,
-        backgroundColor: '#F87171',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 4,
-        borderColor: '#fff',
-        marginBottom: 20,
-    },
     lastGuessText: {
         fontFamily: "OutfitBold",
         color: 'white',

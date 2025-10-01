@@ -135,7 +135,7 @@ export default function Icon() {
             <PreGameMenuHeader
                 title="Icon Select"
                 onBack={() => router.push("../components/main")}
-                onProceed={() => router.push({ pathname: "../components/matchSettings", params: { from: "iconSinglePlayer" } })}
+                onProceed={() => router.push({ pathname: "../components/matchSettings", params: { from: "iconSinglePlayer", nrOfPlayers: 1 } })}
                 canProceed={selected1 !== null}
             />
 

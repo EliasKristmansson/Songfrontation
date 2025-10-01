@@ -20,7 +20,7 @@ function getRandomGenres(list, n) {
 
 export default function Icon() {
     const router = useRouter();
-    const { rounds, duration, guesses, points } = useLocalSearchParams();
+    const { genre, rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
 
     const randomGenres = useMemo(() => getRandomGenres(GENRES, 3), []);
     const [selectedGenre, setSelectedGenre] = useState(null);
@@ -40,6 +40,7 @@ export default function Icon() {
                             duration: String(asStr(duration) ?? ""),
                             guesses: String(asStr(guesses) ?? ""),
                             points: String(asStr(points) ?? ""),
+                            nrOfPlayers,
                         },
                     })
                 }
@@ -89,13 +90,19 @@ const styles = StyleSheet.create({
         width: 110,
         height: 110,
         borderRadius: 55,
-        backgroundColor: DARKER_PURPLE,
+        backgroundColor: "#6466bc",
         borderWidth: 2,
         borderColor: "transparent",
         alignItems: "center",
         justifyContent: "center",
     },
-    genreButtonSelected: { borderColor: "#fff" },
+    genreButtonSelected: {
+        borderColor: "#fff",
+        shadowColor: "#8e7cc3",
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        elevation: 10,
+    },
     genreText: {
         color: "#fff",
         fontSize: 16,

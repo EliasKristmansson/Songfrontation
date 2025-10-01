@@ -164,7 +164,7 @@ export default function Icon() {
                     setDividerPos(1.1); // update shader
                     router.push("../components/main"); // navigate
                 }}
-                onProceed={() => router.push({ pathname: "../components/matchSettings", params: { from: "icon" } })}
+                onProceed={() => router.push({ pathname: "../components/matchSettings", params: { from: "icon", nrOfPlayers: 2 } })}
                 canProceed={selected1 !== null && selected2 !== null}
             />
 

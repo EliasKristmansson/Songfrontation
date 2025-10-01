@@ -70,7 +70,7 @@ function PlayerButton({ label, onPress }) {
 }
 
 export default function Main({ background, stars = [] }) {
-    const { dividerPos, setDividerPos  } = useContext(BackgroundShaderContext);
+    const { dividerPos, setDividerPos } = useContext(BackgroundShaderContext);
     const [helpVisible, setHelpVisible] = useState(false);
     const router = useRouter();
 
@@ -177,17 +177,12 @@ export default function Main({ background, stars = [] }) {
                     >
                         <PlayerButton
                             label="1 Player"
-                            onPress={() =>
-                                router.push("../components/iconSinglePlayer")
-                            }
+                            onPress={() => router.push({ pathname: "../components/iconSinglePlayer", params: { nrOfPlayers: 1 } })}
                         />
                         <View style={styles.divider} />
                         <PlayerButton
                             label="2 Players"
-                            onPress={() => {
-                                setDividerPos(0.5); // update shader
-                                router.push("../components/icon"); // navigate
-                            }}
+                            onPress={() => router.push({ pathname: "../components/icon", params: { nrOfPlayers: 2 } })}
                         />
                     </LinearGradient>
                 </View>
@@ -247,7 +242,7 @@ const styles = StyleSheet.create({
     },
     settingsText: {
         fontSize: 24,
-        
+
     },
     sectionLabel: {
         fontSize: 16,
