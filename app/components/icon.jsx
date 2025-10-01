@@ -1,8 +1,9 @@
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ShaderBackground from "./backgroundShader";
+import { BackgroundShaderContext } from "./backgroundShaderContext";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
 const ICONS = Array.from({ length: 20 }, (_, i) => i + 1);
@@ -36,6 +37,7 @@ export default function Icon() {
     const [selected2, setSelected2] = useState(null);
     const [customImage1, setCustomImage1] = useState(null);
     const [customImage2, setCustomImage2] = useState(null);
+    const { dividerPos, setDividerPos } = useContext(BackgroundShaderContext);
 
     const takeSelfie = async (player) => {
         const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
@@ -119,7 +121,10 @@ export default function Icon() {
             {/* Header at the top */}
             <PreGameMenuHeader
                 title="Icon Select"
-                onBack={() => router.push("../components/main")}
+                onBack={() => {
+                                setDividerPos(1.1); // update shader
+                                router.push("../components/main"); // navigate
+                            }}
                 onProceed={() => router.push({ pathname: "../components/matchSettings", params: { from: "icon" } })}
                 canProceed={selected1 !== null && selected2 !== null}
             />

@@ -18,6 +18,12 @@ export default function ShaderBackground({
   const startTime = useRef(Date.now());
   const glRef = useRef(null);
   const animationRef = useRef(null);
+  const latestProps = useRef({ speed, scale, color1, color2, color3, color4, dividerPos });
+
+  // Update ref when props change
+  useEffect(() => {
+    latestProps.current = { speed, scale, color1, color2, color3, color4, dividerPos };
+  }, [speed, scale, color1, color2, color3, color4, dividerPos]);
 
   const createTexture = (gl, asset) => {
         const texture = gl.createTexture();
@@ -52,6 +58,18 @@ export default function ShaderBackground({
       gl.uniform1f(timeUniform, elapsed);
       gl.uniform2f(resUniform, gl.drawingBufferWidth, gl.drawingBufferHeight);
       gl.uniform1f(motionUniform, disableMotion ? 0.0 : 1.0);
+
+      // Use latest props from ref
+      const {
+        speed,
+        scale,
+        color1,
+        color2,
+        color3,
+        color4,
+        dividerPos,
+      } = latestProps.current;
+
       gl.uniform1f(speedUniform, speed);
       gl.uniform1f(scaleUniform, scale);
       gl.uniform1f(dividerUniform, dividerPos);
@@ -107,28 +125,37 @@ export default function ShaderBackground({
       uniform sampler2D u_grainTex;
 
       void main() {
-        vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+  vec2 uv = gl_FragCoord.xy / u_resolution.xy;
 
-        // sine wave pulse
-        float pulse = sin(u_time * u_speed * -2.0 + uv.y * 2.0) * 0.3 + 0.2;
+  // sine wave pulse
+  float pulse = sin(u_time * u_speed * -2.0 + uv.y * 2.0) * 0.3 + 0.2;
 
-        vec2 perlinUV = uv * u_scale + vec2(0.0, u_time * 0.01);
+  vec2 perlinUV = uv * u_scale + vec2(0.0, u_time * 0.01);
 
+  // sample perlin and grain
+  vec4 perlinSample = texture2D(u_perlinTex, perlinUV);
+  vec4 grainSample = texture2D(u_grainTex, uv * 4.0);
 
-        // sample perlin and grain
-        vec4 perlinSample = texture2D(u_perlinTex, perlinUV);
-        vec4 grainSample = texture2D(u_grainTex, uv * 4.0);
+  float factor = perlinSample.r * pulse;
 
-        // use perlin.r modulated by pulse as blend factor
-        float factor = perlinSample.r * pulse;
-        vec3 baseColor = uv.x < u_dividerPos
-          ? mix(u_color1, u_color2, factor)
-          : mix(u_color3, u_color4, factor);
+  vec3 firstHalf = mix(u_color1, u_color2, factor);
+  vec3 secondHalf = mix(u_color3, u_color4, factor);
 
-        vec3 color = mix(baseColor, grainSample.rgb, 0.15);
+  // Reveal animation via divider position
+  float secondHalfMask = step(u_dividerPos, uv.x);
+  vec3 baseColor = mix(firstHalf, secondHalf, secondHalfMask);
 
-        gl_FragColor = vec4(color, 1.0);
-      }
+  // Add divider line
+  float dividerDist = abs(uv.x - u_dividerPos);
+  float dividerLine = smoothstep(0.0, 0.003, 0.003 - dividerDist);
+  vec3 dividerColor = vec3(1.0); // you could pass this as a uniform too
+  baseColor = mix(baseColor, dividerColor, dividerLine);
+
+  // Add grain
+  vec3 color = mix(baseColor, grainSample.rgb, 0.15);
+
+  gl_FragColor = vec4(color, 1.0);
+}
     `;
 
     const vertShader = gl.createShader(gl.VERTEX_SHADER);

@@ -70,7 +70,7 @@ function PlayerButton({ label, onPress }) {
 }
 
 export default function Main({ background, stars = [] }) {
-    const { setDividerPos } = useContext(BackgroundShaderContext);
+    const { dividerPos, setDividerPos  } = useContext(BackgroundShaderContext);
     const [helpVisible, setHelpVisible] = useState(false);
     const router = useRouter();
 
