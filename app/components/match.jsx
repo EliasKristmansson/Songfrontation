@@ -1,6 +1,6 @@
 import { Audio } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
@@ -14,27 +14,59 @@ import {
     View,
 } from "react-native";
 import GuessBubble from "../components/guessBubble.jsx"; // ⬅️ NEW
-import { useLocalSearchParams } from "expo-router";
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 // Common search terms for randomness
-const SEARCH_TERMS = [
-    "love",
-    "dance",
-    "night",
-    "fire",
-    "heart",
-    "baby",
-    "party",
-    "dream",
-    "light",
-    "girl",
-    "boy",
-    "rock",
-    "pop",
-    "life",
+export const ITUNES_GENRES = [
+  { id: 14, name: "Music > Pop" },
+  { id: 51, name: "Music > Pop > K-Pop" },
+  { id: 52, name: "Music > Pop > Indie Pop" },
+  { id: 21, name: "Music > Rock" },
+  { id: 1152, name: "Music > Rock > Hard Rock" },
+  { id: 1153, name: "Music > Rock > Indie Rock" },
+  { id: 1154, name: "Music > Rock > Alternative Rock" },
+  { id: 6, name: "Music > Country" },
+  { id: 1006, name: "Music > Country > Contemporary Country" },
+  { id: 1007, name: "Music > Country > Classic Country" },
+  { id: 17, name: "Music > Dance" },
+  { id: 1009, name: "Music > Dance > Electro Pop" },
+  { id: 1010, name: "Music > Dance > House" },
+  { id: 15, name: "Music > R&B/Soul" },
+  { id: 1011, name: "Music > R&B/Soul > Contemporary R&B" },
+  { id: 1012, name: "Music > R&B/Soul > Neo Soul" },
+  { id: 11, name: "Music > Jazz" },
+  { id: 1013, name: "Music > Jazz > Smooth Jazz" },
+  { id: 1014, name: "Music > Jazz > Vocal Jazz" },
+  { id: 7, name: "Music > Hip-Hop/Rap" },
+  { id: 1015, name: "Music > Hip-Hop/Rap > Trap" },
+  { id: 1016, name: "Music > Hip-Hop/Rap > Gangsta Rap" },
+  { id: 5, name: "Music > Classical" },
+  { id: 1017, name: "Music > Classical > Baroque" },
+  { id: 1018, name: "Music > Classical > Romantic" },
+  { id: 3, name: "Music > Blues" },
+  { id: 1019, name: "Music > Blues > Electric Blues" },
+  { id: 1020, name: "Music > Blues > Acoustic Blues" },
+  { id: 50, name: "Music > Electronic" },
+  { id: 1021, name: "Music > Electronic > Ambient" },
+  { id: 1022, name: "Music > Electronic > Dance/Electronic" },
+  { id: 10, name: "Music > Singer/Songwriter" },
+  { id: 1023, name: "Music > Singer/Songwriter > Indie Singer/Songwriter" },
+  { id: 1024, name: "Music > Singer/Songwriter > Folk Singer/Songwriter" },
+  { id: 12, name: "Music > Easy Listening" },
+  { id: 1025, name: "Music > Easy Listening > Lounge" },
+  { id: 1026, name: "Music > Easy Listening > Soft Rock" },
+  { id: 28, name: "Music > New Age" },
+  { id: 1027, name: "Music > New Age > Meditation" },
+  { id: 1028, name: "Music > New Age > Nature Sounds" },
+  { id: 2, name: "Music > Soundtrack" },
+  { id: 1029, name: "Music > Soundtrack > Movie Soundtrack" },
+  { id: 1030, name: "Music > Soundtrack > Musical Theatre" },
+  { id: 4, name: "Music > Holiday" },
+  { id: 1031, name: "Music > Holiday > Christmas" },
+  { id: 1032, name: "Music > Holiday > Halloween" },
 ];
+
 
 // Absolute positions for bubbles
 const LEFT_BUBBLE_POSITIONS = [
@@ -297,10 +329,12 @@ export default function Match() {
                 setSound(null);
             }
 
-            const randomTerm = SEARCH_TERMS[Math.floor(Math.random() * SEARCH_TERMS.length)];
+            const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
+
             const res = await fetch(
-                `https://itunes.apple.com/search?term=${encodeURIComponent(randomTerm)}&entity=song&limit=25`
+            `https://itunes.apple.com/search?term=${encodeURIComponent(randomGenre.name)}&entity=song&limit=50&genreId=${randomGenre.id}`
             );
+            
             const data = await res.json();
             if (!data.results || data.results.length === 0) {
                 Alert.alert("No Preview", "Could not find a track with a preview.");
