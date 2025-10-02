@@ -1,28 +1,24 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ITUNES_GENRES } from "./match"; // import official genres
 import PreGameMenuHeader from "./preGameMenuHeader";
 
-const DARKER_PURPLE = "#3a2a6b";
-
-const GENRES = [
-    "Pop", "Rock", "Hip-Hop", "Jazz", "EDM", "Classical",
-    "Country", "Metal", "Indie", "Folk", "R&B", "Random"
-];
-
-// Hjälp: expo-router kan ge string | string[]
-const asStr = (v) => (Array.isArray(v) ? v[0] : v ?? "");
-
+// Helper to pick random genres
 function getRandomGenres(list, n) {
     const shuffled = [...list].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, n);
 }
 
-export default function Icon() {
-    const router = useRouter();
-    const { genre, rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
+// Helper for string params
+const asStr = (v) => (Array.isArray(v) ? v[0] : v ?? "");
 
-    const randomGenres = useMemo(() => getRandomGenres(GENRES, 3), []);
+export default function GenreAlternatives() {
+    const router = useRouter();
+    const { rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
+
+    // Pick 3 random genres from official list
+    const randomGenres = useMemo(() => getRandomGenres(ITUNES_GENRES, 3), []);
     const [selectedGenre, setSelectedGenre] = useState(null);
 
     return (
@@ -30,37 +26,37 @@ export default function Icon() {
             <PreGameMenuHeader
                 title="Selection of Genre"
                 onBack={() => router.push("../components/matchSettings")}
-                onProceed={() =>
+                onProceed={() => {
                     router.push({
                         pathname: "../components/match",
                         params: {
-                            // Skickar vidare vald genre + tidigar einställningar från MatchSettings
-                            genre: selectedGenre ?? "Random",
+                            // Send selected genre (id & name)
+                            genre: selectedGenre ? JSON.stringify(selectedGenre) : JSON.stringify(randomGenres[0]),
                             rounds: String(asStr(rounds) ?? ""),
                             duration: String(asStr(duration) ?? ""),
                             guesses: String(asStr(guesses) ?? ""),
                             points: String(asStr(points) ?? ""),
                             nrOfPlayers,
                         },
-                    })
-                }
+                    });
+                }}
                 canProceed={!!selectedGenre}
                 proceedLabel="Start"
             />
 
             <View style={styles.centerArea}>
                 <View style={styles.genreButtonRow}>
-                    {randomGenres.map((genre) => (
+                    {randomGenres.map((genreObj) => (
                         <TouchableOpacity
-                            key={genre}
+                            key={genreObj.id}
                             style={[
                                 styles.genreButton,
-                                selectedGenre === genre && styles.genreButtonSelected,
+                                selectedGenre === genreObj && styles.genreButtonSelected,
                             ]}
-                            onPress={() => setSelectedGenre(genre)}
+                            onPress={() => setSelectedGenre(genreObj)}
                             activeOpacity={0.85}
                         >
-                            <Text style={styles.genreText}>{genre}</Text>
+                            <Text style={styles.genreText}>{genreObj.name.split(" > ").pop()}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -105,7 +101,7 @@ const styles = StyleSheet.create({
     },
     genreText: {
         color: "#fff",
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: "bold",
         textAlign: "center",
     },

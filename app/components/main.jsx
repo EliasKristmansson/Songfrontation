@@ -37,9 +37,6 @@ function PlayerButton({ label, onPress }) {
         }).start();
     };
 
-    //Shaders från Layout_ funkar bara på mobilen, enkom lösning för webben
-
-
     return (
         <Pressable
             onPress={onPress}
@@ -74,27 +71,15 @@ export default function Main({ background, stars = [] }) {
     const [helpVisible, setHelpVisible] = useState(false);
     const router = useRouter();
 
+    // Default settings for Quick Match
+    const defaultQuickMatch = {
+        rounds: 3,
+        duration: 29,
+        guesses: 3,
+        points: 3,
+    };
+
     return (
-
-        /* PNG background image setup
-        <ImageBackground source={{ uri: background }} style={styles.container}>
-            
-            {stars.map((star, idx) => (
-                <Image
-                    key={idx}
-                    source={star.source}
-                    style={[
-                        styles.star,
-                        {
-                            left: star.left,
-                            top: star.top,
-                            width: star.size,
-                            height: star.size,
-                        },
-                    ]}
-                />
-            ))} */
-
         <View style={styles.container}>
             {/* Web-only shader */}
             {Platform.OS === "web" && (
@@ -148,12 +133,22 @@ export default function Main({ background, stars = [] }) {
                     >
                         <PlayerButton
                             label="1 Player"
-                            onPress={() => router.push({ pathname: "../components/match", params: { nrOfPlayers: 1 } })}
+                            onPress={() =>
+                                router.push({
+                                    pathname: "../components/genreRandom",
+                                    params: { ...defaultQuickMatch, nrOfPlayers: 1 },
+                                })
+                            }
                         />
                         <View style={styles.divider} />
                         <PlayerButton
                             label="2 Players"
-                            onPress={() => router.push({ pathname: "../components/match", params: { nrOfPlayers: 2 } })}
+                            onPress={() =>
+                                router.push({
+                                    pathname: "../components/genreRandom",
+                                    params: { ...defaultQuickMatch, nrOfPlayers: 2 },
+                                })
+                            }
                         />
                     </LinearGradient>
                 </View>
@@ -177,12 +172,22 @@ export default function Main({ background, stars = [] }) {
                     >
                         <PlayerButton
                             label="1 Player"
-                            onPress={() => router.push({ pathname: "../components/iconSinglePlayer", params: { nrOfPlayers: 1 } })}
+                            onPress={() =>
+                                router.push({
+                                    pathname: "../components/iconSinglePlayer",
+                                    params: { nrOfPlayers: 1 },
+                                })
+                            }
                         />
                         <View style={styles.divider} />
                         <PlayerButton
                             label="2 Players"
-                            onPress={() => router.push({ pathname: "../components/icon", params: { nrOfPlayers: 2 } })}
+                            onPress={() =>
+                                router.push({
+                                    pathname: "../components/icon",
+                                    params: { nrOfPlayers: 2 },
+                                })
+                            }
                         />
                     </LinearGradient>
                 </View>
@@ -238,11 +243,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.5,
         shadowRadius: 8,
         elevation: 10,
-
     },
     settingsText: {
         fontSize: 24,
-
     },
     sectionLabel: {
         fontSize: 16,

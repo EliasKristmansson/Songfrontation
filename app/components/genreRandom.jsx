@@ -1,24 +1,20 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
+import { ITUNES_GENRES } from "./match"; // import official genre list with IDs
 import PreGameMenuHeader from "./preGameMenuHeader";
 
-
-const GENRES = [
-    "Pop", "Rock", "Hip-Hop", "Jazz", "EDM", "Classical",
-    "Country", "Metal", "Indie", "Folk", "R&B"
-];
-
+// Pick a random genre object from ITUNES_GENRES
 function getRandomGenre(list) {
     return list[Math.floor(Math.random() * list.length)];
 }
 
-export default function Icon() {
+export default function GenreRandom() {
     const router = useRouter();
     const { rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
 
-    // Slumpa genre
-    const randomGenre = useMemo(() => getRandomGenre(GENRES), []);
+    // Generate genre once
+    const randomGenre = useMemo(() => getRandomGenre(ITUNES_GENRES), []);
 
     return (
         <View style={styles.container}>
@@ -29,12 +25,12 @@ export default function Icon() {
                     router.push({
                         pathname: "../components/match",
                         params: {
-                            // Skicka med alla valda inställningar till match
-                            genre: randomGenre,
-                            rounds: String(rounds ?? ""),
-                            duration: String(duration ?? ""),
-                            guesses: String(guesses ?? ""),
-                            points: String(points ?? ""),
+                            genreId: randomGenre.id,       // pass genre ID
+                            genreName: randomGenre.name,   // pass name for display
+                            rounds: String(rounds ?? "3"),
+                            duration: String(duration ?? "29"),
+                            guesses: String(guesses ?? "3"),
+                            points: String(points ?? "3"),
                             nrOfPlayers,
                         },
                     });
@@ -45,7 +41,7 @@ export default function Icon() {
 
             <View style={styles.genreWrapper}>
                 <Text style={styles.genreLabel}>Your genre:</Text>
-                <Text style={styles.genreText}>{randomGenre}</Text>
+                <Text style={styles.genreText}>{randomGenre.name}</Text>
             </View>
         </View>
     );

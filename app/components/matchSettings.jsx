@@ -11,17 +11,17 @@ import {
 } from "react-native";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
-
 export default function MatchSettings() {
     const router = useRouter();
-    const [genre, setGenre] = useState("Choose");
-    const [rounds, setRounds] = useState(1);
+    const { from } = useLocalSearchParams();
+
+    // Defaults aligned with Quick Match
+    const [genre, setGenre] = useState("Random");
+    const [rounds, setRounds] = useState(3);
     const [duration, setDuration] = useState(29);
     const [guesses, setGuesses] = useState(3);
     const [points, setPoints] = useState(3);
-    const { from } = useLocalSearchParams();
 
-    // Next button logic + params
     const getSelectedMatchMode = () => {
         if (genre === "Random") return "../components/genreRandom";
         if (genre === "Alternatives") return "../components/genreAlternatives";
@@ -182,19 +182,18 @@ export default function MatchSettings() {
                         disabled={!getSelectedMatchMode()}
                         onPress={() => {
                             const nextPath = getSelectedMatchMode();
+                            if (!nextPath) return;
 
-                            if (nextPath) {
-                                const params = {
-                                    genre,
-                                    rounds: String(rounds),
-                                    duration: String(duration),
-                                    guesses: String(guesses),
-                                    points: String(points),
-                                    nrOfPlayers: from === "iconSinglePlayer" ? 1 : 2,
-                                };
+                            const params = {
+                                genre,
+                                rounds: String(rounds),
+                                duration: String(duration),
+                                guesses: String(guesses),
+                                points: String(points),
+                                nrOfPlayers: from === "iconSinglePlayer" ? 1 : 2,
+                            };
 
-                                router.push({ pathname: nextPath, params });
-                            }
+                            router.push({ pathname: nextPath, params });
                         }}
                         style={[
                             styles.proceedButton,
