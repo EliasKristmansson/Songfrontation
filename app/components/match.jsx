@@ -166,10 +166,13 @@ export default function Match() {
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrack, setCurrentTrack] = useState(null);
+    const [playedTrackIds, setPlayedTrackIds] = useState(new Set());
     const [currentSongObj, setCurrentSongObj] = useState(null);
     const [songOptions, setSongOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [correctPressed, setCorrectPressed] = useState(false);
+    const [currentRoundGenre, setCurrentRoundGenre] = useState(null);
+
     // Last guess phase state
     const [lastGuessPhase, setLastGuessPhase] = useState(false);
     const [lastGuessUsed, setLastGuessUsed] = useState({ 1: false, 2: false });
@@ -229,6 +232,7 @@ export default function Match() {
 
     // Helper to reset round state
     const resetRound = () => {
+        setCurrentRoundGenre(null);
         setPlayer1Points(0);
         setPlayer2Points(0);
         setCorrectPressed(false);
@@ -318,117 +322,140 @@ export default function Match() {
     };
 
     // Core play logic
-    const handlePlayCore = async () => {
-        try {
-            setLoading(true);
-            setCorrectPressed(false);
-            setLastGuessPhase(false);
-            setLastGuessUsed({ 1: false, 2: false });
-            if (sound) {
-                await sound.unloadAsync();
-                setSound(null);
-            }
+// Core play logic with no repeats
+const handlePlayCore = async () => {
+    try {
+        setLoading(true);
+        setCorrectPressed(false);
+        setLastGuessPhase(false);
+        setLastGuessUsed({ 1: false, 2: false });
 
-            const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
-
-            const res = await fetch(
-            `https://itunes.apple.com/search?term=${encodeURIComponent(randomGenre.name)}&entity=song&limit=50&genreId=${randomGenre.id}`
-            );
-            
-            const data = await res.json();
-            if (!data.results || data.results.length === 0) {
-                Alert.alert("No Preview", "Could not find a track with a preview.");
-                setLoading(false);
-                return;
-            }
-
-            const tracksWithPreview = data.results.filter(t => t.previewUrl);
-            if (tracksWithPreview.length < 3) {
-                Alert.alert("Not enough previews", "Could not find enough tracks with previews.");
-                setLoading(false);
-                return;
-            }
-
-            const correctTrackIdx = Math.floor(Math.random() * tracksWithPreview.length);
-            const correctTrack = tracksWithPreview[correctTrackIdx];
-
-            const songObj = new Song({
-                songId: correctTrack.trackId,
-                songGenre: correctTrack.primaryGenreName,
-                songFile: correctTrack.previewUrl,
-                songTitle: correctTrack.trackName,
-                songArtist: correctTrack.artistName,
-                songDuration: 30,
-                songArtistAlternatives: [],
-            });
-            setCurrentSongObj(songObj);
-
-            let indices = [correctTrackIdx];
-            while (indices.length < 3) {
-                const idx = Math.floor(Math.random() * tracksWithPreview.length);
-                if (!indices.includes(idx)) indices.push(idx);
-            }
-            indices.sort(() => Math.random() - 0.5);
-
-            const options = indices.map(idx => ({
-                title: tracksWithPreview[idx].trackName,
-                artist: tracksWithPreview[idx].artistName,
-                previewUrl: tracksWithPreview[idx].previewUrl,
-                isCorrect: idx === correctTrackIdx,
-            }));
-
-            setSongOptions(options);
-            setCurrentTrack({
-                title: correctTrack.trackName,
-                artist: correctTrack.artistName,
-                previewUrl: correctTrack.previewUrl,
-            });
-
-            const { sound: newSound } = await Audio.Sound.createAsync(
-                { uri: correctTrack.previewUrl },
-                { shouldPlay: true }
-            );
-
-            setSound(newSound);
-            setIsPlaying(true);
-
-            setDividerTimer(matchSettings.songDuration);
-            if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
-            dividerTimerRef.current = setInterval(() => {
-                setDividerTimer(prev => {
-                    if (prev <= 1) {
-                        clearInterval(dividerTimerRef.current);
-                        // Timer ran out, enter last guess phase
-                        setIsPlaying(false);
-                        setLastGuessPhase(true);
-                        setLastGuessUsed({ 1: false, 2: false });
-                        if (newSound) {
-                            newSound.unloadAsync();
-                            setSound(null);
-                        }
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-
-            newSound.setOnPlaybackStatusUpdate(status => {
-                if (status.didJustFinish) {
-                    setIsPlaying(false);
-                    newSound.unloadAsync();
-                    setSound(null);
-                    if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
-                }
-            });
-
-            setLoading(false);
-        } catch (err) {
-            console.error("Error playing preview:", err);
-            Alert.alert("Error", "Failed to play preview");
-            setIsPlaying(false);
-            setLoading(false);
+        if (sound) {
+            await sound.unloadAsync();
+            setSound(null);
         }
-    };
+
+        // Step 1: pick genre if not yet set for this round
+        let genreToUse = currentRoundGenre;
+        if (!genreToUse) {
+            const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
+            genreToUse = randomGenre;
+            setCurrentRoundGenre(randomGenre); // lock it for this round
+        }
+
+        // Step 2: fetch tracks from iTunes with the same genre
+        const res = await fetch(
+            `https://itunes.apple.com/search?term=${encodeURIComponent(genreToUse.name)}&entity=song&limit=50&genreId=${genreToUse.id}`
+        );
+        const data = await res.json();
+
+        if (!data.results || data.results.length === 0) {
+            Alert.alert("No Preview", "Could not find a track with a preview.");
+            setLoading(false);
+            return;
+        }
+
+        // Step 3: filter out previously played tracks
+        let tracksWithPreview = data.results.filter(
+            t => t.previewUrl && !playedTrackIds.has(t.trackId)
+        );
+
+        if (tracksWithPreview.length < 3) {
+            Alert.alert(
+                "Not enough new previews",
+                "Could not find enough new tracks with previews."
+            );
+            setLoading(false);
+            return;
+        }
+
+        // Step 4: pick 3 unique tracks for this board
+        const optionsTracks = [];
+        while (optionsTracks.length < 3 && tracksWithPreview.length > 0) {
+            const idx = Math.floor(Math.random() * tracksWithPreview.length);
+            optionsTracks.push(tracksWithPreview[idx]);
+            tracksWithPreview.splice(idx, 1); // remove from pool
+        }
+
+        // Step 5: pick random correct track from options
+        const correctTrackIdx = Math.floor(Math.random() * optionsTracks.length);
+        const correctTrack = optionsTracks[correctTrackIdx];
+
+        // Step 6: mark all board tracks as played
+        setPlayedTrackIds(prev => {
+            const newSet = new Set(prev);
+            optionsTracks.forEach(t => newSet.add(t.trackId));
+            return newSet;
+        });
+
+        // Step 7: create Song object
+        const songObj = new Song({
+            songId: correctTrack.trackId,
+            songGenre: correctTrack.primaryGenreName,
+            songFile: correctTrack.previewUrl,
+            songTitle: correctTrack.trackName,
+            songArtist: correctTrack.artistName,
+            songDuration: 30,
+            songArtistAlternatives: [],
+        });
+        setCurrentSongObj(songObj);
+
+        // Step 8: map options for display
+        const options = optionsTracks.map((t, idx) => ({
+            title: t.trackName,
+            artist: t.artistName,
+            previewUrl: t.previewUrl,
+            isCorrect: idx === correctTrackIdx,
+        }));
+        setSongOptions(options);
+
+        // Step 9: play the correct track
+        const { sound: newSound } = await Audio.Sound.createAsync(
+            { uri: correctTrack.previewUrl },
+            { shouldPlay: true }
+        );
+
+        setSound(newSound);
+        setIsPlaying(true);
+
+        // Step 10: setup divider timer
+        setDividerTimer(matchSettings.songDuration);
+        if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+        dividerTimerRef.current = setInterval(() => {
+            setDividerTimer(prev => {
+                if (prev <= 1) {
+                    clearInterval(dividerTimerRef.current);
+                    setIsPlaying(false);
+                    setLastGuessPhase(true);
+                    setLastGuessUsed({ 1: false, 2: false });
+                    if (newSound) {
+                        newSound.unloadAsync();
+                        setSound(null);
+                    }
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        newSound.setOnPlaybackStatusUpdate(status => {
+            if (status.didJustFinish) {
+                setIsPlaying(false);
+                newSound.unloadAsync();
+                setSound(null);
+                if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+            }
+        });
+
+        setLoading(false);
+    } catch (err) {
+        console.error("Error playing preview:", err);
+        Alert.alert("Error", "Failed to play preview");
+        setIsPlaying(false);
+        setLoading(false);
+    }
+};
+
 
     useEffect(() => {
         let mounted = true;
