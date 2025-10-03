@@ -1,10 +1,14 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Dimensions, Modal, Platform, StyleSheet, Text, TouchableOpacity, View,
-} from "react-native";
+import { useState } from "react";
+import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const windowWidth = Dimensions.get("window").width;
 
+// Vad som görs beroende på om den är synlig och vilket alternativ som väljs
 export default function RematchModal({ visible, onRematch, onBackToMenu }) {
+    const [showRematchModal, setShowRematchModal] = useState(false);
+
+    // Innehållet i modalen
     const content = (
         <View style={styles.overlay}>
             <View style={styles.modalContent}>
@@ -27,18 +31,29 @@ export default function RematchModal({ visible, onRematch, onBackToMenu }) {
         </View>
     );
 
-    if (Platform.OS === "ios") {
-        if (!visible) return null;
-        return (
-            <View
-                pointerEvents={visible ? "auto" : "none"}
-                style={styles.absoluteContainer}
-            >
-                {content}
-            </View>
-        );
-    }
+    // Om rematch --> tillbaka till match med samma inställningar
+    const onRematch = () => {
+        setShowRematchModal(false);
+        router.replace({
+            pathname: "/components/match",
+            params: {
+                nrOfPlayers: matchSettings.nrOfPlayers,
+                genre: JSON.stringify(matchSettings.selectionOfGenre),
+                points: matchSettings.nrOfSongsToWinRound,
+                rounds: matchSettings.nrOfRoundsToWinMatch,
+                duration: matchSettings.songDuration,
+                guesses: matchSettings.nrOfGuessesOnBoard,
+            }
+        });
+    };
 
+    // Om tillbaka till meny --> gå till startsidan
+    const onBackToMenu = () => {
+        setShowRematchModal(false);
+        router.push("/");
+    };
+
+    // Returnerar modalen
     return (
         <Modal
             visible={visible}
