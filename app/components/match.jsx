@@ -1,16 +1,9 @@
 import { Audio } from "expo-av";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    Dimensions,
-    StyleSheet,
-    Text,
-    View
-} from "react-native";
+import { ActivityIndicator, Alert, Animated, Dimensions, StyleSheet, Text, View } from "react-native";
 import GuessBubble from "../components/guessBubble.jsx";
+import RematchModal from "../components/modals/rematch.jsx";
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
@@ -92,6 +85,10 @@ class MatchSettings {
 export default function Match() {
     const router = useRouter();
     const params = useLocalSearchParams();
+
+    // Tillagda för att rematch sa funka
+    const [showRematch, setShowRematch] = useState(false);
+    const [matchWinner, setMatchWinner] = useState(null);
 
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -190,10 +187,64 @@ export default function Match() {
         }
     };
 
-    const endMatch = (winner) => {
-        Alert.alert("Match Over", `Player ${winner} wins the match!`, [
-            { text: "OK", onPress: () => router.push("/") }
-        ]);
+    const stopAllActivity = async () => {
+        try {
+            if (dividerTimerRef.current) {
+                clearInterval(dividerTimerRef.current);
+                dividerTimerRef.current = null;
+            }
+            if (player1CooldownTimer.current) {
+                clearInterval(player1CooldownTimer.current);
+                player1CooldownTimer.current = null;
+            }
+            if (player2CooldownTimer.current) {
+                clearInterval(player2CooldownTimer.current);
+                player2CooldownTimer.current = null;
+            }
+            if (sound) {
+                await sound.unloadAsync();
+                setSound(null);
+            }
+            setIsPlaying(false);
+        } catch (e) {
+            console.log("stopAllActivity error:", e);
+        }
+    };
+
+    const endMatch = async (winner) => {
+        try {
+            await stopAllActivity();
+        } catch { }
+        setMatchWinner(winner);
+        setShowRematch(true);
+    };
+
+    const handleRematch = () => {
+        setPlayer1RoundsWon(0);
+        setPlayer2RoundsWon(0);
+        setPlayer1Points(0);
+        setPlayer2Points(0);
+        setPlayedTrackIds(new Set());
+        setRoundWinner(null);
+        setShowRematch(false);
+
+        setShowInitialCountdown(true);
+        let count = 3;
+        setInitialCountdown(count);
+        const countdown = setInterval(() => {
+            count -= 1;
+            setInitialCountdown(count);
+            if (count <= 0) {
+                clearInterval(countdown);
+                setShowInitialCountdown(false);
+                resetRound();
+                setTimeout(() => handlePlayCore({ force: true }), 120); // <— viktig ändring
+            }
+        }, 900);
+    };
+    const handleBackToMenu = () => {
+        setShowRematch(false);
+        router.push("/");
     };
 
     const nextRound = (winner) => {
@@ -219,13 +270,14 @@ export default function Match() {
     };
 
     // --- Core play logic ---
-    const handlePlayCore = async () => {
+    // Uppdaterad för rematch sak funka
+    const handlePlayCore = async (opts = {}) => {
+        if (showRematch && !opts.force) return;
         try {
             setLoading(true);
             setCorrectPressed(false);
             setLastGuessPhase(false);
             setLastGuessUsed({ 1: false, 2: false });
-
             if (sound) {
                 await sound.unloadAsync();
                 setSound(null);
@@ -638,9 +690,15 @@ export default function Match() {
                     <Text style={{ color: "#fff", marginTop: 10 }}>Loading song preview...</Text>
                 </View>
             )}
+
+            {/* Return Overlay */}
+            <RematchModal
+                visible={showRematch}
+                onRematch={handleRematch}
+                onBackToMenu={handleBackToMenu}
+            />
         </View>
     );
-
 }
 
 const styles = StyleSheet.create({
