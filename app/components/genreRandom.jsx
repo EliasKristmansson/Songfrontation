@@ -55,18 +55,22 @@ const styles = StyleSheet.create({
     genreWrapper: {
         flex: 1,
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start", // push content up
+        paddingTop: 80,              // adjust how high
         gap: 6,
     },
+
     genreLabel: {
         fontSize: 16,
         opacity: 0.7,
         color: "#fff",
+        fontFamily: "OutfitRegular",
     },
     genreText: {
         fontSize: 40,
         fontWeight: "800",
         color: "#fff",
         letterSpacing: 1,
+        fontFamily: "OutfitBold",
     },
 });
