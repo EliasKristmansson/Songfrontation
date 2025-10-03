@@ -182,12 +182,13 @@ export default function Main({ background, stars = [] }) {
                         <View style={styles.divider} />
                         <PlayerButton
                             label="2 Players"
-                            onPress={() =>
+                            onPress={() => {
                                 router.push({
                                     pathname: "../components/icon",
                                     params: { nrOfPlayers: 2 },
-                                })
-                            }
+                                });
+                                setDividerPos(0.5);
+                            }}
                         />
                     </LinearGradient>
                 </View>
