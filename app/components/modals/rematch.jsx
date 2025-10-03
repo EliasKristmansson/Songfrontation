@@ -3,6 +3,7 @@ import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from "rea
 
 const windowWidth = Dimensions.get("window").width;
 
+// Testaändirng
 export default function RematchModal({ visible, onRematch, onBackToMenu }) {
     // Innehållet i modalen
     const content = (
