@@ -219,141 +219,152 @@ export default function Match() {
     };
 
     // --- Core play logic ---
-const handlePlayCore = async () => {
-    try {
-        setLoading(true);
-        setCorrectPressed(false);
-        setLastGuessPhase(false);
-        setLastGuessUsed({ 1: false, 2: false });
+    const handlePlayCore = async () => {
+        try {
+            setLoading(true);
+            setCorrectPressed(false);
+            setLastGuessPhase(false);
+            setLastGuessUsed({ 1: false, 2: false });
 
-        if (sound) {
-            await sound.unloadAsync();
-            setSound(null);
-        }
-
-        // Pick genre if not yet set for this round
-        let genreToUse = currentRoundGenre;
-        if (!genreToUse) {
-            const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
-            genreToUse = randomGenre;
-            setCurrentRoundGenre(randomGenre);
-        }
-
-        // Fetch tracks from iTunes
-        const res = await fetch(
-            `https://itunes.apple.com/search?term=${encodeURIComponent(genreToUse.name)}&entity=song&limit=50&genreId=${genreToUse.id}`
-        );
-        const data = await res.json();
-
-        if (!data.results || data.results.length === 0) {
-            Alert.alert("No Preview", "Could not find a track with a preview.");
-            setLoading(false);
-            return;
-        }
-
-        // Filter out previously played tracks and tracks without preview
-        let tracksWithPreview = data.results.filter(
-            t => t.previewUrl && !playedTrackIds.has(t.trackId)
-        );
-
-        if (tracksWithPreview.length === 0) {
-            Alert.alert("No New Tracks", "No new tracks available for this genre.");
-            setLoading(false);
-            return;
-        }
-
-        // Pick up to 3 unique tracks (fill with repeats if < 3)
-        const optionsTracks = [];
-        while (optionsTracks.length < 3) {
-            if (tracksWithPreview.length === 0) break;
-            const idx = Math.floor(Math.random() * tracksWithPreview.length);
-            optionsTracks.push(tracksWithPreview[idx]);
-            tracksWithPreview.splice(idx, 1);
-        }
-
-        // If fewer than 3 tracks, fill with already played tracks
-        while (optionsTracks.length < 3) {
-            const fallback = data.results[Math.floor(Math.random() * data.results.length)];
-            if (fallback.previewUrl) optionsTracks.push(fallback);
-        }
-
-        // Pick random correct track
-        const correctTrackIdx = Math.floor(Math.random() * optionsTracks.length);
-        const correctTrack = optionsTracks[correctTrackIdx];
-
-        // Mark tracks as played
-        setPlayedTrackIds(prev => {
-            const newSet = new Set(prev);
-            optionsTracks.forEach(t => newSet.add(t.trackId));
-            return newSet;
-        });
-
-        // Create Song object
-        const songObj = new Song({
-            songId: correctTrack.trackId,
-            songGenre: correctTrack.primaryGenreName,
-            songFile: correctTrack.previewUrl,
-            songTitle: correctTrack.trackName,
-            songArtist: correctTrack.artistName,
-            songDuration: 30,
-            songArtistAlternatives: [],
-        });
-        setCurrentSongObj(songObj);
-
-        // Map options for display (always 3)
-        const options = optionsTracks.map((t, idx) => ({
-            title: t.trackName || "Unknown Title",
-            artist: t.artistName || "Unknown Artist",
-            previewUrl: t.previewUrl,
-            isCorrect: idx === correctTrackIdx,
-        }));
-        setSongOptions(options);
-
-        // Play the correct track
-        const { sound: newSound } = await Audio.Sound.createAsync(
-            { uri: correctTrack.previewUrl },
-            { shouldPlay: true }
-        );
-        setSound(newSound);
-        setIsPlaying(true);
-
-        // Divider timer
-        setDividerTimer(matchSettings.songDuration);
-        if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
-        dividerTimerRef.current = setInterval(() => {
-            setDividerTimer(prev => {
-                if (prev <= 1) {
-                    clearInterval(dividerTimerRef.current);
-                    setIsPlaying(false);
-                    setLastGuessPhase(true);
-                    setLastGuessUsed({ 1: false, 2: false });
-                    if (newSound) {
-                        newSound.unloadAsync();
-                        setSound(null);
-                    }
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        newSound.setOnPlaybackStatusUpdate(status => {
-            if (status.didJustFinish) {
-                setIsPlaying(false);
-                newSound.unloadAsync();
+            if (sound) {
+                await sound.unloadAsync();
                 setSound(null);
-                if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
             }
-        });
 
-        setLoading(false);
-    } catch (err) {
-        console.error("Error playing preview:", err);
-        Alert.alert("Error", "Failed to play preview");
-        setIsPlaying(false);
-        setLoading(false);
-    }
-};
+            // Pick genre if not yet set for this round
+            let genreToUse = currentRoundGenre;
+            if (!genreToUse) {
+                const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
+                genreToUse = randomGenre;
+                setCurrentRoundGenre(randomGenre);
+            }
+
+            // Fetch tracks from iTunes
+            const res = await fetch(
+                `https://itunes.apple.com/search?term=${encodeURIComponent(genreToUse.name)}&entity=song&limit=50&genreId=${genreToUse.id}`
+            );
+            const data = await res.json();
+
+            if (!data.results || data.results.length === 0) {
+                Alert.alert("No Preview", "Could not find a track with a preview.");
+                setLoading(false);
+                return;
+            }
+
+            // Filter out previously played tracks and tracks without preview
+            let tracksWithPreview = data.results.filter(
+                t => t.previewUrl && !playedTrackIds.has(t.trackId)
+            );
+
+            if (tracksWithPreview.length === 0) {
+                Alert.alert("No New Tracks", "No new tracks available for this genre.");
+                setLoading(false);
+                return;
+            }
+
+            // Pick up to 3 unique tracks (fill with repeats if < 3)
+            const optionsTracks = [];
+            while (optionsTracks.length < 3) {
+                if (tracksWithPreview.length === 0) break;
+                const idx = Math.floor(Math.random() * tracksWithPreview.length);
+                optionsTracks.push(tracksWithPreview[idx]);
+                tracksWithPreview.splice(idx, 1);
+            }
+
+            // If fewer than 3 tracks, fill with already played tracks
+            while (optionsTracks.length < 3) {
+                const fallback = data.results[Math.floor(Math.random() * data.results.length)];
+                if (fallback.previewUrl) optionsTracks.push(fallback);
+            }
+
+            // Pick random correct track
+            const correctTrackIdx = Math.floor(Math.random() * optionsTracks.length);
+            const correctTrack = optionsTracks[correctTrackIdx];
+
+            // Mark tracks as played
+            setPlayedTrackIds(prev => {
+                const newSet = new Set(prev);
+                optionsTracks.forEach(t => newSet.add(t.trackId));
+                return newSet;
+            });
+
+            // Create Song object
+            const songObj = new Song({
+                songId: correctTrack.trackId,
+                songGenre: correctTrack.primaryGenreName,
+                songFile: correctTrack.previewUrl,
+                songTitle: correctTrack.trackName,
+                songArtist: correctTrack.artistName,
+                songDuration: 30,
+                songArtistAlternatives: [],
+            });
+            setCurrentSongObj(songObj);
+
+            // Map options for display (always 3)
+            const options = optionsTracks.map((t, idx) => ({
+                title: t.trackName || "Unknown Title",
+                artist: t.artistName || "Unknown Artist",
+                previewUrl: t.previewUrl,
+                isCorrect: idx === correctTrackIdx,
+            }));
+            setSongOptions(options);
+
+            // Play the correct track
+            const { sound: newSound } = await Audio.Sound.createAsync(
+                { uri: correctTrack.previewUrl },
+                { shouldPlay: true }
+            );
+            setSound(newSound);
+            setIsPlaying(true);
+
+            // Divider timer
+            setDividerTimer(matchSettings.songDuration);
+            if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+            dividerTimerRef.current = setInterval(() => {
+                setDividerTimer(prev => {
+                    if (prev <= 1) {
+                        clearInterval(dividerTimerRef.current);
+                        setIsPlaying(false);
+                        setLastGuessPhase(true);
+                        setLastGuessUsed({ 1: false, 2: false });
+                        if (newSound) {
+                            newSound.unloadAsync();
+                            setSound(null);
+                        }
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            newSound.setOnPlaybackStatusUpdate(status => {
+                if (status.didJustFinish) {
+                    setIsPlaying(false);
+                    newSound.unloadAsync();
+                    setSound(null);
+                    if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+                }
+            });
+
+            setLoading(false);
+        } catch (err) {
+            console.error("Error playing preview:", err);
+            Alert.alert("Error", "Failed to play preview");
+            setIsPlaying(false);
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
+            if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
+            if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+            if (sound) {
+                sound.unloadAsync().catch(() => { });
+            }
+        };
+    }, []);
 
 
     // Initial countdown
@@ -391,7 +402,55 @@ const handlePlayCore = async () => {
         }, 300);
     };
 
+    // seconds to block after a wrong guess — tweak as you like
+    const WRONG_GUESS_COOLDOWN = 2;
+
+    const startCooldown = (playerNum) => {
+        if (playerNum === 1) {
+            // clear existing just in case
+            if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
+
+            setPlayer1Cooldown(true);
+            setPlayer1CooldownTime(WRONG_GUESS_COOLDOWN);
+
+            player1CooldownTimer.current = setInterval(() => {
+                setPlayer1CooldownTime(prev => {
+                    if (prev <= 1) {
+                        if (player1CooldownTimer.current) {
+                            clearInterval(player1CooldownTimer.current);
+                            player1CooldownTimer.current = null;
+                        }
+                        setPlayer1Cooldown(false);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } else {
+            if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
+
+            setPlayer2Cooldown(true);
+            setPlayer2CooldownTime(WRONG_GUESS_COOLDOWN);
+
+            player2CooldownTimer.current = setInterval(() => {
+                setPlayer2CooldownTime(prev => {
+                    if (prev <= 1) {
+                        if (player2CooldownTimer.current) {
+                            clearInterval(player2CooldownTimer.current);
+                            player2CooldownTimer.current = null;
+                        }
+                        setPlayer2Cooldown(false);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+    };
+
+
     const handleGuess = async (isCorrect, playerNum, idx) => {
+        // --- Last-guess-phase handling (unchanged) ---
         if (lastGuessPhase) {
             if (lastGuessUsed[playerNum]) return;
             setLastGuessUsed(prev => ({ ...prev, [playerNum]: true }));
@@ -407,6 +466,13 @@ const handlePlayCore = async () => {
             return;
         }
 
+        // --- Respect active cooldown (only in normal play) ---
+        if ((playerNum === 1 && player1Cooldown) || (playerNum === 2 && player2Cooldown)) {
+            // you can provide feedback here (e.g. small vibration or toast)
+            return;
+        }
+
+        // --- Normal (non-last-guess) flow ---
         if (isCorrect) {
             setCorrectPressed(true);
             if (sound) {
@@ -430,10 +496,12 @@ const handlePlayCore = async () => {
 
             triggerGreenGlow(playerNum, idx);
         } else {
-            // TODO: implement cooldown for incorrect guess
+            // wrong guess -> glow + start cooldown
             triggerRedGlow(playerNum, idx);
+            startCooldown(playerNum);
         }
     };
+
 
     // --- Render helpers ---
     const PointsRow = ({ points }) => (
@@ -452,125 +520,126 @@ const handlePlayCore = async () => {
         </View>
     );
 
-return (
-    <View style={{ flex: 1 }}>
-        {/* Countdown overlay */}
-        {showInitialCountdown && (
-            <View style={styles.countdownOverlay} pointerEvents="none">
-                <View style={styles.countdownBubble}>
-                    <Text style={styles.countdownText}>
-                        {initialCountdown > 0 ? initialCountdown : "Go!"}
-                    </Text>
-                </View>
-            </View>
-        )}
-
-        {/* Player 1 Cooldown Overlay */}
-        {player1Cooldown && (
-            <View style={[styles.cooldownOverlay, styles.cooldownOverlayLeft]} pointerEvents="none">
-                <View style={styles.cooldownBubble}>
-                    <Text style={styles.cooldownTextBig}>{player1CooldownTime}</Text>
-                </View>
-            </View>
-        )}
-
-        {/* Player 2 Cooldown Overlay */}
-        {player2Cooldown && !isSinglePlayer && (
-            <View style={[styles.cooldownOverlay, styles.cooldownOverlayRight]} pointerEvents="none">
-                <View style={styles.cooldownBubble}>
-                    <Text style={styles.cooldownTextBig}>{player2CooldownTime}</Text>
-                </View>
-            </View>
-        )}
-
-        {/* Header */}
-        <View style={styles.headerRow}>
-            <View style={styles.sideRow}>
-                <PointsRow points={player1Points} />
-                <RoundsRow won={player1RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
-                <View style={styles.largeIconCircle}>
-                    <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
-                </View>
-            </View>
-
-            <View style={styles.dividerContainer}>
-                <View style={styles.dividerBlock}>
-                    <Text style={styles.dividerTimerText}>{dividerTimer}s</Text>
-                    <View style={[styles.dividerBar, { width: `${(dividerTimer / matchSettings.songDuration) * 100}%` }]} />
-                </View>
-            </View>
-
-            {!isSinglePlayer && (
-                <View style={styles.sideRow}>
-                    <View style={styles.largeIconCircle}>
-                        <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
+    return (
+        <View style={{ flex: 1 }}>
+            {/* Countdown overlay */}
+            {showInitialCountdown && (
+                <View style={styles.countdownOverlay} pointerEvents="none">
+                    <View style={styles.countdownBubble}>
+                        <Text style={styles.countdownText}>
+                            {initialCountdown > 0 ? initialCountdown : "Go!"}
+                        </Text>
                     </View>
-                    <PointsRow points={player2Points} />
-                    <RoundsRow won={player2RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP2} />
                 </View>
             )}
-        </View>
 
-        {/* Last Guess Phase Overlay */}
-        {lastGuessPhase && (
-            <View style={styles.lastGuessOverlay} pointerEvents="none">
-                <Text style={styles.lastGuessText}>Time's up</Text>
-                <Text style={styles.lastGuessText2}>Last Guess!</Text>
+            {/* Player 1 Cooldown Overlay */}
+            {player1Cooldown && (
+                <View style={[styles.cooldownOverlay, styles.cooldownOverlayLeft]} pointerEvents="auto">
+                    <View style={styles.cooldownBubble}>
+                        <Text style={styles.cooldownTextBig}>{player1CooldownTime}</Text>
+                    </View>
+                </View>
+            )}
+
+            {/* Player 2 Cooldown Overlay */}
+            {player2Cooldown && !isSinglePlayer && (
+                <View style={[styles.cooldownOverlay, styles.cooldownOverlayRight]} pointerEvents="auto">
+                    <View style={styles.cooldownBubble}>
+                        <Text style={styles.cooldownTextBig}>{player2CooldownTime}</Text>
+                    </View>
+                </View>
+            )}
+
+
+            {/* Header */}
+            <View style={styles.headerRow}>
+                <View style={styles.sideRow}>
+                    <PointsRow points={player1Points} />
+                    <RoundsRow won={player1RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
+                    <View style={styles.largeIconCircle}>
+                        <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
+                    </View>
+                </View>
+
+                <View style={styles.dividerContainer}>
+                    <View style={styles.dividerBlock}>
+                        <Text style={styles.dividerTimerText}>{dividerTimer}s</Text>
+                        <View style={[styles.dividerBar, { width: `${(dividerTimer / matchSettings.songDuration) * 100}%` }]} />
+                    </View>
+                </View>
+
+                {!isSinglePlayer && (
+                    <View style={styles.sideRow}>
+                        <View style={styles.largeIconCircle}>
+                            <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
+                        </View>
+                        <PointsRow points={player2Points} />
+                        <RoundsRow won={player2RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP2} />
+                    </View>
+                )}
             </View>
-        )}
 
-        {/* Song Options */}
-        <View style={styles.playArea}>
-            <View style={styles.sideColumn}>
-                {songOptions.filter(Boolean).map((option, idx) => (
-                    <GuessBubble
-                        key={`p1-${idx}`}
-                        option={option}
-                        onPress={() => handleGuess(option.isCorrect, 1, idx)}
-                        animatedIndex={idx}
-                        positionStyle={LEFT_BUBBLE_POSITIONS[idx] || {}}
-                        glowColor={
-                            correctGlowIndices[1]?.includes(idx)
-                                ? "green"
-                                : wrongGlowIndices[1]?.includes(idx)
-                                ? "red"
-                                : null
-                        }
-                    />
-                ))}
-            </View>
+            {/* Last Guess Phase Overlay */}
+            {lastGuessPhase && (
+                <View style={styles.lastGuessOverlay} pointerEvents="none">
+                    <Text style={styles.lastGuessText}>Time's up</Text>
+                    <Text style={styles.lastGuessText2}>Last Guess!</Text>
+                </View>
+            )}
 
-            {!isSinglePlayer && (
+            {/* Song Options */}
+            <View style={styles.playArea}>
                 <View style={styles.sideColumn}>
                     {songOptions.filter(Boolean).map((option, idx) => (
                         <GuessBubble
-                            key={`p2-${idx}`}
+                            key={`p1-${idx}`}
                             option={option}
-                            onPress={() => handleGuess(option.isCorrect, 2, idx)}
+                            onPress={() => handleGuess(option.isCorrect, 1, idx)}
                             animatedIndex={idx}
-                            positionStyle={RIGHT_BUBBLE_POSITIONS[idx] || {}}
+                            positionStyle={LEFT_BUBBLE_POSITIONS[idx] || {}}
                             glowColor={
-                                correctGlowIndices[2]?.includes(idx)
+                                correctGlowIndices[1]?.includes(idx)
                                     ? "green"
-                                    : wrongGlowIndices[2]?.includes(idx)
-                                    ? "red"
-                                    : null
+                                    : wrongGlowIndices[1]?.includes(idx)
+                                        ? "red"
+                                        : null
                             }
                         />
                     ))}
                 </View>
+
+                {!isSinglePlayer && (
+                    <View style={styles.sideColumn}>
+                        {songOptions.filter(Boolean).map((option, idx) => (
+                            <GuessBubble
+                                key={`p2-${idx}`}
+                                option={option}
+                                onPress={() => handleGuess(option.isCorrect, 2, idx)}
+                                animatedIndex={idx}
+                                positionStyle={RIGHT_BUBBLE_POSITIONS[idx] || {}}
+                                glowColor={
+                                    correctGlowIndices[2]?.includes(idx)
+                                        ? "green"
+                                        : wrongGlowIndices[2]?.includes(idx)
+                                            ? "red"
+                                            : null
+                                }
+                            />
+                        ))}
+                    </View>
+                )}
+            </View>
+
+            {/* Loading Overlay */}
+            {loading && (
+                <View style={styles.loaderOverlay}>
+                    <ActivityIndicator size="large" color="#5C66C5" />
+                    <Text style={{ color: "#fff", marginTop: 10 }}>Loading song preview...</Text>
+                </View>
             )}
         </View>
-
-        {/* Loading Overlay */}
-        {loading && (
-            <View style={styles.loaderOverlay}>
-                <ActivityIndicator size="large" color="#5C66C5" />
-                <Text style={{ color: "#fff", marginTop: 10 }}>Loading song preview...</Text>
-            </View>
-        )}
-    </View>
-);
+    );
 
 }
 
