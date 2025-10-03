@@ -73,7 +73,7 @@ export default function Main({ background, stars = [] }) {
 
     // Default settings for Quick Match
     const defaultQuickMatch = {
-        rounds: 3,
+        rounds: 1,
         duration: 29,
         guesses: 3,
         points: 3,
