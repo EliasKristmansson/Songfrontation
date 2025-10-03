@@ -564,7 +564,7 @@ export default function Match() {
 
                 <View style={styles.dividerContainer}>
                     <View style={styles.dividerBlock}>
-                        <Text style={styles.dividerTimerText}>{dividerTimer}s</Text>
+                        <Text style={styles.dividerTimerText}>{dividerTimer}</Text>
                         <View style={[styles.dividerBar, { width: `${(dividerTimer / matchSettings.songDuration) * 100}%` }]} />
                     </View>
                 </View>
@@ -782,6 +782,16 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 36,
         fontFamily: "OutfitBold",
+    },
+    lastGuessOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1100,
     },
     countdownOverlay: {
         position: "absolute",
