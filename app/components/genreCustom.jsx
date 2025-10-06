@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ITUNES_GENRES } from "./match"; // Official genres with IDs
 import PreGameMenuHeader from "./preGameMenuHeader";
@@ -11,28 +11,15 @@ export default function GenreCustom() {
     const router = useRouter();
     const { rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
 
-    const [selected, setSelected] = useState(new Set());
-    const selectedList = useMemo(() => Array.from(selected), [selected]);
-
-    // Max 3 selections
-    const toggleGenre = (g) => {
-        setSelected((prev) => {
-            const next = new Set(prev);
-            if (next.has(g)) {
-                next.delete(g);
-            } else {
-                if (next.size >= 3) return prev;
-                next.add(g);
-            }
-            return next;
-        });
-    };
+    const [selectedGenre, setSelectedGenre] = useState(null);
 
     const onStartMatch = () => {
+        if (!selectedGenre) return;
         router.push({
             pathname: "../components/match",
             params: {
-                genres: JSON.stringify(selectedList),
+                genreId: selectedGenre.id,
+                genreName: selectedGenre.name,
                 rounds: String(asStr(rounds)),
                 duration: String(asStr(duration)),
                 guesses: String(asStr(guesses)),
@@ -48,28 +35,24 @@ export default function GenreCustom() {
                 title="Selection of Genre"
                 onBack={() => router.push("../components/matchSettings")}
                 onProceed={onStartMatch}
-                canProceed={selected.size > 0}
+                canProceed={!!selectedGenre}
                 proceedLabel="Start"
             />
 
             <View style={styles.content}>
                 <Text style={styles.subHeader}>
-                    {selected.size > 0
-                        ? `Selected (${selected.size}/3): ${selectedList.map(g => g.name.split(" > ").pop()).join(", ")}`
-                        : "Choose up to 3"}
+                    {selectedGenre ? `Selected: ${selectedGenre.name.split(" > ").pop()}` : "Choose one genre"}
                 </Text>
 
                 <ScrollView contentContainerStyle={styles.iconList}>
                     {ITUNES_GENRES.map((g) => {
-                        const isSelected = selected.has(g);
-                        const isDisabled = !isSelected && selected.size >= 3;
+                        const isSelected = selectedGenre?.id === g.id;
                         return (
                             <TouchableOpacity
                                 key={g.id}
-                                onPress={() => toggleGenre(g)}
-                                style={[styles.iconWrapper, isDisabled && styles.disabledWrapper]}
+                                onPress={() => setSelectedGenre(g)}
+                                style={styles.iconWrapper}
                                 activeOpacity={0.85}
-                                disabled={isDisabled}
                             >
                                 <View style={[styles.icon, isSelected && styles.selectedIcon]}>
                                     <Text style={styles.iconText}>{g.name.split(" > ").pop()}</Text>

@@ -90,6 +90,10 @@ export default function Match() {
     const [showRematch, setShowRematch] = useState(false);
     const [matchWinner, setMatchWinner] = useState(null);
 
+    const genreId = params.genreId ? parseInt(params.genreId) : null;
+    const genreName = params.genreName || "Unknown";
+
+
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentSongObj, setCurrentSongObj] = useState(null);
@@ -283,30 +287,73 @@ export default function Match() {
                 setSound(null);
             }
 
-            // Pick genre if not yet set for this round
-            let genreToUse = currentRoundGenre;
-            if (!genreToUse) {
+            // Determine genre to use
+            let expectedGenreId = genreId;
+            let expectedGenreName = genreName;
+
+            if (!expectedGenreId) {
                 const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
-                genreToUse = randomGenre;
+                expectedGenreId = randomGenre.id;
+                expectedGenreName = randomGenre.name;
                 setCurrentRoundGenre(randomGenre);
             }
 
-            // Fetch tracks from iTunes
-            const res = await fetch(
-                `https://itunes.apple.com/search?term=${encodeURIComponent(genreToUse.name)}&entity=song&limit=50&genreId=${genreToUse.id}`
-            );
-            const data = await res.json();
+            // ✅ Console check
+            console.log("Searching for genre:", expectedGenreName, "with genreId:", expectedGenreId);
 
-            if (!data.results || data.results.length === 0) {
+
+
+            if (!genreId) {
+                Alert.alert("Error", "No genre selected!");
+                setLoading(false);
+                return;
+            }
+
+            const randomLetter = String.fromCharCode(97 + Math.floor(Math.random() * 26)); // a-z
+
+            const res = await fetch(
+                `https://itunes.apple.com/search?term=${randomLetter}&media=music&entity=song&genreId=${genreId}&limit=200`
+            );
+
+            // ✅ Only parse JSON ONCE — never call res.json() again afterward!
+            let responseData;
+            try {
+                responseData = await res.json();
+            } catch (e) {
+                console.error("Failed to parse JSON:", e);
+                Alert.alert("API Error", "Could not fetch data from iTunes.");
+                setLoading(false);
+                return;
+            }
+
+            if (!responseData || !responseData.results || responseData.results.length === 0) {
                 Alert.alert("No Preview", "Could not find a track with a preview.");
                 setLoading(false);
                 return;
             }
 
-            // Filter out previously played tracks and tracks without preview
-            let tracksWithPreview = data.results.filter(
-                t => t.previewUrl && !playedTrackIds.has(t.trackId)
+
+
+
+            // ✅ We already have responseData — use it!
+            const results = responseData.results;
+
+            let tracksWithPreview = responseData.results.filter(
+            t =>
+                t.previewUrl &&
+                !playedTrackIds.has(t.trackId) &&
+                t.primaryGenreName?.toLowerCase().includes(expectedGenreName.split('>')[1].trim().toLowerCase())
             );
+
+
+
+
+            console.log(
+            "Filtered tracks:",
+            tracksWithPreview.map(t => ({ name: t.trackName, genre: t.primaryGenreName }))
+            );
+
+
 
             if (tracksWithPreview.length === 0) {
                 Alert.alert("No New Tracks", "No new tracks available for this genre.");
@@ -325,9 +372,10 @@ export default function Match() {
 
             // If fewer than 3 tracks, fill with already played tracks
             while (optionsTracks.length < 3) {
-                const fallback = data.results[Math.floor(Math.random() * data.results.length)];
+                const fallback = responseData.results[Math.floor(Math.random() * responseData.results.length)];
                 if (fallback.previewUrl) optionsTracks.push(fallback);
             }
+
 
             // Pick random correct track
             const correctTrackIdx = Math.floor(Math.random() * optionsTracks.length);

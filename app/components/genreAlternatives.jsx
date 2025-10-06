@@ -30,14 +30,14 @@ export default function GenreAlternatives() {
                     router.push({
                         pathname: "../components/match",
                         params: {
-                            // Send selected genre (id & name)
-                            genre: selectedGenre ? JSON.stringify(selectedGenre) : JSON.stringify(randomGenres[0]),
+                            genreId: selectedGenre.id,
+                            genreName: selectedGenre.name,
                             rounds: String(asStr(rounds) ?? ""),
                             duration: String(asStr(duration) ?? ""),
                             guesses: String(asStr(guesses) ?? ""),
                             points: String(asStr(points) ?? ""),
                             nrOfPlayers,
-                        },
+                        }
                     });
                 }}
                 canProceed={!!selectedGenre}
