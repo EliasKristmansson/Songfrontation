@@ -136,7 +136,7 @@ export default function Main({ background, stars = [] }) {
                             onPress={() =>
                                 router.push({
                                     pathname: "../components/genreRandom",
-                                    params: { ...defaultQuickMatch, nrOfPlayers: 1 },
+                                    params: { ...defaultQuickMatch, nrOfPlayers: 1, from: "main" },
                                 })
                             }
                         />
@@ -146,7 +146,7 @@ export default function Main({ background, stars = [] }) {
                             onPress={() =>
                                 router.push({
                                     pathname: "../components/genreRandom",
-                                    params: { ...defaultQuickMatch, nrOfPlayers: 2 },
+                                    params: { ...defaultQuickMatch, nrOfPlayers: 2, from: "main" },
                                 })
                             }
                         />

@@ -11,7 +11,7 @@ function getRandomGenre(list) {
 
 export default function GenreRandom() {
     const router = useRouter();
-    const { rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
+    const { rounds, duration, guesses, points, nrOfPlayers, from } = useLocalSearchParams();
 
     // Generate genre once
     const randomGenre = useMemo(() => getRandomGenre(ITUNES_GENRES), []);
@@ -20,7 +20,10 @@ export default function GenreRandom() {
         <View style={styles.container}>
             <PreGameMenuHeader
                 title="Selection of Genre"
-                onBack={() => router.push("../components/matchSettings")}
+                onBack={() => {
+                    if (from === "main") router.push("../components/main");
+                    else router.push("../components/matchSettings");
+                }}
                 onProceed={() => {
                     router.push({
                         pathname: "../components/match",
