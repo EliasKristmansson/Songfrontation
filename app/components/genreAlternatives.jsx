@@ -1,23 +1,21 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ITUNES_GENRES } from "./match"; // import official genres
+import { ITUNES_GENRES } from "./match";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
-// Helper to pick random genres
 function getRandomGenres(list, n) {
     const shuffled = [...list].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, n);
 }
 
-// Helper for string params
 const asStr = (v) => (Array.isArray(v) ? v[0] : v ?? "");
 
 export default function GenreAlternatives() {
     const router = useRouter();
     const { rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
 
-    // Pick 3 random genres from official list
     const randomGenres = useMemo(() => getRandomGenres(ITUNES_GENRES, 3), []);
     const [selectedGenre, setSelectedGenre] = useState(null);
 
@@ -46,19 +44,29 @@ export default function GenreAlternatives() {
 
             <View style={styles.centerArea}>
                 <View style={styles.genreButtonRow}>
-                    {randomGenres.map((genreObj) => (
-                        <TouchableOpacity
-                            key={genreObj.id}
-                            style={[
-                                styles.genreButton,
-                                selectedGenre === genreObj && styles.genreButtonSelected,
-                            ]}
-                            onPress={() => setSelectedGenre(genreObj)}
-                            activeOpacity={0.85}
-                        >
-                            <Text style={styles.genreText}>{genreObj.name.split(" > ").pop()}</Text>
-                        </TouchableOpacity>
-                    ))}
+                    {randomGenres.map((genreObj) => {
+                        const isSelected = selectedGenre === genreObj;
+                        return (
+                            <TouchableOpacity
+                                key={genreObj.id}
+                                style={styles.genreButtonWrapper}
+                                onPress={() => setSelectedGenre(genreObj)}
+                                activeOpacity={0.85}
+                            >
+                                <LinearGradient
+                                    colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={[
+                                        styles.genreButton,
+                                        isSelected && styles.genreButtonSelected,
+                                    ]}
+                                >
+                                    <Text style={styles.genreText}>{genreObj.name.split(" > ").pop()}</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
             </View>
         </View>
@@ -82,21 +90,31 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         gap: 20,
     },
-    genreButton: {
+    genreButtonWrapper: {
         width: 110,
         height: 110,
         borderRadius: 55,
-        backgroundColor: "#6466bc",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    genreButton: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 55,
         borderWidth: 2,
         borderColor: "transparent",
         alignItems: "center",
         justifyContent: "center",
+        shadowColor: "#412F7E",
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 6,
     },
     genreButtonSelected: {
         borderColor: "#fff",
-        shadowColor: "#8e7cc3",
+        shadowColor: "#896DA3",
         shadowOpacity: 0.5,
-        shadowRadius: 8,
+        shadowRadius: 12,
         elevation: 10,
     },
     genreText: {

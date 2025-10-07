@@ -1,26 +1,23 @@
 import Slider from "@react-native-community/slider";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import {
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
 export default function MatchSettings() {
     const router = useRouter();
     const { from } = useLocalSearchParams();
 
-    // Defaults aligned with Quick Match
     const [genre, setGenre] = useState("Random");
     const [rounds, setRounds] = useState(3);
     const [duration, setDuration] = useState(29);
     const [guesses, setGuesses] = useState(3);
     const [points, setPoints] = useState(3);
+
+    // Scroller
+    const [scrollPos, setScrollPos] = useState(0);
+    const [scrollContentHeight, setScrollContentHeight] = useState(1);
+    const [scrollViewHeight, setScrollViewHeight] = useState(1);
 
     const getSelectedMatchMode = () => {
         if (genre === "Random") return "../components/genreRandom";
@@ -29,181 +26,197 @@ export default function MatchSettings() {
         return null;
     };
 
+    const canProceed = !!getSelectedMatchMode();
+    const handleNext = () => {
+        const nextPath = getSelectedMatchMode();
+        if (!nextPath) return;
+
+        const params = {
+            genre,
+            rounds: String(rounds),
+            duration: String(duration),
+            guesses: String(guesses),
+            points: String(points),
+            nrOfPlayers: from === "iconSinglePlayer" ? 1 : 2,
+        };
+
+        router.push({ pathname: nextPath, params });
+    };
+
+    // Scroller-kod
+    const thumbHeight = Math.max(
+        (scrollViewHeight / scrollContentHeight) * scrollViewHeight,
+        30
+    );
+    const maxThumbTop = scrollViewHeight - thumbHeight;
+    const thumbTop = Math.min(
+        (scrollPos / (scrollContentHeight - scrollViewHeight)) * maxThumbTop || 0,
+        maxThumbTop
+    );
+
     return (
         <View style={styles.container}>
             <PreGameMenuHeader
                 title="Match Settings"
-                onBack={() => {
-                    if (from === "iconSinglePlayer") {
-                        router.push("../components/iconSinglePlayer");
-                    } else {
-                        router.push("../components/icon");
-                    }
-                }}
-                proceedLabel={null}
+                proceedLabel="Next"
+                onProceed={canProceed ? handleNext : undefined}
+                proceedDisabled={!canProceed}
             />
 
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.cardsColumn}>
-                    {/* Genre Selection */}
-                    <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Selection of Genre</Text>
-                        <View style={styles.optionsRow}>
-                            {["Random", "Alternatives", "Custom"].map((option) => (
-                                <TouchableOpacity
-                                    key={option}
-                                    style={[
-                                        styles.optionButton,
-                                        genre === option && styles.optionButtonSelected,
-                                    ]}
-                                    onPress={() => setGenre(option)}
-                                >
-                                    <Text
-                                        style={
-                                            genre === option
-                                                ? styles.optionTextSelected
-                                                : styles.optionText
-                                        }
+            <View style={{ flex: 1 }}>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    onScroll={e => setScrollPos(e.nativeEvent.contentOffset.y)}
+                    onContentSizeChange={(_, h) => setScrollContentHeight(h)}
+                    onLayout={e => setScrollViewHeight(e.nativeEvent.layout.height)}
+                    scrollEventThrottle={16}
+                >
+                    <View style={styles.cardsColumn}>
+                        {/* Genre Selection */}
+                        <View style={styles.card}>
+                            <Text style={styles.cardLabel}>Selection of Genre</Text>
+                            <View style={styles.optionsRow}>
+                                {["Random", "Alternatives", "Custom"].map((option) => (
+                                    <TouchableOpacity
+                                        key={option}
+                                        style={[
+                                            styles.optionButton,
+                                            genre === option && styles.optionButtonSelected,
+                                        ]}
+                                        onPress={() => setGenre(option)}
                                     >
-                                        {option}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={
+                                                genre === option
+                                                    ? styles.optionTextSelected
+                                                    : styles.optionText
+                                            }
+                                        >
+                                            {option}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    </View>
 
-                    {/* Number of Rounds */}
-                    <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Number of Rounds</Text>
-                        <View style={styles.optionsRow}>
-                            {[1, 2, 3].map((option) => (
-                                <TouchableOpacity
-                                    key={option}
-                                    style={[
-                                        styles.optionButton,
-                                        rounds === option && styles.optionButtonSelected,
-                                    ]}
-                                    onPress={() => setRounds(option)}
-                                >
-                                    <Text
-                                        style={
-                                            rounds === option
-                                                ? styles.optionTextSelected
-                                                : styles.optionText
-                                        }
+                        {/* Number of Rounds */}
+                        <View style={styles.card}>
+                            <Text style={styles.cardLabel}>Number of Rounds</Text>
+                            <View style={styles.optionsRow}>
+                                {[1, 2, 3].map((option) => (
+                                    <TouchableOpacity
+                                        key={option}
+                                        style={[
+                                            styles.optionButton,
+                                            rounds === option && styles.optionButtonSelected,
+                                        ]}
+                                        onPress={() => setRounds(option)}
                                     >
-                                        {option}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={
+                                                rounds === option
+                                                    ? styles.optionTextSelected
+                                                    : styles.optionText
+                                            }
+                                        >
+                                            {option}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    </View>
 
-                    {/* Round Duration */}
-                    <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Round Duration</Text>
-                        <View style={styles.sliderRow}>
-                            <Text style={styles.sliderLabel}>5s</Text>
-                            <Slider
-                                style={styles.slider}
-                                minimumValue={5}
-                                maximumValue={29}
-                                step={1}
-                                value={duration}
-                                onValueChange={setDuration}
-                                minimumTrackTintColor="#fff"
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
-                                thumbTintColor="white"
-                            />
-                            <Text style={styles.sliderLabel}>29s</Text>
+                        {/* Round Duration */}
+                        <View style={styles.card}>
+                            <Text style={styles.cardLabel}>Round Duration</Text>
+                            <View style={styles.sliderRow}>
+                                <Text style={styles.sliderLabel}>5s</Text>
+                                <Slider
+                                    style={styles.slider}
+                                    minimumValue={5}
+                                    maximumValue={29}
+                                    step={1}
+                                    value={duration}
+                                    onValueChange={setDuration}
+                                    minimumTrackTintColor="#fff"
+                                    maximumTrackTintColor="rgba(255,255,255,0.3)"
+                                    thumbTintColor="white"
+                                />
+                                <Text style={styles.sliderLabel}>29s</Text>
+                            </View>
+                            <Text style={styles.sliderInfo}>{duration} seconds</Text>
                         </View>
-                        <Text style={styles.sliderInfo}>{duration} seconds</Text>
-                    </View>
 
-                    {/* Guesses on Board */}
-                    <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Guesses on Board</Text>
-                        <View style={styles.optionsRow}>
-                            {[2, 3, 4].map((option) => (
-                                <TouchableOpacity
-                                    key={option}
-                                    style={[
-                                        styles.optionButton,
-                                        guesses === option && styles.optionButtonSelected,
-                                    ]}
-                                    onPress={() => setGuesses(option)}
-                                >
-                                    <Text
-                                        style={
-                                            guesses === option
-                                                ? styles.optionTextSelected
-                                                : styles.optionText
-                                        }
+                        {/* Guesses on Board */}
+                        <View style={styles.card}>
+                            <Text style={styles.cardLabel}>Guesses on Board</Text>
+                            <View style={styles.optionsRow}>
+                                {[2, 3, 4].map((option) => (
+                                    <TouchableOpacity
+                                        key={option}
+                                        style={[
+                                            styles.optionButton,
+                                            guesses === option && styles.optionButtonSelected,
+                                        ]}
+                                        onPress={() => setGuesses(option)}
                                     >
-                                        {option}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={
+                                                guesses === option
+                                                    ? styles.optionTextSelected
+                                                    : styles.optionText
+                                            }
+                                        >
+                                            {option}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    </View>
 
-                    {/* Points to Win Round */}
-                    <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Points to Win Round</Text>
-                        <View style={styles.optionsRow}>
-                            {[1, 3, 5].map((option) => (
-                                <TouchableOpacity
-                                    key={option}
-                                    style={[
-                                        styles.optionButton,
-                                        points === option && styles.optionButtonSelected,
-                                    ]}
-                                    onPress={() => setPoints(option)}
-                                >
-                                    <Text
-                                        style={
-                                            points === option
-                                                ? styles.optionTextSelected
-                                                : styles.optionText
-                                        }
+                        {/* Points to Win Round */}
+                        <View style={styles.card}>
+                            <Text style={styles.cardLabel}>Points to Win Round</Text>
+                            <View style={styles.optionsRow}>
+                                {[1, 3, 5].map((option) => (
+                                    <TouchableOpacity
+                                        key={option}
+                                        style={[
+                                            styles.optionButton,
+                                            points === option && styles.optionButtonSelected,
+                                        ]}
+                                        onPress={() => setPoints(option)}
                                     >
-                                        {option}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={
+                                                points === option
+                                                    ? styles.optionTextSelected
+                                                    : styles.optionText
+                                            }
+                                        >
+                                            {option}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
                     </View>
+                </ScrollView>
 
-                    {/* Proceed Button */}
-                    <TouchableOpacity
-                        disabled={!getSelectedMatchMode()}
-                        onPress={() => {
-                            const nextPath = getSelectedMatchMode();
-                            if (!nextPath) return;
-
-                            const params = {
-                                genre,
-                                rounds: String(rounds),
-                                duration: String(duration),
-                                guesses: String(guesses),
-                                points: String(points),
-                                nrOfPlayers: from === "iconSinglePlayer" ? 1 : 2,
-                            };
-
-                            router.push({ pathname: nextPath, params });
-                        }}
+                {/* Scrollbar som syns hela tiden */}
+                <View style={styles.scrollbarTrack}>
+                    <View
                         style={[
-                            styles.proceedButton,
-                            !getSelectedMatchMode() && styles.proceedButtonDisabled,
+                            styles.scrollbarThumb,
+                            {
+                                height: thumbHeight,
+                                top: thumbTop,
+                            },
                         ]}
-                    >
-                        <Text style={styles.proceedText}>Next →</Text>
-                    </TouchableOpacity>
+                    />
                 </View>
-            </ScrollView>
+            </View>
         </View>
     );
 }
@@ -217,17 +230,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 16,
         paddingBottom: 40,
-    },
-    backButton: {
-        position: "absolute",
-        top: 20,
-        left: 20,
-        zIndex: 10,
-        padding: 8,
-    },
-    backArrow: {
-        color: "white",
-        fontSize: 28,
     },
     cardsColumn: {
         width: "100%",
@@ -302,19 +304,20 @@ const styles = StyleSheet.create({
         color: "white",
         marginTop: 6,
     },
-    proceedButton: {
-        marginTop: 20,
-        backgroundColor: "white",
-        paddingVertical: 12,
-        paddingHorizontal: 28,
-        borderRadius: 25,
+    scrollbarTrack: {
+        position: "absolute",
+        right: 6,
+        top: 0,
+        bottom: 0,
+        width: 5,
+        borderRadius: 5 / 2,
     },
-    proceedButtonDisabled: {
-        opacity: 0.4,
-    },
-    proceedText: {
-        color: "#000",
-        fontFamily: "OutfitBold",
-        fontSize: 16,
+    scrollbarThumb: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        borderRadius: 5 / 2,
+        backgroundColor: "rgba(0,0,0,0.35)",
+        opacity: 0.7,
     },
 });

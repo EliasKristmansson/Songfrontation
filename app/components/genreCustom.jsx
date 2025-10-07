@@ -1,7 +1,8 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ITUNES_GENRES } from "./match"; // Official genres with IDs
+import { useEffect, useRef, useState } from "react";
+import { Animated, Easing, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ITUNES_GENRES } from "./match";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
 // Helper for string params
@@ -12,6 +13,41 @@ export default function GenreCustom() {
     const { rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
 
     const [selectedGenre, setSelectedGenre] = useState(null);
+
+    // Bounce scrollindikator ---
+    const scrollY = useRef(new Animated.Value(0)).current;
+    const scrollRef = useRef(null);
+
+    const bounce = (ref, animatedVal) => {
+        Animated.sequence([
+            Animated.timing(animatedVal, {
+                toValue: 10,
+                duration: 100,
+                useNativeDriver: false,
+                easing: Easing.out(Easing.quad),
+            }),
+            Animated.spring(animatedVal, {
+                toValue: 0,
+                friction: 10,
+                tension: 40,
+                useNativeDriver: false,
+            }),
+        ]).start();
+
+        animatedVal.addListener(({ value }) => {
+            ref.current?.scrollTo({ y: value, animated: false });
+        });
+    };
+
+    useEffect(() => {
+        setTimeout(() => {
+            bounce(scrollRef, scrollY);
+        }, 400);
+
+        return () => {
+            scrollY.removeAllListeners();
+        };
+    }, []);
 
     const onStartMatch = () => {
         if (!selectedGenre) return;
@@ -44,23 +80,41 @@ export default function GenreCustom() {
                     {selectedGenre ? `Selected: ${selectedGenre.name.split(" > ").pop()}` : "Choose one genre"}
                 </Text>
 
-                <ScrollView contentContainerStyle={styles.iconList}>
-                    {ITUNES_GENRES.map((g) => {
-                        const isSelected = selectedGenre?.id === g.id;
-                        return (
-                            <TouchableOpacity
-                                key={g.id}
-                                onPress={() => setSelectedGenre(g)}
-                                style={styles.iconWrapper}
-                                activeOpacity={0.85}
-                            >
-                                <View style={[styles.icon, isSelected && styles.selectedIcon]}>
-                                    <Text style={styles.iconText}>{g.name.split(" > ").pop()}</Text>
-                                </View>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
+                <View style={{ flex: 1 }}>
+                    <ScrollView
+                        ref={scrollRef}
+                        contentContainerStyle={styles.iconList}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {ITUNES_GENRES.map((g) => {
+                            const isSelected = selectedGenre?.id === g.id;
+                            return (
+                                <TouchableOpacity
+                                    key={g.id}
+                                    onPress={() => setSelectedGenre(g)}
+                                    style={styles.iconWrapper}
+                                    activeOpacity={0.85}
+                                >
+                                    <LinearGradient
+                                        colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={[styles.icon, isSelected && styles.selectedIcon]}
+                                    >
+                                        <Text style={styles.iconText}>{g.name.split(" > ").pop()}</Text>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+
+                    {/* Scrollindikator/gradient längst ner */}
+                    <LinearGradient
+                        colors={["transparent", "#20163B"]}
+                        style={styles.scrollFadeBottom}
+                        pointerEvents="none"
+                    />
+                </View>
             </View>
         </View>
     );
@@ -70,11 +124,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         minHeight: Platform.OS === "web" ? "100vh" : undefined,
+        position: "relative",
     },
     content: {
         flex: 1,
         paddingTop: 16,
         paddingHorizontal: 20,
+        position: "relative",
     },
     subHeader: {
         textAlign: "center",
@@ -97,25 +153,25 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-    disabledWrapper: {
-        opacity: 0.6,
-    },
     icon: {
         width: "100%",
         height: "100%",
         borderRadius: 999,
         borderWidth: 2,
         borderColor: "transparent",
-        backgroundColor: "#6466bc",
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 6,
+        shadowColor: "#412F7E",
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 6,
     },
     selectedIcon: {
         borderColor: "#fff",
-        shadowColor: "#8e7cc3",
+        shadowColor: "#896DA3",
         shadowOpacity: 0.5,
-        shadowRadius: 8,
+        shadowRadius: 12,
         elevation: 10,
     },
     iconText: {
@@ -123,5 +179,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
         color: "#fff",
+    },
+    scrollFadeBottom: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 30,
+        zIndex: 5,
     },
 });
