@@ -1,65 +1,56 @@
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useAudio } from "../components/audioContext"; // adjust path if needed
 
 export default function Settings() {
     const router = useRouter();
-    const [master, setMaster] = useState(50);
-    const [effects, setEffects] = useState(50);
-    const [music, setMusic] = useState(50);
+    const {
+        masterVolume,
+        setMasterVolume,
+        effectsVolume,
+        setEffectsVolume,
+        musicVolume,
+        setMusicVolume,
+    } = useAudio();
 
+    // Convert values (0–100) to (0–1) when updating
     return (
         <View>
-            {/* Simple Back Arrow */}
-            <TouchableOpacity
-                onPress={() => router.push("/")}
-                style={styles.backButton}
-            >
+            <TouchableOpacity onPress={() => router.push("/")} style={styles.backButton}>
                 <Text style={styles.backArrow}>←</Text>
             </TouchableOpacity>
 
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Sliders */}
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.slidersColumn}>
-                    {["Master", "Effects", "Music"].map((label, idx) => {
-                        const value = [master, effects, music][idx];
-                        const setValue = [setMaster, setEffects, setMusic][idx];
-                        return (
-                            <View key={label} style={styles.sliderCard}>
-                                <Text style={styles.volumeLabel}>{label} Volume</Text>
-                                <View style={styles.sliderRow}>
-                                    <Text style={styles.sliderLabel}>0%</Text>
-                                    <Slider
-                                        style={styles.slider}
-                                        minimumValue={0}
-                                        maximumValue={100}
-                                        step={1}
-                                        value={value}
-                                        onValueChange={setValue}
-                                        minimumTrackTintColor="#fff"
-                                        maximumTrackTintColor="rgba(255,255,255,0.3)"
-                                        thumbTintColor="white"
-                                    />
-                                    <Text style={styles.sliderLabel}>100%</Text>
-                                </View>
-                                <Text style={styles.sliderInfo}>{value}%</Text>
+                    {[
+                        { label: "Master", value: masterVolume, setValue: setMasterVolume },
+                        { label: "Effects", value: effectsVolume, setValue: setEffectsVolume },
+                        { label: "Music", value: musicVolume, setValue: setMusicVolume },
+                    ].map(({ label, value, setValue }) => (
+                        <View key={label} style={styles.sliderCard}>
+                            <Text style={styles.volumeLabel}>{label} Volume</Text>
+                            <View style={styles.sliderRow}>
+                                <Text style={styles.sliderLabel}>0%</Text>
+                                <Slider
+                                    style={styles.slider}
+                                    minimumValue={0}
+                                    maximumValue={1}
+                                    step={0.01}
+                                    value={value}
+                                    onValueChange={setValue}
+                                    minimumTrackTintColor="#fff"
+                                    maximumTrackTintColor="rgba(255,255,255,0.3)"
+                                    thumbTintColor="white"
+                                />
+                                <Text style={styles.sliderLabel}>100%</Text>
                             </View>
-                        );
-                    })}
+                            <Text style={styles.sliderInfo}>{Math.round(value * 100)}%</Text>
+                        </View>
+                    ))}
                 </View>
             </ScrollView>
         </View>
-
     );
 }
 

@@ -62,11 +62,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         opacity: 0.7,
         color: "#fff",
+        fontFamily: "OutfitRegular"
     },
     genreText: {
         fontSize: 40,
         fontWeight: "800",
         color: "#fff",
         letterSpacing: 1,
+        fontFamily: "OutfitBold",
     },
 });
