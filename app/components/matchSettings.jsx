@@ -61,6 +61,7 @@ export default function MatchSettings() {
                 proceedLabel="Next"
                 onProceed={canProceed ? handleNext : undefined}
                 proceedDisabled={!canProceed}
+                onBack={() => router.push("../components/icon")}
             />
 
             <View style={{ flex: 1 }}>
