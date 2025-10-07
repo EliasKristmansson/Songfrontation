@@ -83,8 +83,8 @@ const styles = StyleSheet.create({
         borderRadius: 80,
     },
     bubbleOption: {
-        width: 120,
-        height: 120,
+        width: 150,
+        height: 150,
         borderRadius: 80,
         alignItems: "center",
         justifyContent: "center",
