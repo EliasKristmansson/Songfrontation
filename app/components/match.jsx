@@ -19,25 +19,45 @@ export const ITUNES_GENRES = [
     { id: 5, name: "Music > Classical" },
     { id: 3, name: "Music > Blues" },
     { id: 50, name: "Music > Electronic" },
-    { id: 10, name: "Music > Singer/Songwriter" },
-    { id: 12, name: "Music > Easy Listening" },
-    { id: 28, name: "Music > New Age" },
-    { id: 2, name: "Music > Soundtrack" },
-    { id: 4, name: "Music > Holiday" },
 ];
 
-// --- Bubble positions ---
-const LEFT_BUBBLE_POSITIONS = [
-    { top: 5, left: 200 },
-    { top: 160, left: 160 },
-    { top: 50, left: 50 },
-];
+// --- Predefined bubble positions ---
+const LEFT_BUBBLE_POSITIONS = {
+    2: [
+        { top: 0, right: 40 },
+        { top: 130, right: 150 },
+    ],
+    3: [
+        { top: 5, left: 200 },
+        { top: 160, left: 160 },
+        { top: 50, left: 50 },
+    ],
+    4: [
+        { top: 0, right: 40 },
+        { top: 120, right: 50 },
+        { top: 20, right: 200 },
+        { top: 120, right: 200 },
+    ],
+};
 
-const RIGHT_BUBBLE_POSITIONS = [
-    { top: 5, right: 200 },
-    { top: 160, right: 160 },
-    { top: 50, right: 50 },
-];
+const RIGHT_BUBBLE_POSITIONS = {
+    2: [
+        { top: 0, left: 40 },
+        { top: 130, left: 150 },
+    ],
+    3: [
+        { top: 5, right: 200 },
+        { top: 160, right: 160 },
+        { top: 50, right: 50 },
+    ],
+    4: [
+        { top: 200, right: 50 },
+        { top: 120, right: 50 },
+        { top: 20, right: 200 },
+        { top: 120, right: 200 },
+    ],
+};
+
 
 // --- Game classes ---
 class Player {
@@ -115,7 +135,10 @@ export default function Match() {
         songDuration: params.duration ? parseInt(params.duration) : 30,
         nrOfGuessesOnBoard: params.guesses ? parseInt(params.guesses) : 3,
     });
+
     const isSinglePlayer = matchSettings.nrOfPlayers === 1;
+    const { nrOfGuessesOnBoard } = matchSettings;
+    console.log("nrOfGuessesOnBoard: " + nrOfGuessesOnBoard);
 
     const [player1, setPlayer1] = useState(new Player({ playerId: 1, playerIcon: "🎤" }));
     const [player2, setPlayer2] = useState(isSinglePlayer ? null : new Player({ playerId: 2, playerIcon: "🎸" }));
@@ -279,10 +302,10 @@ export default function Match() {
     // --- Core play logic ---
     // Uppdaterad för rematch sak funka
     const handlePlayCore = async (opts = {}) => {
-        if (showRematch && !opts.force){
+        if (showRematch && !opts.force) {
             tracksWithPreview([]);
             return;
-        
+
         }
         try {
             setLoading(true);
@@ -346,7 +369,7 @@ export default function Match() {
             );
 
             // --- 0️⃣ Initialize allPlayedTracks state at the top of your component (outside this function) ---
-        
+
             // --- 1️⃣ Filter new tracks ---
             let tracksWithPreview = responseData.results.filter(
                 t =>
@@ -361,7 +384,7 @@ export default function Match() {
             );
 
             // --- 2️⃣ Check if enough tracks exist ---
-            if (tracksWithPreview.length + allPlayedTracks.length < 3) {
+            if (tracksWithPreview.length + allPlayedTracks.length < 4) {
                 Alert.alert("Not Enough Tracks", "Returning to front page.");
                 setLoading(false);
                 router.push("/");
@@ -370,7 +393,7 @@ export default function Match() {
 
             // --- 3️⃣ Pick up to 3 unique NEW tracks ---
             const optionsTracks = [];
-            while (optionsTracks.length < 3 && tracksWithPreview.length > 0) {
+            while (optionsTracks.length < 4 && tracksWithPreview.length > 0) {
                 const idx = Math.floor(Math.random() * tracksWithPreview.length);
                 const track = tracksWithPreview.splice(idx, 1)[0];
                 optionsTracks.push(track);
@@ -378,14 +401,14 @@ export default function Match() {
 
             // --- 4️⃣ Fill missing slots from previously played tracks ---
             const playedArray = [...allPlayedTracks].filter(t => !optionsTracks.includes(t)); // avoid duplicates
-            while (optionsTracks.length < 3 && playedArray.length > 0) {
+            while (optionsTracks.length < 4 && playedArray.length > 0) {
                 const idx = Math.floor(Math.random() * playedArray.length);
                 const track = playedArray.splice(idx, 1)[0]; // remove used to prevent infinite loop
                 if (track && track.previewUrl) optionsTracks.push(track);
             }
 
             // --- 5️⃣ If still <3 (should rarely happen), reroute ---
-            if (optionsTracks.length < 3) {
+            if (optionsTracks.length < 4) {
                 Alert.alert("Not Enough Tracks", "Returning to front page.");
                 setLoading(false);
                 router.push("/");
@@ -710,45 +733,52 @@ export default function Match() {
             {/* Song Options */}
             <View style={styles.playArea}>
                 <View style={styles.sideColumn}>
-                    {songOptions.filter(Boolean).map((option, idx) => (
-                        <GuessBubble
-                            key={`p1-${idx}`}
-                            option={option}
-                            onPress={() => handleGuess(option.isCorrect, 1, idx)}
-                            animatedIndex={idx}
-                            positionStyle={LEFT_BUBBLE_POSITIONS[idx] || {}}
-                            glowColor={
-                                correctGlowIndices[1]?.includes(idx)
-                                    ? "green"
-                                    : wrongGlowIndices[1]?.includes(idx)
-                                        ? "red"
-                                        : null
-                            }
-                        />
-                    ))}
-                </View>
-
-                {!isSinglePlayer && (
-                    <View style={styles.sideColumn}>
-                        {songOptions.filter(Boolean).map((option, idx) => (
+                    {songOptions
+                        .filter(Boolean)
+                        .slice(0, nrOfGuessesOnBoard) // 👈 only show this many
+                        .map((option, idx) => (
                             <GuessBubble
-                                key={`p2-${idx}`}
+                                key={`p1-${idx}`}
                                 option={option}
-                                onPress={() => handleGuess(option.isCorrect, 2, idx)}
+                                onPress={() => handleGuess(option.isCorrect, 1, idx)}
                                 animatedIndex={idx}
-                                positionStyle={RIGHT_BUBBLE_POSITIONS[idx] || {}}
+                                positionStyle={LEFT_BUBBLE_POSITIONS[nrOfGuessesOnBoard][idx]}
                                 glowColor={
-                                    correctGlowIndices[2]?.includes(idx)
+                                    correctGlowIndices[1]?.includes(idx)
                                         ? "green"
-                                        : wrongGlowIndices[2]?.includes(idx)
+                                        : wrongGlowIndices[1]?.includes(idx)
                                             ? "red"
                                             : null
                                 }
                             />
                         ))}
+                </View>
+
+                {!isSinglePlayer && (
+                    <View style={styles.sideColumn}>
+                        {songOptions
+                            .filter(Boolean)
+                            .slice(0, nrOfGuessesOnBoard) // 👈 same here
+                            .map((option, idx) => (
+                                <GuessBubble
+                                    key={`p2-${idx}`}
+                                    option={option}
+                                    onPress={() => handleGuess(option.isCorrect, 2, idx)}
+                                    animatedIndex={idx}
+                                    positionStyle={RIGHT_BUBBLE_POSITIONS[nrOfGuessesOnBoard][idx]}
+                                    glowColor={
+                                        correctGlowIndices[2]?.includes(idx)
+                                            ? "green"
+                                            : wrongGlowIndices[2]?.includes(idx)
+                                                ? "red"
+                                                : null
+                                    }
+                                />
+                            ))}
                     </View>
                 )}
             </View>
+
 
             {/* Loading Overlay */}
             {loading && (
@@ -832,6 +862,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         height: 320,
         position: "relative",
+
     },
     largeIconCircle: {
         width: 40,
