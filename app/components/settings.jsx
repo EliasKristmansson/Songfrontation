@@ -1,7 +1,10 @@
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useContext, useEffect, useState } from "react";
+import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { useAudio } from "../components/audioContext"; // adjust path if needed
+import { BackgroundShaderContext } from "./backgroundShaderContext";
+
 
 export default function Settings() {
     const router = useRouter();
@@ -13,6 +16,19 @@ export default function Settings() {
         musicVolume,
         setMusicVolume,
     } = useAudio();
+    const { animationSpeed, setAnimationSpeed } = useContext(BackgroundShaderContext);
+
+    // Sync toggle with animationSpeed
+    const [animationsEnabled, setAnimationsEnabled] = useState(animationSpeed > 0);
+
+    useEffect(() => {
+        setAnimationsEnabled(animationSpeed > 0);
+    }, [animationSpeed]);
+
+    const handleToggleAnimations = (enabled) => {
+        setAnimationsEnabled(enabled);
+        setAnimationSpeed(enabled ? 0.2 : 0);
+    };
 
     // Convert values (0–100) to (0–1) when updating
     return (
@@ -48,6 +64,19 @@ export default function Settings() {
                             <Text style={styles.sliderInfo}>{Math.round(value * 100)}%</Text>
                         </View>
                     ))}
+                </View>
+                <View style={styles.toggleCard}>
+                    <Text style={styles.volumeLabel}>Background Animations</Text>
+                    <View style={styles.toggleRow}>
+                        <Text style={styles.animationLabel}>Off</Text>
+                        <Switch
+                            value={animationsEnabled}
+                            onValueChange={handleToggleAnimations}
+                            trackColor={{ false: "#888", true: "#888" }}
+                            thumbColor="#ddd"
+                        />
+                        <Text style={styles.animationLabel}>On</Text>
+                    </View>
                 </View>
             </ScrollView>
         </View>
@@ -118,4 +147,26 @@ const styles = StyleSheet.create({
         color: "white",
         marginTop: 4,
     },
+    toggleCard: {
+        backgroundColor: "rgba(0,0,0,0.35)",
+        borderRadius: 14,
+        padding: 12,
+        marginVertical: 12,
+        width: "95%",
+        maxWidth: 500,
+        alignItems: "center",
+    },
+    toggleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%",
+        justifyContent: "center",
+        marginTop: 8,
+    },
+    animationLabel: {
+        fontSize: 14,
+        fontFamily: "OutfitBold",
+        color: "#ddd",
+        paddingHorizontal: 20,
+    }    
 });
