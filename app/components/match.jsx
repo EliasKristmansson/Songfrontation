@@ -133,6 +133,9 @@ export default function Match() {
     const player1CooldownTimer = useRef(null);
     const player2CooldownTimer = useRef(null);
 
+    const [allPlayedTracks, setAllPlayedTracks] = useState([]); // only once at component level
+
+
     const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
     const dividerTimerRef = useRef(null);
 
@@ -276,7 +279,11 @@ export default function Match() {
     // --- Core play logic ---
     // Uppdaterad för rematch sak funka
     const handlePlayCore = async (opts = {}) => {
-        if (showRematch && !opts.force) return;
+        if (showRematch && !opts.force){
+            tracksWithPreview([]);
+            return;
+        
+        }
         try {
             setLoading(true);
             setCorrectPressed(false);
@@ -333,60 +340,72 @@ export default function Match() {
             }
 
 
-
-
-            // ✅ We already have responseData — use it!
-            const results = responseData.results;
-
-            let tracksWithPreview = responseData.results.filter(
-            t =>
-                t.previewUrl &&
-                !playedTrackIds.has(t.trackId) &&
-                t.primaryGenreName?.toLowerCase().includes(expectedGenreName.split('>')[1].trim().toLowerCase())
+            console.log(
+                "Filtered tracks:",
+                (tracksWithPreview || []).map(t => ({ name: t.trackName, genre: t.primaryGenreName }))
             );
 
-
-
+            // --- 0️⃣ Initialize allPlayedTracks state at the top of your component (outside this function) ---
+        
+            // --- 1️⃣ Filter new tracks ---
+            let tracksWithPreview = responseData.results.filter(
+                t =>
+                    t.previewUrl &&
+                    !playedTrackIds.has(t.trackId) &&
+                    t.primaryGenreName?.toLowerCase().includes(expectedGenreName.split('>')[1].trim().toLowerCase())
+            );
 
             console.log(
-            "Filtered tracks:",
-            tracksWithPreview.map(t => ({ name: t.trackName, genre: t.primaryGenreName }))
+                "Filtered new tracks:",
+                tracksWithPreview.map(t => ({ name: t.trackName, genre: t.primaryGenreName }))
             );
 
-
-
-            if (tracksWithPreview.length === 0) {
-                Alert.alert("No New Tracks", "No new tracks available for this genre.");
+            // --- 2️⃣ Check if enough tracks exist ---
+            if (tracksWithPreview.length + allPlayedTracks.length < 3) {
+                Alert.alert("Not Enough Tracks", "Returning to front page.");
                 setLoading(false);
+                router.push("/");
                 return;
             }
 
-            // Pick up to 3 unique tracks (fill with repeats if < 3)
+            // --- 3️⃣ Pick up to 3 unique NEW tracks ---
             const optionsTracks = [];
-            while (optionsTracks.length < 3) {
-                if (tracksWithPreview.length === 0) break;
+            while (optionsTracks.length < 3 && tracksWithPreview.length > 0) {
                 const idx = Math.floor(Math.random() * tracksWithPreview.length);
-                optionsTracks.push(tracksWithPreview[idx]);
-                tracksWithPreview.splice(idx, 1);
+                const track = tracksWithPreview.splice(idx, 1)[0];
+                optionsTracks.push(track);
             }
 
-            // If fewer than 3 tracks, fill with already played tracks
-            while (optionsTracks.length < 3) {
-                const fallback = responseData.results[Math.floor(Math.random() * responseData.results.length)];
-                if (fallback.previewUrl) optionsTracks.push(fallback);
+            // --- 4️⃣ Fill missing slots from previously played tracks ---
+            const playedArray = [...allPlayedTracks].filter(t => !optionsTracks.includes(t)); // avoid duplicates
+            while (optionsTracks.length < 3 && playedArray.length > 0) {
+                const idx = Math.floor(Math.random() * playedArray.length);
+                const track = playedArray.splice(idx, 1)[0]; // remove used to prevent infinite loop
+                if (track && track.previewUrl) optionsTracks.push(track);
             }
 
+            // --- 5️⃣ If still <3 (should rarely happen), reroute ---
+            if (optionsTracks.length < 3) {
+                Alert.alert("Not Enough Tracks", "Returning to front page.");
+                setLoading(false);
+                router.push("/");
+                return;
+            }
 
-            // Pick random correct track
-            const correctTrackIdx = Math.floor(Math.random() * optionsTracks.length);
-            const correctTrack = optionsTracks[correctTrackIdx];
+            // --- 6️⃣ Pick random correct track ---
+            let correctTrackIdx = Math.floor(Math.random() * optionsTracks.length);
+            let correctTrack = optionsTracks[correctTrackIdx];
 
-            // Mark tracks as played
+            // --- 7️⃣ Mark tracks as played ---
             setPlayedTrackIds(prev => {
                 const newSet = new Set(prev);
                 optionsTracks.forEach(t => newSet.add(t.trackId));
                 return newSet;
             });
+
+            // --- 8️⃣ Add all selected tracks to allPlayedTracks ---
+            setAllPlayedTracks(prev => [...prev, ...optionsTracks]);
+
 
             // Create Song object
             const songObj = new Song({
