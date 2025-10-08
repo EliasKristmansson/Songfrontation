@@ -1,9 +1,10 @@
 import { Audio } from "expo-av";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Animated, Dimensions, StyleSheet, Text, View } from "react-native";
 import GuessBubble from "../components/guessBubble.jsx";
 import RematchModal from "../components/modals/rematch.jsx";
+import { BackgroundShaderContext } from "./backgroundShaderContext";
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
@@ -105,6 +106,7 @@ class MatchSettings {
 export default function Match() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const {dividerPos, setDividerPos} = useContext(BackgroundShaderContext);
 
     // Tillagda för att rematch sa funka
     const [showRematch, setShowRematch] = useState(false);
@@ -275,6 +277,7 @@ export default function Match() {
     const handleBackToMenu = () => {
         setShowRematch(false);
         router.push("/");
+        setDividerPos(1.1);
     };
 
     const nextRound = (winner) => {
