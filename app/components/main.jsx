@@ -139,16 +139,21 @@ export default function Main({ background, stars = [] }) {
                                     params: { ...defaultQuickMatch, nrOfPlayers: 1, from: "main" },
                                 })
                             }
+                                
                         />
                         <View style={styles.divider} />
                         <PlayerButton
                             label="2 Players"
                             onPress={() =>
-                                router.push({
-                                    pathname: "../components/genreRandom",
-                                    params: { ...defaultQuickMatch, nrOfPlayers: 2, from: "main" },
-                                })
+                                {
+                                    router.push({
+                                        pathname: "../components/genreRandom",
+                                        params: { ...defaultQuickMatch, nrOfPlayers: 2, from: "main" },
+                                    });
+                                    setDividerPos(0.5);
+                                }
                             }
+                            
                         />
                     </LinearGradient>
                 </View>

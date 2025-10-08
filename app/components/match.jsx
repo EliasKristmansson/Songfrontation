@@ -1,11 +1,11 @@
 import { Audio } from "expo-av";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useContext, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, Dimensions, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import GuessBubble from "../components/guessBubble.jsx";
 import RematchModal from "../components/modals/rematch.jsx";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
-
+import PauseMatch from "./modals/pauseOngoingMatch.jsx";
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 // --- Official iTunes genres ---
@@ -107,6 +107,7 @@ export default function Match() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const {dividerPos, setDividerPos} = useContext(BackgroundShaderContext);
+    const [showPause, setShowPause] = useState(false);
 
     // Tillagda för att rematch sa funka
     const [showRematch, setShowRematch] = useState(false);
@@ -160,6 +161,9 @@ export default function Match() {
 
     const [allPlayedTracks, setAllPlayedTracks] = useState([]); // only once at component level
 
+    //Check if there was a track playing before pausing game
+    const wasPlayingBeforePause = useRef(false);
+    const pausedForModal = useRef(false);
 
     const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
     const dividerTimerRef = useRef(null);
@@ -243,6 +247,120 @@ export default function Match() {
         }
     };
 
+        // --- Helper to (re)start divider interval ---
+    const startDividerInterval = () => {
+        if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+        // only start if there's time left
+        if (dividerTimer <= 0) return;
+        dividerTimerRef.current = setInterval(() => {
+            setDividerTimer(prev => {
+                if (prev <= 1) {
+                    clearInterval(dividerTimerRef.current);
+                    dividerTimerRef.current = null;
+                    setIsPlaying(false);
+                    setLastGuessPhase(true);
+                    setLastGuessUsed({ 1: false, 2: false });
+                    if (sound) {
+                        // unload in background; ignore errors
+                        sound.unloadAsync().then(() => setSound(null)).catch(() => {});
+                    }
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    // --- Helpers to (re)start player cooldown timers if they have remaining time ---
+    const startPlayer1CooldownInterval = () => {
+        if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
+        if (player1CooldownTime <= 0) return;
+        setPlayer1Cooldown(true);
+        player1CooldownTimer.current = setInterval(() => {
+            setPlayer1CooldownTime(prev => {
+                if (prev <= 1) {
+                    if (player1CooldownTimer.current) {
+                        clearInterval(player1CooldownTimer.current);
+                        player1CooldownTimer.current = null;
+                    }
+                    setPlayer1Cooldown(false);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    const startPlayer2CooldownInterval = () => {
+        if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
+        if (player2CooldownTime <= 0) return;
+        setPlayer2Cooldown(true);
+        player2CooldownTimer.current = setInterval(() => {
+            setPlayer2CooldownTime(prev => {
+                if (prev <= 1) {
+                    if (player2CooldownTimer.current) {
+                        clearInterval(player2CooldownTimer.current);
+                        player2CooldownTimer.current = null;
+                    }
+                    setPlayer2Cooldown(false);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+        // --- Pause everything (audio + intervals) ---
+    const pauseAll = async () => {
+        try {
+            pausedForModal.current = true;
+            wasPlayingBeforePause.current = isPlaying; // remember if we were playing
+            // pause audio if it exists and is playing
+            if (sound && isPlaying) {
+                try { await sound.pauseAsync(); } catch (e) { console.warn("pauseAll: pauseAsync failed", e); }
+            }
+            // clear divider interval
+            if (dividerTimerRef.current) {
+                clearInterval(dividerTimerRef.current);
+                dividerTimerRef.current = null;
+            }
+            // clear cooldown intervals
+            if (player1CooldownTimer.current) {
+                clearInterval(player1CooldownTimer.current);
+                player1CooldownTimer.current = null;
+            }
+            if (player2CooldownTimer.current) {
+                clearInterval(player2CooldownTimer.current);
+                player2CooldownTimer.current = null;
+            }
+            // stop UI play flag
+            setIsPlaying(false);
+        } catch (e) {
+            console.error("pauseAll error", e);
+        }
+    };
+
+    // --- Resume everything (continue from remaining times) ---
+    const resumeAll = async () => {
+        try {
+            pausedForModal.current = false;
+            // resume audio only if we had been playing before pause
+            if (sound && wasPlayingBeforePause.current) {
+                try { await sound.playAsync(); setIsPlaying(true); } catch (e) { console.warn("resumeAll: playAsync failed", e); }
+            }
+            // restart divider if there is time left and we are not in last-guess or initial countdown
+            if (dividerTimer > 0 && !lastGuessPhase && !showInitialCountdown) {
+                startDividerInterval();
+            }
+            // restart cooldown timers if they had remaining time
+            if (player1CooldownTime > 0) startPlayer1CooldownInterval();
+            if (player2CooldownTime > 0) startPlayer2CooldownInterval();
+        } catch (e) {
+            console.error("resumeAll error", e);
+        }
+    };
+
+
     const endMatch = async (winner) => {
         try {
             await stopAllActivity();
@@ -276,6 +394,12 @@ export default function Match() {
     };
     const handleBackToMenu = () => {
         setShowRematch(false);
+        router.push("/");
+        setDividerPos(1.1);
+    };
+
+    const handleBackToMenuFromPause = () => {
+        setShowPause(false);
         router.push("/");
         setDividerPos(1.1);
     };
@@ -678,6 +802,15 @@ export default function Match() {
                 </View>
             )}
 
+            <View style={styles.topRightButtons}>
+                                <TouchableOpacity
+                                    style={styles.settingsButton}
+                                    onPress={() => {setShowPause(true); pauseAll();}}
+                                >
+                                    <Text style={styles.settingsText}>⏸</Text>
+                                </TouchableOpacity>       
+            </View>
+
             {/* Player 1 Cooldown Overlay */}
             {player1Cooldown && (
                 <View style={[styles.cooldownOverlay, styles.cooldownOverlayLeft]} pointerEvents="auto">
@@ -796,6 +929,11 @@ export default function Match() {
                 visible={showRematch}
                 onRematch={handleRematch}
                 onBackToMenu={handleBackToMenu}
+            />
+            <PauseMatch 
+                visible={showPause}
+                resumeMatch={() => {setShowPause(false); resumeAll();}}
+                onBackToMenu={handleBackToMenuFromPause}
             />
         </View>
     );
@@ -977,4 +1115,23 @@ const styles = StyleSheet.create({
         fontSize: 48,
         fontWeight: "800",
     },
+    topRightButtons: {
+        position: "absolute",
+        right: 30,
+        top: 10,
+    },
+    settingsButton: {
+        padding: 4,
+        borderRadius: 50,
+        backgroundColor: "#6466bc",
+        borderWidth: 2,
+        borderColor: "white",
+        shadowColor: "#8e7cc3",
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        elevation: 10,
+    },
+    settingsText: {
+        fontSize: 24,
+    }
 });

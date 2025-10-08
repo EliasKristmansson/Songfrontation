@@ -1,0 +1,84 @@
+import { LinearGradient } from "expo-linear-gradient";
+import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+const windowWidth = Dimensions.get("window").width;
+
+export default function PauseMatch({ visible, resumeMatch, onBackToMenu }) {
+    const content = (
+        <View style={styles.overlay}>
+            <View style={styles.buttonsWrap}>
+                {/* Rematch */}
+                <LinearGradient
+                    colors={["#242F7D", "#412F59", "#804D58"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.buttonGradient}
+                >
+                    <TouchableOpacity style={styles.buttonTapArea} onPress={() => resumeMatch()} activeOpacity={0.9}>
+                        <Text style={styles.buttonText}>Resume</Text>
+                    </TouchableOpacity>
+                </LinearGradient>
+
+                {/* Back to Menu */}
+                <LinearGradient
+                    colors={["#242F7D", "#412F59", "#804D58"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.buttonGradient}
+                >
+                    <TouchableOpacity style={styles.buttonTapArea} onPress={() => onBackToMenu()} activeOpacity={0.9}>
+                        <Text style={styles.buttonText}>Exit to Menu</Text>
+                    </TouchableOpacity>
+                </LinearGradient>
+            </View>
+        </View>
+    );
+
+    return (
+        <Modal
+            visible={!!visible}
+            transparent
+            animationType="fade"
+            statusBarTranslucent
+            supportedOrientations={["portrait", "landscape"]}
+            //onRequestClose={onBackToMenu}
+        >
+            <View style={{ flex: 1 }}>{content}</View>
+        </Modal>
+    );
+}
+
+const styles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: "rgba(26,18,59,0.86)",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 24,
+    },
+
+    buttonsWrap: {
+        width: "100%",
+        alignItems: "center",
+    },
+
+    buttonGradient: {
+        width: Math.min(windowWidth * 0.78, 420),
+        borderRadius: 50,
+        borderWidth: 2,
+        borderColor: "#FFFFFF",
+        marginVertical: 8,
+        overflow: "hidden",
+    },
+
+    buttonTapArea: {
+        paddingVertical: 18,
+        alignItems: "center",
+    },
+
+    buttonText: {
+        color: "#FFFFFF",
+        fontSize: 18,
+        fontWeight: "bold",
+    },
+});
