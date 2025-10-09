@@ -1,7 +1,7 @@
 import { Audio } from "expo-av";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useContext, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import GuessBubble from "../components/guessBubble.jsx";
 import RematchModal from "../components/modals/rematch.jsx";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
@@ -128,6 +128,15 @@ export default function Match() {
     const [lastGuessPhase, setLastGuessPhase] = useState(false);
     const [lastGuessUsed, setLastGuessUsed] = useState({ 1: false, 2: false });
 
+    // Transition state for between songs
+    const [showSongTransition, setShowSongTransition] = useState(false);
+    const [songTransitionCountdown, setSongTransitionCountdown] = useState(3);
+
+    //Shader background color context
+    const { setPrimaryBackgroundColor, primaryBackgroundColor } = useContext(BackgroundShaderContext);
+    const { secondaryBackgroundColor, setSecondaryBackgroundColor } = useContext(BackgroundShaderContext);
+    const glowAnim = useRef(new Animated.Value(0)).current;
+
     // Player and round state
     const matchSettings = new MatchSettings({
         nrOfPlayers: params.nrOfPlayers ? parseInt(params.nrOfPlayers) : 2,
@@ -171,6 +180,7 @@ export default function Match() {
     const [showInitialCountdown, setShowInitialCountdown] = useState(true);
 
     const bubbleScalesRef = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]);
+    const bubbleScalesRefShrinkGrow = useRef([]);
 
     const [wrongGlowIndices, setWrongGlowIndices] = useState({});
     const [correctGlowIndices, setCorrectGlowIndices] = useState({});
@@ -245,6 +255,89 @@ export default function Match() {
             console.log("stopAllActivity error:", e);
         }
     };
+
+
+    const animateBubblesOut = () => {
+    const animations = bubbleScalesRef.current.map(scale =>
+        Animated.timing(scale, { toValue: 0, duration: 250, useNativeDriver: true })
+    );
+    Animated.stagger(50, animations).start(() => {
+        setSongOptions([]); // only clear after animation completes
+    });
+};
+        // --- Helper to start the song transition ---
+    const startSongTransition = () => {
+        //animateBubblesOut();
+        setSongOptions([]); // 👈 hides the guessing bubbles
+        let count = 3;
+
+        const glowDuration = 1600;
+        
+        setTimeout(() => {
+            setInitialCountdown(count);
+            setShowInitialCountdown(true);
+            const interval = setInterval(() => {
+                count -= 1;
+                setInitialCountdown(count);
+                if (count <= 0) {
+                    clearInterval(interval);
+                    setShowInitialCountdown(false);
+                    setTimeout(() => handlePlayCore(), 200);
+                }
+            }, 1000);
+        }, glowDuration);
+        
+    };
+
+    useEffect(() => {
+        bubbleScalesRefShrinkGrow.current = songOptions.map(() => new Animated.Value(1));
+    }, [songOptions]);
+
+    const mix = (a, b, t) => [
+        a[0] + (b[0] - a[0]) * t,
+        a[1] + (b[1] - a[1]) * t,
+        a[2] + (b[2] - a[2]) * t,
+    ];
+
+    const triggerGreenGlowBackground = () => {
+    // Animate from 0 → 1 → 0
+    glowAnim.setValue(0);
+    Animated.sequence([
+        Animated.timing(glowAnim, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+        }),
+        Animated.timing(glowAnim, {
+        toValue: 0,
+        duration: 1200,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: false,
+        }),
+    ]).start();
+    };
+
+    useEffect(() => {
+    const normalColor = [0.255, 0.184, 0.494]; // your purple base
+    const greenColor = [0.0, 0.6, 0.4]; // bright green flash
+
+    const listener = glowAnim.addListener(({ value }) => {
+        // linear interpolation
+        const mixed = [
+        normalColor[0] + (greenColor[0] - normalColor[0]) * value,
+        normalColor[1] + (greenColor[1] - normalColor[1]) * value,
+        normalColor[2] + (greenColor[2] - normalColor[2]) * value,
+        ];
+        setPrimaryBackgroundColor(mixed);
+    });
+
+    return () => {
+        glowAnim.removeListener(listener);
+    };
+    }, [glowAnim, setPrimaryBackgroundColor]);
+
+    
 
     // --- Helper to (re)start divider interval ---
     const startDividerInterval = () => {
@@ -752,7 +845,7 @@ export default function Match() {
             newPoints += isCorrect ? 1 : 0;
             if (playerNum === 1) setPlayer1Points(newPoints); else setPlayer2Points(newPoints);
 
-            if (isCorrect) triggerGreenGlow(playerNum, idx); else triggerRedGlow(playerNum, idx);
+            if (isCorrect) triggerGreenGlow(playerNum, idx) ; else triggerRedGlow(playerNum, idx);
 
             if (newPoints >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(playerNum);
             else handlePlayCore();
@@ -778,13 +871,19 @@ export default function Match() {
             if (playerNum === 1) {
                 const newPoints = player1Points + 1;
                 setPlayer1Points(newPoints);
-                if (newPoints >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(1);
-                else handlePlayCore();
+                if (newPoints >= matchSettings.nrOfSongsToWinRound){
+                    handleEndOfRound(1); 
+                } 
+                else{
+                    startSongTransition();
+                    triggerGreenGlowBackground(playerNum);
+                } 
             } else {
                 const newPoints = player2Points + 1;
                 setPlayer2Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(2);
-                else handlePlayCore();
+                else startSongTransition();
+                triggerGreenGlowBackground(playerNum);
             }
 
             triggerGreenGlow(playerNum, idx);

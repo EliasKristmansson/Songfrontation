@@ -10,9 +10,11 @@ export default function GuessBubble({
     animatedIndex,
     positionStyle,
     glowColor = null, // "green" | "red" | null
+    externalScale,
 }) {
     const scaleRef = useRef(new Animated.Value(1)).current;
     const glowRef = useRef(new Animated.Value(0)).current;
+    const scaleAnim = externalScale || scaleRef;
 
     useEffect(() => {
         if (glowColor) {
@@ -24,6 +26,16 @@ export default function GuessBubble({
             }).start();
         }
     }, [glowColor]);
+
+    useEffect(() => {
+    scaleAnim.setValue(0);
+    Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 100,
+        useNativeDriver: true,
+    }).start();
+}, []);
 
     const handlePressIn = () => {
         Animated.spring(scaleRef, { toValue: 0.92, useNativeDriver: true }).start();
