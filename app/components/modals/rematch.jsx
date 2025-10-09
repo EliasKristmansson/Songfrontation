@@ -19,17 +19,16 @@ export default function RematchModal({ visible, onRematch, onBackToMenu }) {
                     </TouchableOpacity>
                 </LinearGradient>
 
-                {/* Back to Menu */}
-                <LinearGradient
-                    colors={["#242F7D", "#412F59", "#804D58"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.buttonGradient}
-                >
-                    <TouchableOpacity style={styles.buttonTapArea} onPress={onBackToMenu} activeOpacity={0.9}>
-                        <Text style={styles.buttonText}>Back to Menu</Text>
+                {/* Back to Menu (Inverted Style) */}
+                <View style={[styles.buttonGradient, styles.invertedButton]}>
+                    <TouchableOpacity
+                        style={styles.buttonTapArea}
+                        onPress={onBackToMenu} // functionality stays the same
+                        activeOpacity={0.9}
+                    >
+                        <Text style={styles.invertedButtonText}>Back to Menu</Text>
                     </TouchableOpacity>
-                </LinearGradient>
+                </View>
             </View>
         </View>
     );
@@ -82,6 +81,18 @@ const styles = StyleSheet.create({
 
     buttonText: {
         color: "#FFFFFF",
+        fontSize: 18,
+        fontFamily: "OutfitBold",
+    },
+
+    // Inverted button (Exit to Menu)
+    invertedButton: {
+        backgroundColor: "#FFFFFF",
+        borderColor: "#804D58",
+    },
+
+    invertedButtonText: {
+        color: "#804D58",
         fontSize: 18,
         fontFamily: "OutfitBold",
     },

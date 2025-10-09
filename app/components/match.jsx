@@ -403,26 +403,24 @@ export default function Match() {
         setDividerPos(1.1);
     };
 
-    const nextRound = (winner) => {
-        Alert.alert("Round Over", `Player ${winner} wins the round!`, [
-            {
-                text: "Next Round", onPress: () => {
-                    setShowInitialCountdown(true);
-                    let count = 3;
-                    setInitialCountdown(count);
-                    const countdown = setInterval(() => {
-                        count -= 1;
-                        setInitialCountdown(count);
-                        if (count <= 0) {
-                            clearInterval(countdown);
-                            setShowInitialCountdown(false);
-                            resetRound();
-                            setTimeout(() => handlePlayCore(), 100);
-                        }
-                    }, 900);
-                }
+    const nextRound = () => {
+
+        // Immediately start the countdown for the next round
+        setShowInitialCountdown(true);
+        let count = 3;
+        setInitialCountdown(count);
+
+        const countdown = setInterval(() => {
+            count -= 1;
+            setInitialCountdown(count);
+
+            if (count <= 0) {
+                clearInterval(countdown);
+                setShowInitialCountdown(false);
+                resetRound();
+                setTimeout(() => handlePlayCore(), 100);
             }
-        ]);
+        }, 900);
     };
 
     // --- Core play logic ---
@@ -1027,7 +1025,7 @@ const styles = StyleSheet.create({
 
     sideColumn: {
         flex: 1,
-        height: 320, 
+        height: 320,
         alignItems: "center",
     },
 
