@@ -19,7 +19,8 @@ export default function ShaderBackground({
   const glRef = useRef(null);
   const animationRef = useRef(null);
   const latestProps = useRef({ speed, scale, color1, color2, color3, color4, dividerPos });
-
+  const lastFrameTime = useRef(null);
+  const shaderTime = useRef(0);
   // Update ref when props change
   useEffect(() => {
     latestProps.current = { speed, scale, color1, color2, color3, color4, dividerPos };
@@ -36,61 +37,76 @@ export default function ShaderBackground({
         return texture;
     };
 
-  const renderLoop = (gl, uniforms) => {
+  const startRenderLoop = (gl, uniforms) => {
+  // stop any previous loop to avoid double-running
+  if (animationRef.current) cancelAnimationFrame(animationRef.current);
+
+  const {
+    timeUniform,
+    resUniform,
+    motionUniform,
+    speedUniform,
+    scaleUniform,
+    color1Uniform,
+    color2Uniform,
+    color3Uniform,
+    color4Uniform,
+    dividerUniform,
+  } = uniforms;
+
+  const render = () => {
+    if (!startTime.current) startTime.current = Date.now();
+    if (!lastFrameTime.current) lastFrameTime.current = Date.now();
+
+    const now = Date.now();
+    const delta = (now - lastFrameTime.current) / 1000.0; // seconds since last frame
+    lastFrameTime.current = now;
+
+    // Smooth delta to avoid huge jumps when JS hiccups
+    const smoothedDelta = Math.min(delta, 1 / 30); // cap at ~30 FPS worth of time step
+
+    // Accumulate "shader time" separately
+    shaderTime.current += smoothedDelta;
+    const elapsed = shaderTime.current;
+
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+
+    gl.uniform1f(timeUniform, elapsed);
+    gl.uniform2f(resUniform, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    gl.uniform1f(motionUniform, disableMotion ? 0.0 : 1.0);
+
     const {
-      timeUniform,
-      resUniform,
-      motionUniform,
-      speedUniform,
-      scaleUniform,
-      color1Uniform,
-      color2Uniform,
-      color3Uniform,
-      color4Uniform,
-      dividerUniform,
-    } = uniforms;
+      speed,
+      scale,
+      color1,
+      color2,
+      color3,
+      color4,
+      dividerPos,
+    } = latestProps.current;
 
-    const render = () => {
-      const elapsed = (Date.now() - startTime.current) / 1000.0;
+    gl.uniform1f(speedUniform, speed);
+    gl.uniform1f(scaleUniform, scale);
+    gl.uniform1f(dividerUniform, dividerPos);
+    gl.uniform3f(color1Uniform, color1[0], color1[1], color1[2]);
+    gl.uniform3f(color2Uniform, color2[0], color2[1], color2[2]);
+    gl.uniform3f(color3Uniform, color3[0], color3[1], color3[2]);
+    gl.uniform3f(color4Uniform, color4[0], color4[1], color4[2]);
 
-      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
-      gl.uniform1f(timeUniform, elapsed);
-      gl.uniform2f(resUniform, gl.drawingBufferWidth, gl.drawingBufferHeight);
-      gl.uniform1f(motionUniform, disableMotion ? 0.0 : 1.0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-      // Use latest props from ref
-      const {
-        speed,
-        scale,
-        color1,
-        color2,
-        color3,
-        color4,
-        dividerPos,
-      } = latestProps.current;
+    gl.flush();
+    gl.endFrameEXP();
 
-      gl.uniform1f(speedUniform, speed);
-      gl.uniform1f(scaleUniform, scale);
-      gl.uniform1f(dividerUniform, dividerPos);
-      gl.uniform3f(color1Uniform, color1[0], color1[1], color1[2]);
-      gl.uniform3f(color2Uniform, color2[0], color2[1], color2[2]);
-      gl.uniform3f(color3Uniform, color3[0], color3[1], color3[2]);
-      gl.uniform3f(color4Uniform, color4[0], color4[1], color4[2]);
-
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-      gl.flush();
-      gl.endFrameEXP();
-
-      animationRef.current = requestAnimationFrame(render);
-    };
-
-    render();
+    animationRef.current = requestAnimationFrame(render);
   };
+
+  // kick off first frame
+  animationRef.current = requestAnimationFrame(render);
+};
 
   const onContextCreate = async (gl) => {
     const grainAsset = Asset.fromModule(require("../../assets/images/grain.png"));
@@ -213,19 +229,28 @@ export default function ShaderBackground({
 
     glRef.current = { gl, ...uniforms };
 
-    renderLoop(gl, glRef.current);
+    startRenderLoop(gl, glRef.current);
+
   };
 
   useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active" && glRef.current) {
-        renderLoop(glRef.current.gl, glRef.current);
-      } else if (state.match(/inactive|background/)) {
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      }
-    });
-    return () => sub.remove();
-  }, []);
+  const handleAppStateChange = (nextState) => {
+    if (nextState === "active" && glRef.current) {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      // restart from fresh RAF cycle
+      startRenderLoop(glRef.current.gl, glRef.current);
+    } else if (nextState.match(/inactive|background/)) {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+  };
+
+  const sub = AppState.addEventListener("change", handleAppStateChange);
+  return () => {
+    sub.remove();
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+  };
+}, []);
 
   return (
     <View style={[styles.container, style]}>
