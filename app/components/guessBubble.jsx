@@ -63,7 +63,7 @@ export default function GuessBubble({
                     style={[styles.bubbleOption, disabled && styles.bubbleDisabled]}
                 >
                     <LinearGradient
-                        colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
+                        colors={["#896DA3", "#5663C4", "#412F7E"]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.bubbleOptionInner}
@@ -103,6 +103,9 @@ const styles = StyleSheet.create({
         borderRadius: 80,
         alignItems: "center",
         justifyContent: "center",
+        padding: 15,
+        borderWidth: 1.5,
+        borderColor: "#FFFFFF",
     },
     bubbleDisabled: { opacity: 0.5 },
     optionText: {
