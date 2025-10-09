@@ -55,7 +55,7 @@ const RIGHT_BUBBLE_POSITIONS = {
         { top: 200, right: 50 },
         { top: 120, right: 50 },
         { top: 20, right: 200 },
-        { top: 120, right: 200 },
+        { top: 120, right: 200 }, 
     ],
 };
 

@@ -60,6 +60,10 @@ const styles = StyleSheet.create({
     buttonsWrap: {
         width: "100%",
         alignItems: "center",
+        shadowColor: "#8e7cc3",
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        elevation: 10,
     },
 
     buttonGradient: {
@@ -79,6 +83,6 @@ const styles = StyleSheet.create({
     buttonText: {
         color: "#FFFFFF",
         fontSize: 18,
-        fontWeight: "bold",
+        fontFamily: "OutfitBold",
     },
 });
