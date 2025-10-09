@@ -1,10 +1,9 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
-import { ITUNES_GENRES } from "./match"; // import official genre list with IDs
+import { ITUNES_GENRES } from "./match";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
-// Pick a random genre object from ITUNES_GENRES
 function getRandomGenre(list) {
     return list[Math.floor(Math.random() * list.length)];
 }
@@ -12,8 +11,6 @@ function getRandomGenre(list) {
 export default function GenreRandom() {
     const router = useRouter();
     const { rounds, duration, guesses, points, nrOfPlayers, from } = useLocalSearchParams();
-
-    // Generate genre once
     const randomGenre = useMemo(() => getRandomGenre(ITUNES_GENRES), []);
 
     return (
@@ -21,20 +18,22 @@ export default function GenreRandom() {
             <PreGameMenuHeader
                 title="Selection of Genre"
                 onBack={() => {
-                    if (from === "main") router.push("../components/main");
-                    else router.push("../components/matchSettings");
+                    // ✅ preserve 'from' when going back
+                    if (from === "main") router.push({ pathname: "../components/main" });
+                    else router.push({ pathname: "../components/matchSettings", params: { from } });
                 }}
                 onProceed={() => {
                     router.push({
                         pathname: "../components/match",
                         params: {
-                            genreId: randomGenre.id,       // pass genre ID
-                            genreName: randomGenre.name,   // pass name for display
+                            genreId: randomGenre.id,
+                            genreName: randomGenre.name,
                             rounds: String(rounds ?? "3"),
                             duration: String(duration ?? "29"),
                             guesses: String(guesses ?? "3"),
                             points: String(points ?? "3"),
                             nrOfPlayers,
+                            from, // ✅ keep it here too
                         },
                     });
                 }}
@@ -51,27 +50,8 @@ export default function GenreRandom() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        minHeight: Platform.OS === "web" ? "100vh" : undefined,
-    },
-    genreWrapper: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-    },
-    genreLabel: {
-        fontSize: 16,
-        opacity: 0.7,
-        color: "#fff",
-        fontFamily: "OutfitRegular"
-    },
-    genreText: {
-        fontSize: 40,
-        fontWeight: "800",
-        color: "#fff",
-        letterSpacing: 1,
-        fontFamily: "OutfitBold",
-    },
+    container: { flex: 1, minHeight: Platform.OS === "web" ? "100vh" : undefined },
+    genreWrapper: { flex: 1, alignItems: "center", justifyContent: "center", gap: 6 },
+    genreLabel: { fontSize: 16, opacity: 0.7, color: "#fff", fontFamily: "OutfitRegular" },
+    genreText: { fontSize: 40, fontWeight: "800", color: "#fff", letterSpacing: 1, fontFamily: "OutfitBold" },
 });

@@ -27,6 +27,7 @@ export default function MatchSettings() {
     };
 
     const canProceed = !!getSelectedMatchMode();
+
     const handleNext = () => {
         const nextPath = getSelectedMatchMode();
         if (!nextPath) return;
@@ -38,12 +39,13 @@ export default function MatchSettings() {
             guesses: String(guesses),
             points: String(points),
             nrOfPlayers: from === "iconSinglePlayer" ? 1 : 2,
+            from, // ✅ preserve the original 'from'
         };
 
         router.push({ pathname: nextPath, params });
     };
 
-    // Scroller-kod
+    // Scroller logic
     const thumbHeight = Math.max(
         (scrollViewHeight / scrollContentHeight) * scrollViewHeight,
         30
@@ -205,15 +207,12 @@ export default function MatchSettings() {
                     </View>
                 </ScrollView>
 
-                {/* Scrollbar som syns hela tiden */}
+                {/* Scrollbar */}
                 <View style={styles.scrollbarTrack}>
                     <View
                         style={[
                             styles.scrollbarThumb,
-                            {
-                                height: thumbHeight,
-                                top: thumbTop,
-                            },
+                            { height: thumbHeight, top: thumbTop },
                         ]}
                     />
                 </View>
@@ -223,19 +222,9 @@ export default function MatchSettings() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        minHeight: Platform.OS === "web" ? "100vh" : undefined,
-    },
-    scrollContent: {
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingBottom: 40,
-    },
-    cardsColumn: {
-        width: "100%",
-        alignItems: "center",
-    },
+    container: { flex: 1, minHeight: Platform.OS === "web" ? "100vh" : undefined },
+    scrollContent: { alignItems: "center", paddingHorizontal: 16, paddingBottom: 40 },
+    cardsColumn: { width: "100%", alignItems: "center" },
     card: {
         backgroundColor: "rgba(0,0,0,0.35)",
         borderRadius: 14,
@@ -245,20 +234,8 @@ const styles = StyleSheet.create({
         maxWidth: 500,
         alignItems: "center",
     },
-    cardLabel: {
-        fontSize: 16,
-        fontFamily: "OutfitBold",
-        color: "#fff",
-        marginBottom: 8,
-        letterSpacing: 0.5,
-        textAlign: "center",
-    },
-    optionsRow: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "center",
-        gap: 10,
-    },
+    cardLabel: { fontSize: 16, fontFamily: "OutfitBold", color: "#fff", marginBottom: 8 },
+    optionsRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 10 },
     optionButton: {
         borderRadius: 20,
         paddingVertical: 8,
@@ -272,53 +249,12 @@ const styles = StyleSheet.create({
         borderColor: "#fff",
         backgroundColor: "rgba(255,255,255,0.15)",
     },
-    optionText: {
-        color: "#fff",
-        fontSize: 15,
-        fontFamily: "OutfitRegular",
-    },
-    optionTextSelected: {
-        color: "#fff",
-        fontSize: 15,
-        fontFamily: "OutfitBold",
-    },
-    sliderRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        width: "100%",
-    },
-    slider: {
-        flex: 1,
-        marginHorizontal: 8,
-        height: 8,
-    },
-    sliderLabel: {
-        fontSize: 12,
-        fontFamily: "OutfitRegular",
-        color: "#ddd",
-        width: 32,
-        textAlign: "center",
-    },
-    sliderInfo: {
-        fontSize: 14,
-        fontFamily: "OutfitBold",
-        color: "white",
-        marginTop: 6,
-    },
-    scrollbarTrack: {
-        position: "absolute",
-        right: 6,
-        top: 0,
-        bottom: 0,
-        width: 5,
-        borderRadius: 5 / 2,
-    },
-    scrollbarThumb: {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        borderRadius: 5 / 2,
-        backgroundColor: "rgba(0,0,0,0.35)",
-        opacity: 0.7,
-    },
+    optionText: { color: "#fff", fontSize: 15, fontFamily: "OutfitRegular" },
+    optionTextSelected: { color: "#fff", fontSize: 15, fontFamily: "OutfitBold" },
+    sliderRow: { flexDirection: "row", alignItems: "center", width: "100%" },
+    slider: { flex: 1, marginHorizontal: 8, height: 8 },
+    sliderLabel: { fontSize: 12, color: "#ddd", width: 32, textAlign: "center" },
+    sliderInfo: { fontSize: 14, fontFamily: "OutfitBold", color: "white", marginTop: 6 },
+    scrollbarTrack: { position: "absolute", right: 6, top: 0, bottom: 0, width: 5 },
+    scrollbarThumb: { position: "absolute", left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.35)", borderRadius: 3 },
 });

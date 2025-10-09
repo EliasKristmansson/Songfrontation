@@ -35,9 +35,9 @@ const LEFT_BUBBLE_POSITIONS = {
     ],
     4: [
         { top: 0, right: 40 },
-        { top: 120, right: 50 },
-        { top: 20, right: 200 },
-        { top: 120, right: 200 },
+        { top: 160, right: 20 },
+        { top: 5, right: 200 },
+        { top: 165, right: 185 },
     ],
 };
 
@@ -52,10 +52,10 @@ const RIGHT_BUBBLE_POSITIONS = {
         { top: 50, right: 50 },
     ],
     4: [
-        { top: 200, right: 50 },
-        { top: 120, right: 50 },
-        { top: 20, right: 200 },
-        { top: 120, right: 200 }, 
+        { top: 0, left: 40 },
+        { top: 160, left: 20 },
+        { top: 5, left: 200 },
+        { top: 165, left: 185 },
     ],
 };
 
@@ -106,7 +106,7 @@ class MatchSettings {
 export default function Match() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const {dividerPos, setDividerPos} = useContext(BackgroundShaderContext);
+    const { dividerPos, setDividerPos } = useContext(BackgroundShaderContext);
     const [showPause, setShowPause] = useState(false);
 
     // Tillagda för att rematch sa funka
@@ -115,7 +115,6 @@ export default function Match() {
 
     const genreId = params.genreId ? parseInt(params.genreId) : null;
     const genreName = params.genreName || "Unknown";
-
 
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -247,7 +246,7 @@ export default function Match() {
         }
     };
 
-        // --- Helper to (re)start divider interval ---
+    // --- Helper to (re)start divider interval ---
     const startDividerInterval = () => {
         if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
         // only start if there's time left
@@ -262,7 +261,7 @@ export default function Match() {
                     setLastGuessUsed({ 1: false, 2: false });
                     if (sound) {
                         // unload in background; ignore errors
-                        sound.unloadAsync().then(() => setSound(null)).catch(() => {});
+                        sound.unloadAsync().then(() => setSound(null)).catch(() => { });
                     }
                     return 0;
                 }
@@ -310,7 +309,7 @@ export default function Match() {
         }, 1000);
     };
 
-        // --- Pause everything (audio + intervals) ---
+    // --- Pause everything (audio + intervals) ---
     const pauseAll = async () => {
         try {
             pausedForModal.current = true;
@@ -428,51 +427,62 @@ export default function Match() {
 
     // --- Core play logic ---
     // Uppdaterad för rematch sak funka
+    // --- Core play logic ---
     const handlePlayCore = async (opts = {}) => {
-        if (showRematch && !opts.force) {
-            tracksWithPreview([]);
-            return;
-
-        }
         try {
+            // If rematch modal is showing and this isn't a forced restart, bail out
+            if (showRematch && !opts.force) {
+                // Close rematch state and return (original code tried to call an undefined function)
+                setShowRematch(false);
+                return;
+            }
+
             setLoading(true);
             setCorrectPressed(false);
             setLastGuessPhase(false);
             setLastGuessUsed({ 1: false, 2: false });
+
+            // Unload previous sound if any
             if (sound) {
-                await sound.unloadAsync();
+                try {
+                    await sound.unloadAsync();
+                } catch (e) {
+                    console.warn("Warning unloading previous sound:", e);
+                }
                 setSound(null);
             }
 
-            // Determine genre to use
+            // Determine which genre to use
             let expectedGenreId = genreId;
             let expectedGenreName = genreName;
 
             if (!expectedGenreId) {
+                // pick a random genre if none provided
                 const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
                 expectedGenreId = randomGenre.id;
                 expectedGenreName = randomGenre.name;
                 setCurrentRoundGenre(randomGenre);
             }
 
-            // ✅ Console check
             console.log("Searching for genre:", expectedGenreName, "with genreId:", expectedGenreId);
 
-
-
-            if (!genreId) {
+            if (!expectedGenreId) {
                 Alert.alert("Error", "No genre selected!");
                 setLoading(false);
                 return;
             }
 
+            // Number of guesses requested by user (2, 3 or 4)
+            const nrOfGuesses = matchSettings.nrOfGuessesOnBoard || 3;
+
+            // random letter search to get a broad selection
             const randomLetter = String.fromCharCode(97 + Math.floor(Math.random() * 26)); // a-z
 
             const res = await fetch(
-                `https://itunes.apple.com/search?term=${randomLetter}&media=music&entity=song&genreId=${genreId}&limit=200`
+                `https://itunes.apple.com/search?term=${randomLetter}&media=music&entity=song&genreId=${expectedGenreId}&limit=200`
             );
 
-            // ✅ Only parse JSON ONCE — never call res.json() again afterward!
+            // parse JSON once
             let responseData;
             try {
                 responseData = await res.json();
@@ -489,104 +499,118 @@ export default function Match() {
                 return;
             }
 
+            // prepare expected genre substring for matching "Music > Pop" -> "pop"
+            const expectedGenreSub = expectedGenreName && expectedGenreName.includes(">")
+                ? expectedGenreName.split(">")[1].trim().toLowerCase()
+                : (expectedGenreName || "").toLowerCase();
 
-            console.log(
-                "Filtered tracks:",
-                (tracksWithPreview || []).map(t => ({ name: t.trackName, genre: t.primaryGenreName }))
-            );
-
-            // --- 0️⃣ Initialize allPlayedTracks state at the top of your component (outside this function) ---
-
-            // --- 1️⃣ Filter new tracks ---
-            let tracksWithPreview = responseData.results.filter(
+            // --- Filter new tracks (have preview, not already played, and matching genre text) ---
+            let fetched = responseData.results || [];
+            let tracksWithPreview = fetched.filter(
                 t =>
                     t.previewUrl &&
                     !playedTrackIds.has(t.trackId) &&
-                    t.primaryGenreName?.toLowerCase().includes(expectedGenreName.split('>')[1].trim().toLowerCase())
+                    (t.primaryGenreName || "").toLowerCase().includes(expectedGenreSub)
             );
 
             console.log(
-                "Filtered new tracks:",
+                "Filtered new tracks (matching genre & not played):",
                 tracksWithPreview.map(t => ({ name: t.trackName, genre: t.primaryGenreName }))
             );
 
-            // --- 2️⃣ Check if enough tracks exist ---
-            if (tracksWithPreview.length + allPlayedTracks.length < 4) {
+            // If total unique tracks (new + previously played) are less than required, bail out
+            if ((tracksWithPreview.length + allPlayedTracks.length) < nrOfGuesses) {
                 Alert.alert("Not Enough Tracks", "Returning to front page.");
                 setLoading(false);
                 router.push("/");
                 return;
             }
 
-            // --- 3️⃣ Pick up to 3 unique NEW tracks ---
+            // --- Build the optionsTracks array with up to nrOfGuesses items ---
             const optionsTracks = [];
-            while (optionsTracks.length < 4 && tracksWithPreview.length > 0) {
+
+            // take from fresh tracks first
+            while (optionsTracks.length < nrOfGuesses && tracksWithPreview.length > 0) {
                 const idx = Math.floor(Math.random() * tracksWithPreview.length);
                 const track = tracksWithPreview.splice(idx, 1)[0];
-                optionsTracks.push(track);
-            }
-
-            // --- 4️⃣ Fill missing slots from previously played tracks ---
-            const playedArray = [...allPlayedTracks].filter(t => !optionsTracks.includes(t)); // avoid duplicates
-            while (optionsTracks.length < 4 && playedArray.length > 0) {
-                const idx = Math.floor(Math.random() * playedArray.length);
-                const track = playedArray.splice(idx, 1)[0]; // remove used to prevent infinite loop
                 if (track && track.previewUrl) optionsTracks.push(track);
             }
 
-            // --- 5️⃣ If still <3 (should rarely happen), reroute ---
-            if (optionsTracks.length < 4) {
+            // if still missing, fill from previously played tracks (allPlayedTracks)
+            const playedFallback = allPlayedTracks.filter(t => !optionsTracks.some(o => o.trackId === t.trackId));
+            while (optionsTracks.length < nrOfGuesses && playedFallback.length > 0) {
+                const idx = Math.floor(Math.random() * playedFallback.length);
+                const track = playedFallback.splice(idx, 1)[0];
+                if (track && track.previewUrl) optionsTracks.push(track);
+            }
+
+            // Final check
+            if (optionsTracks.length < nrOfGuesses) {
                 Alert.alert("Not Enough Tracks", "Returning to front page.");
                 setLoading(false);
                 router.push("/");
                 return;
             }
 
-            // --- 6️⃣ Pick random correct track ---
+            // --- Pick correct track randomly among the chosen options ---
             let correctTrackIdx = Math.floor(Math.random() * optionsTracks.length);
             let correctTrack = optionsTracks[correctTrackIdx];
 
-            // --- 7️⃣ Mark tracks as played ---
+            // --- Mark these tracks as played (update Set) ---
             setPlayedTrackIds(prev => {
                 const newSet = new Set(prev);
                 optionsTracks.forEach(t => newSet.add(t.trackId));
                 return newSet;
             });
 
-            // --- 8️⃣ Add all selected tracks to allPlayedTracks ---
-            setAllPlayedTracks(prev => [...prev, ...optionsTracks]);
+            // --- Add selected tracks to allPlayedTracks (avoid duplicates) ---
+            setAllPlayedTracks(prev => {
+                const existingIds = new Set(prev.map(p => p.trackId));
+                const toAppend = optionsTracks.filter(t => !existingIds.has(t.trackId));
+                return [...prev, ...toAppend];
+            });
 
-
-            // Create Song object
+            // --- Build Song object for the correct track and keep it in state ---
             const songObj = new Song({
                 songId: correctTrack.trackId,
                 songGenre: correctTrack.primaryGenreName,
                 songFile: correctTrack.previewUrl,
                 songTitle: correctTrack.trackName,
                 songArtist: correctTrack.artistName,
-                songDuration: 30,
+                songDuration: matchSettings.songDuration || 30,
                 songArtistAlternatives: [],
             });
             setCurrentSongObj(songObj);
 
-            // Map options for display (always 3)
-            const options = optionsTracks.map((t, idx) => ({
+            // --- Map options for display (exactly nrOfGuesses items) ---
+            const options = optionsTracks.slice(0, nrOfGuesses).map((t, idx) => ({
                 title: t.trackName || "Unknown Title",
                 artist: t.artistName || "Unknown Artist",
                 previewUrl: t.previewUrl,
                 isCorrect: idx === correctTrackIdx,
             }));
+
+            // Safety: if for any reason correct track is not among the visible options, force one to be correct
+            if (!options.some(o => o.isCorrect)) {
+                console.warn("Correct track fell outside visible options — forcing one to be correct.");
+                correctTrackIdx = 0;
+                options[0].isCorrect = true;
+                correctTrack = optionsTracks[0];
+            }
+
+            // set options to state used by UI
             setSongOptions(options);
 
-            // Play the correct track
+            // --- Load and play correct track's preview ---
             const { sound: newSound } = await Audio.Sound.createAsync(
                 { uri: correctTrack.previewUrl },
                 { shouldPlay: true }
             );
+
             setSound(newSound);
             setIsPlaying(true);
 
-            // Divider timer
+            // start the divider timer using matchSettings.songDuration
             setDividerTimer(matchSettings.songDuration);
             if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
             dividerTimerRef.current = setInterval(() => {
@@ -597,7 +621,7 @@ export default function Match() {
                         setLastGuessPhase(true);
                         setLastGuessUsed({ 1: false, 2: false });
                         if (newSound) {
-                            newSound.unloadAsync();
+                            newSound.unloadAsync().catch(e => console.warn("Unload error:", e));
                             setSound(null);
                         }
                         return 0;
@@ -606,10 +630,11 @@ export default function Match() {
                 });
             }, 1000);
 
+            // playback status handler: unload when finished
             newSound.setOnPlaybackStatusUpdate(status => {
                 if (status.didJustFinish) {
                     setIsPlaying(false);
-                    newSound.unloadAsync();
+                    newSound.unloadAsync().catch(e => console.warn("Unload error:", e));
                     setSound(null);
                     if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
                 }
@@ -623,6 +648,7 @@ export default function Match() {
             setLoading(false);
         }
     };
+
 
     useEffect(() => {
         return () => {
@@ -803,12 +829,12 @@ export default function Match() {
             )}
 
             <View style={styles.topRightButtons}>
-                                <TouchableOpacity
-                                    style={styles.settingsButton}
-                                    onPress={() => {setShowPause(true); pauseAll();}}
-                                >
-                                    <Text style={styles.settingsText}>⏸</Text>
-                                </TouchableOpacity>       
+                <TouchableOpacity
+                    style={styles.settingsButton}
+                    onPress={() => { setShowPause(true); pauseAll(); }}
+                >
+                    <Text style={styles.settingsText}>⏸</Text>
+                </TouchableOpacity>
             </View>
 
             {/* Player 1 Cooldown Overlay */}
@@ -930,9 +956,9 @@ export default function Match() {
                 onRematch={handleRematch}
                 onBackToMenu={handleBackToMenu}
             />
-            <PauseMatch 
+            <PauseMatch
                 visible={showPause}
-                resumeMatch={() => {setShowPause(false); resumeAll();}}
+                resumeMatch={() => { setShowPause(false); resumeAll(); }}
                 onBackToMenu={handleBackToMenuFromPause}
             />
         </View>
@@ -998,13 +1024,13 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
         position: "relative",
     },
-    sideColumn: {
-        width: (WINDOW_WIDTH - 2) / 2,
-        alignItems: "center",
-        height: 320,
-        position: "relative",
 
+    sideColumn: {
+        flex: 1,
+        height: 320, 
+        alignItems: "center",
     },
+
     largeIconCircle: {
         width: 40,
         height: 40,
