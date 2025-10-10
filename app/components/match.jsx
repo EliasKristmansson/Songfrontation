@@ -166,6 +166,10 @@ export default function Match() {
     const [player2CooldownTime, setPlayer2CooldownTime] = useState(0);
     const player1CooldownTimer = useRef(null);
     const player2CooldownTimer = useRef(null);
+    const transitionTimeoutRef = useRef(null);
+    const isSongTransitionPendingRef = useRef(false);
+
+
 
     const [allPlayedTracks, setAllPlayedTracks] = useState([]); // only once at component level
 
@@ -178,6 +182,8 @@ export default function Match() {
 
     const [initialCountdown, setInitialCountdown] = useState(3);
     const [showInitialCountdown, setShowInitialCountdown] = useState(true);
+    const initialCountdownRef = useRef(null);
+
 
     const bubbleScalesRef = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]);
     const bubbleScalesRefShrinkGrow = useRef([]);
@@ -207,6 +213,30 @@ export default function Match() {
         if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
         if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
     };
+
+    const startInitialCountdown = (onFinish) => {
+        // Clear any leftover interval
+        if (initialCountdownRef.current) {
+            clearInterval(initialCountdownRef.current);
+            initialCountdownRef.current = null;
+        }
+
+        setShowInitialCountdown(true);
+        let count = 3;
+        setInitialCountdown(count);
+
+        initialCountdownRef.current = setInterval(() => {
+            count -= 1;
+            setInitialCountdown(count);
+
+            if (count <= 0) {
+            clearInterval(initialCountdownRef.current);
+            initialCountdownRef.current = null;
+            setShowInitialCountdown(false);
+            onFinish();
+            }
+        }, 900);
+        };
 
     const handleEndOfRound = (winningPlayerNum) => {
         if (winningPlayerNum === 1) {
@@ -267,26 +297,24 @@ export default function Match() {
 };
         // --- Helper to start the song transition ---
     const startSongTransition = () => {
-        //animateBubblesOut();
-        setSongOptions([]); // 👈 hides the guessing bubbles
-        let count = 3;
-
+        setSongOptions([]);
         const glowDuration = 1600;
-        
-        setTimeout(() => {
-            setInitialCountdown(count);
-            setShowInitialCountdown(true);
-            const interval = setInterval(() => {
-                count -= 1;
-                setInitialCountdown(count);
-                if (count <= 0) {
-                    clearInterval(interval);
-                    setShowInitialCountdown(false);
-                    setTimeout(() => handlePlayCore(), 200);
-                }
-            }, 1000);
+
+        isSongTransitionPendingRef.current = true; // ✅ mark pending
+
+        // Clear any previous timeout
+        if (transitionTimeoutRef.current) {
+            clearTimeout(transitionTimeoutRef.current);
+            transitionTimeoutRef.current = null;
+        }
+
+        transitionTimeoutRef.current = setTimeout(() => {
+            transitionTimeoutRef.current = null;
+            isSongTransitionPendingRef.current = false; // ✅ not pending anymore
+            startInitialCountdown(() => {
+            handlePlayCore();
+            });
         }, glowDuration);
-        
     };
 
     useEffect(() => {
@@ -425,6 +453,17 @@ export default function Match() {
                 clearInterval(player2CooldownTimer.current);
                 player2CooldownTimer.current = null;
             }
+            if (initialCountdownRef.current) {
+                clearInterval(initialCountdownRef.current);
+                initialCountdownRef.current = null;
+            }
+
+            if (transitionTimeoutRef.current) {
+                clearTimeout(transitionTimeoutRef.current);
+                transitionTimeoutRef.current = null;
+            }
+
+
             // stop UI play flag
             setIsPlaying(false);
         } catch (e) {
@@ -447,9 +486,31 @@ export default function Match() {
             // restart cooldown timers if they had remaining time
             if (player1CooldownTime > 0) startPlayer1CooldownInterval();
             if (player2CooldownTime > 0) startPlayer2CooldownInterval();
+
+            if (showInitialCountdown && initialCountdown > 0) {
+                let count = initialCountdown;
+                initialCountdownRef.current = setInterval(() => {
+                    count -= 1;
+                    setInitialCountdown(count);
+                    if (count <= 0) {
+                    clearInterval(initialCountdownRef.current);
+                    initialCountdownRef.current = null;
+                    setShowInitialCountdown(false);
+                    handlePlayCore();
+                    }
+                }, 900);
+                return; // don't restart timers below
+            }
+
+            if (isSongTransitionPendingRef.current) {
+                startSongTransition();
+                return; // so you don't double-start anything else
+            }
+
         } catch (e) {
             console.error("resumeAll error", e);
         }
+        
     };
 
 
@@ -470,19 +531,10 @@ export default function Match() {
         setRoundWinner(null);
         setShowRematch(false);
 
-        setShowInitialCountdown(true);
-        let count = 3;
-        setInitialCountdown(count);
-        const countdown = setInterval(() => {
-            count -= 1;
-            setInitialCountdown(count);
-            if (count <= 0) {
-                clearInterval(countdown);
-                setShowInitialCountdown(false);
-                resetRound();
-                setTimeout(() => handlePlayCore({ force: true }), 120); // <— viktig ändring
-            }
-        }, 900);
+
+        startInitialCountdown(() => {
+            handlePlayCore(); // or your rematch-start logic
+        });
     };
     const handleBackToMenu = () => {
         setShowRematch(false);
@@ -567,9 +619,7 @@ export default function Match() {
             const nrOfGuesses = matchSettings.nrOfGuessesOnBoard || 3;
 
             // random letter search to get a broad selection
-            const allowedLetters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','r','s','t','u','v','w'];
-            const randomLetter = allowedLetters[Math.floor(Math.random() * allowedLetters.length)];
-
+            const randomLetter = String.fromCharCode(97 + Math.floor(Math.random() * 26)); // a-z
 
             const res = await fetch(
                 `https://itunes.apple.com/search?term=${randomLetter}&media=music&entity=song&genreId=${expectedGenreId}&limit=200`
@@ -757,22 +807,27 @@ export default function Match() {
 
     // Initial countdown
     useEffect(() => {
-        let mounted = true;
-        const runInitialCountdown = async () => {
-            setShowInitialCountdown(true);
-            let count = 3;
-            setInitialCountdown(count);
-            while (count > 0 && mounted) {
-                await new Promise(res => setTimeout(res, 900));
-                count -= 1;
-                setInitialCountdown(count);
-            }
-            if (!mounted) return;
-            setShowInitialCountdown(false);
-            handlePlayCore();
-        };
-        runInitialCountdown();
-        return () => { mounted = false; };
+       setShowInitialCountdown(true);
+       let count = 3;
+    setInitialCountdown(count);
+
+        initialCountdownRef.current = setInterval(() => {
+        count -= 1;
+     setInitialCountdown(count);
+
+     if (count <= 0) {
+       clearInterval(initialCountdownRef.current);
+       initialCountdownRef.current = null;
+       setShowInitialCountdown(false);
+       handlePlayCore();
+     }
+   }, 900);
+
+   return () => {
+     if (initialCountdownRef.current) {
+       clearInterval(initialCountdownRef.current);
+     }
+   };
     }, []);
 
     // --- Guess handling ---
