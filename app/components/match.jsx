@@ -170,6 +170,7 @@ export default function Match() {
     const transitionTimeoutRef = useRef(null);
     const isSongTransitionPendingRef = useRef(false);
 
+    const shouldShowCounter = matchSettings.nrOfRoundsToWinMatch > 1;
 
 
     const [allPlayedTracks, setAllPlayedTracks] = useState([]); // only once at component level
@@ -994,9 +995,11 @@ export default function Match() {
     // --- Render helpers ---
     const PointsRow = ({ points }) => (
         <View style={{ flexDirection: "row" }}>
-            {[0, 1, 2].map(i => (
+            {Array.from({length: Math.max(1, matchSettings.nrOfSongsToWinRound)}).map((_,i) => (
                 <View key={i} style={[styles.pointCircle, points > i && styles.pointCircleFilled]} />
             ))}
+            
+
         </View>
     );
 
@@ -1053,8 +1056,11 @@ export default function Match() {
             <View style={styles.headerRow}>
                 <View style={styles.sideRow}>
                     <PointsRow points={player1Points} />
-                    <RoundsRow won={player1RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
-                    <View style={styles.largeIconCircle}>
+                    {/* The RoundsRow component is only rendered if shouldShowCounter is true */}
+                        {shouldShowCounter && (
+                            <RoundsRow won={player1RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
+                        )}
+                        <View style={styles.largeIconCircle}>
                         <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
                     </View>
                 </View>
@@ -1071,8 +1077,11 @@ export default function Match() {
                         <View style={styles.largeIconCircle}>
                             <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
                         </View>
+
+                        {shouldShowCounter && (
+                            <RoundsRow won={player1RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
+                        )}
                         <PointsRow points={player2Points} />
-                        <RoundsRow won={player2RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP2} />
                     </View>
                 )}
             </View>
