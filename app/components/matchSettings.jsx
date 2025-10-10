@@ -132,7 +132,7 @@ export default function MatchSettings() {
 
                         {/* Number of Rounds */}
                         <View style={styles.card}>
-                            <Text style={styles.cardLabel}>Rounds to win match</Text>
+                            <Text style={styles.cardLabel}>Rounds to Win Match</Text>
                             <View style={styles.optionsRow}>
                                 {[1, 2, 3].map((option) => (
                                     <TouchableOpacity
