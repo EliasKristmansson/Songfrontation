@@ -1,7 +1,7 @@
 import { Audio } from "expo-av";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useContext, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAudio } from "../components/audioContext";
 import GuessBubble from "../components/guessBubble.jsx";
 import RematchModal from "../components/modals/rematch.jsx";
@@ -59,6 +59,25 @@ const RIGHT_BUBBLE_POSITIONS = {
         { top: 165, left: 185 },
     ],
 };
+
+const SINGLE_BUBBLE_POSITIONS = {
+    2: [
+        { top: 50, left: 250 }, 
+        { top: 50, left: 420 }
+    ],
+    3: [
+        { top: 50, left: 150 }, 
+        { top: 50, left: 330 }, 
+        { top: 50, left: 510 }
+    ],
+    4: [
+        { top: 50, left: 80 }, 
+        { top: 50, left: 250 }, 
+        { top: 50, left: 420 }, 
+        { top: 50, left: 590 }
+    ],
+};
+
 
 
 // --- Game classes ---
@@ -347,13 +366,13 @@ export default function Match() {
         Animated.sequence([
             Animated.timing(glowAnim, {
                 toValue: 1,
-                duration: 400,
+                duration: 150,
                 easing: Easing.out(Easing.quad),
                 useNativeDriver: false,
             }),
             Animated.timing(glowAnim, {
                 toValue: 0,
-                duration: 1200,
+                duration: 500,
                 easing: Easing.in(Easing.quad),
                 useNativeDriver: false,
             }),
@@ -1044,10 +1063,10 @@ export default function Match() {
     // --- Render helpers ---
     const PointsRow = ({ points }) => (
         <View style={{ flexDirection: "row" }}>
-            {Array.from({length: Math.max(1, matchSettings.nrOfSongsToWinRound)}).map((_,i) => (
+            {Array.from({ length: Math.max(1, matchSettings.nrOfSongsToWinRound) }).map((_, i) => (
                 <View key={i} style={[styles.pointCircle, points > i && styles.pointCircleFilled]} />
             ))}
-            
+
 
         </View>
     );
@@ -1106,10 +1125,10 @@ export default function Match() {
                 <View style={styles.sideRow}>
                     <PointsRow points={player1Points} />
                     {/* The RoundsRow component is only rendered if shouldShowCounter is true */}
-                        {shouldShowCounter && (
-                            <RoundsRow won={player1RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
-                        )}
-                        <View style={styles.largeIconCircle}>
+                    {shouldShowCounter && (
+                        <RoundsRow won={player1RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
+                    )}
+                    <View style={styles.largeIconCircle}>
                         <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
                     </View>
                 </View>
@@ -1145,61 +1164,86 @@ export default function Match() {
 
             {/* Song Options */}
             <View style={styles.playArea}>
-                <View style={styles.sideColumn}>
-                    {songOptions
-                        .filter(Boolean)
-                        .slice(0, nrOfGuessesOnBoard) // 👈 only show this many
-                        .map((option, idx) => (
-                            <GuessBubble
-                                key={`p1-${idx}`}
-                                option={option}
-                                onPress={() => handleGuess(option.isCorrect, 1, idx)}
-                                animatedIndex={idx}
-                                positionStyle={LEFT_BUBBLE_POSITIONS[nrOfGuessesOnBoard][idx]}
-                                glowColor={
-                                    correctGlowIndices[1]?.includes(idx)
-                                        ? "green"
-                                        : wrongGlowIndices[1]?.includes(idx)
-                                            ? "red"
-                                            : null
-                                }
-                            />
-                        ))}
-                </View>
-
-                {!isSinglePlayer && (
-                    <View style={styles.sideColumn}>
+                {isSinglePlayer ? (
+                    // 🧍 Single Player Mode
+                    <View style={styles.singleColumn}>
                         {songOptions
                             .filter(Boolean)
-                            .slice(0, nrOfGuessesOnBoard) // 👈 same here
+                            .slice(0, nrOfGuessesOnBoard)
                             .map((option, idx) => (
                                 <GuessBubble
-                                    key={`p2-${idx}`}
+                                    key={`sp-${idx}`}
                                     option={option}
-                                    onPress={() => handleGuess(option.isCorrect, 2, idx)}
+                                    onPress={() => handleGuess(option.isCorrect, 1, idx)}
                                     animatedIndex={idx}
-                                    positionStyle={RIGHT_BUBBLE_POSITIONS[nrOfGuessesOnBoard][idx]}
+                                    positionStyle={SINGLE_BUBBLE_POSITIONS[nrOfGuessesOnBoard][idx]}
                                     glowColor={
-                                        correctGlowIndices[2]?.includes(idx)
+                                        correctGlowIndices[1]?.includes(idx)
                                             ? "green"
-                                            : wrongGlowIndices[2]?.includes(idx)
+                                            : wrongGlowIndices[1]?.includes(idx)
                                                 ? "red"
                                                 : null
                                     }
                                 />
                             ))}
                     </View>
+                ) : (
+                    // 👥 Multiplayer Mode
+                    <View style={styles.playArea}>
+                        <View style={styles.sideColumn}>
+                            {songOptions
+                                .filter(Boolean)
+                                .slice(0, nrOfGuessesOnBoard)
+                                .map((option, idx) => (
+                                    <GuessBubble
+                                        key={`p1-${idx}`}
+                                        option={option}
+                                        onPress={() => handleGuess(option.isCorrect, 1, idx)}
+                                        animatedIndex={idx}
+                                        positionStyle={LEFT_BUBBLE_POSITIONS[nrOfGuessesOnBoard][idx]}
+                                        glowColor={
+                                            correctGlowIndices[1]?.includes(idx)
+                                                ? "green"
+                                                : wrongGlowIndices[1]?.includes(idx)
+                                                    ? "red"
+                                                    : null
+                                        }
+                                    />
+                                ))}
+                        </View>
+
+                        <View style={styles.sideColumn}>
+                            {songOptions
+                                .filter(Boolean)
+                                .slice(0, nrOfGuessesOnBoard)
+                                .map((option, idx) => (
+                                    <GuessBubble
+                                        key={`p2-${idx}`}
+                                        option={option}
+                                        onPress={() => handleGuess(option.isCorrect, 2, idx)}
+                                        animatedIndex={idx}
+                                        positionStyle={RIGHT_BUBBLE_POSITIONS[nrOfGuessesOnBoard][idx]}
+                                        glowColor={
+                                            correctGlowIndices[2]?.includes(idx)
+                                                ? "green"
+                                                : wrongGlowIndices[2]?.includes(idx)
+                                                    ? "red"
+                                                    : null
+                                        }
+                                    />
+                                ))}
+                        </View>
+                    </View>
                 )}
             </View>
 
-
-            {/* Loading Overlay */}
+            {/* Loading Overlay 
             {loading && (
                 <View style={styles.loaderOverlay}>
                     <ActivityIndicator size="large" color="#5C66C5" />
                     <Text style={{ color: "#fff", marginTop: 10 }}>Loading song preview...</Text>
                 </View>
-            )}
+            )}*/}
 
             {/* Return Overlay */}
             <RematchModal
