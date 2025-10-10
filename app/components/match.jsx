@@ -567,7 +567,9 @@ export default function Match() {
             const nrOfGuesses = matchSettings.nrOfGuessesOnBoard || 3;
 
             // random letter search to get a broad selection
-            const randomLetter = String.fromCharCode(97 + Math.floor(Math.random() * 26)); // a-z
+            const allowedLetters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','r','s','t','u','v','w'];
+            const randomLetter = allowedLetters[Math.floor(Math.random() * allowedLetters.length)];
+
 
             const res = await fetch(
                 `https://itunes.apple.com/search?term=${randomLetter}&media=music&entity=song&genreId=${expectedGenreId}&limit=200`
