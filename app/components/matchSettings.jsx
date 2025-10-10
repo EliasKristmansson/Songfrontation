@@ -9,7 +9,7 @@ export default function MatchSettings() {
     const { from } = useLocalSearchParams();
 
     const [genre, setGenre] = useState("Random");
-    const [rounds, setRounds] = useState(3);
+    const [rounds, setRounds] = useState(1);
     const [duration, setDuration] = useState(29);
     const [guesses, setGuesses] = useState(3);
     const [points, setPoints] = useState(3);
@@ -102,10 +102,37 @@ export default function MatchSettings() {
                                 ))}
                             </View>
                         </View>
+                        
+                        {/* Points to Win Round */}
+                        <View style={styles.card}>
+                            <Text style={styles.cardLabel}>Songs to Win Round</Text>
+                            <View style={styles.optionsRow}>
+                                {[1, 3, 5].map((option) => (
+                                    <TouchableOpacity
+                                        key={option}
+                                        style={[
+                                            styles.optionButton,
+                                            points === option && styles.optionButtonSelected,
+                                        ]}
+                                        onPress={() => setPoints(option)}
+                                    >
+                                        <Text
+                                            style={
+                                                points === option
+                                                    ? styles.optionTextSelected
+                                                    : styles.optionText
+                                            }
+                                        >
+                                            {option}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
 
                         {/* Number of Rounds */}
                         <View style={styles.card}>
-                            <Text style={styles.cardLabel}>Number of Rounds</Text>
+                            <Text style={styles.cardLabel}>Rounds to win match</Text>
                             <View style={styles.optionsRow}>
                                 {[1, 2, 3].map((option) => (
                                     <TouchableOpacity
@@ -132,7 +159,7 @@ export default function MatchSettings() {
 
                         {/* Round Duration */}
                         <View style={styles.card}>
-                            <Text style={styles.cardLabel}>Round Duration</Text>
+                            <Text style={styles.cardLabel}>Song Duration</Text>
                             <View style={styles.sliderRow}>
                                 <Text style={styles.sliderLabel}>5s</Text>
                                 <Slider
@@ -178,32 +205,7 @@ export default function MatchSettings() {
                             </View>
                         </View>
 
-                        {/* Points to Win Round */}
-                        <View style={styles.card}>
-                            <Text style={styles.cardLabel}>Points to Win Round</Text>
-                            <View style={styles.optionsRow}>
-                                {[1, 3, 5].map((option) => (
-                                    <TouchableOpacity
-                                        key={option}
-                                        style={[
-                                            styles.optionButton,
-                                            points === option && styles.optionButtonSelected,
-                                        ]}
-                                        onPress={() => setPoints(option)}
-                                    >
-                                        <Text
-                                            style={
-                                                points === option
-                                                    ? styles.optionTextSelected
-                                                    : styles.optionText
-                                            }
-                                        >
-                                            {option}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
+                        
                     </View>
                 </ScrollView>
 
