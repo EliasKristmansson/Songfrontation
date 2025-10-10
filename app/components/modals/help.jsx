@@ -41,7 +41,7 @@ export default function Help({ visible, onClose }) {
 
                 <ScrollView>
                     <Text style={[styles.body, { fontFamily: "OutfitRegular" }]}>
-                        Welcome to Songfrontation! 🎵 {"\n"}
+                        Welcome to Songfrontation! 🎵 {"\n\n"}
                         - Choose Quick Match for a fast game.{"\n"}
                         - Use Custom Match to set your own rules.{"\n"}
                         - Tap settings to configure settings.{"\n\n"}                        
@@ -77,12 +77,12 @@ Inside the Match: {"\n"}
 - If you guess right, you are awarded a point. If you are wrong, you get a 2 second cooldown shown on your side of the screen before you can make another guess.{"\n"}
 - If no player manages to guess right within the timeframe of the song duration, a state of last guess is initiated.{"\n"}
 - If the last guess state is initiated, any player is able to make the last guess. But be careful! If your guess is right you are awarded the point, but if your guess is wrong your opponent is awarded the point.{"\n"}
-- After a point is awarded to a player, the next song and the new guesses on board will appear. The above mentioned process is repeated until the number of points to win the round is reached.{"\n"}
-- When a player wins a round, the next round will start with a 3 second countdown. {"\n"}
+- After a point is awarded to a player, a three second countdown is shown and then the next song and the new guesses on board will appear. The above mentioned process is repeated until the number of points to win the round is reached.{"\n"}
+- When a player wins a round, the next round will start with a 3 second countdown. {"\n"}{"\n"}
 - The won points of the round for each respective player is shown as the big indicators located next to each player's icon. While the won rounds of the current match for each respective player is shown as the small indicators next to each respective player’s won rounds.{"\n\n"}
 End of Match: {"\n"}
 - At the end of a match, you can either choose to play a rematch with the same settings and player icons, or return to the main menu.{"\n"}
-- At any point during the game you can pause the game by pressing the pause button in the top right corner. In the paused state you can choose to resume the match or exit to the main menu.{"\n\n"}
+- At any point during the game you can pause the game by pressing the pause button in the top right corner. In the paused state you can choose to resume or exit to the main menu.{"\n\n"}
 Have fun battling with music! 🎶{"\n"}{"\n"}
 
                     </Text>
