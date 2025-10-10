@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { playButtonSound } from "../utils/playButtonSound";
 import ShaderBackground from "./backgroundShader";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
 import Help from "./modals/help";
@@ -99,14 +100,18 @@ export default function Main({ background, stars = [] }) {
                 <View style={styles.topRightButtons}>
                     <TouchableOpacity
                         style={styles.settingsButton}
-                        onPress={() => setHelpVisible(true)}
+                        onPress={() => {
+                            playButtonSound();
+                            setHelpVisible(true);}}
                     >
                         <Text style={styles.settingsText}>❔</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.settingsButton}
-                        onPress={() => router.push("../components/settings")}
+                        onPress={() => {
+                            playButtonSound();
+                            router.push("../components/settings");}}
                     >
                         <Text style={styles.settingsText}>⚙️</Text>
                     </TouchableOpacity>
@@ -133,11 +138,13 @@ export default function Main({ background, stars = [] }) {
                     >
                         <PlayerButton
                             label="1 Player"
-                            onPress={() =>
+                            onPress={() =>  {
                                 router.push({
                                     pathname: "../components/genreRandom",
                                     params: { ...defaultQuickMatch, nrOfPlayers: 1, from: "main" },
-                                })
+                                });
+                                playButtonSound();
+                            }
                             }
                                 
                         />
@@ -150,6 +157,7 @@ export default function Main({ background, stars = [] }) {
                                         pathname: "../components/genreRandom",
                                         params: { ...defaultQuickMatch, nrOfPlayers: 2, from: "main" },
                                     });
+                                    playButtonSound();
                                     setDividerPos(0.5);
                                 }
                             }
@@ -192,6 +200,7 @@ export default function Main({ background, stars = [] }) {
                                     pathname: "../components/icon",
                                     params: { nrOfPlayers: 2 },
                                 });
+                                playButtonSound();
                                 setDividerPos(0.5);
                             }}
                         />
@@ -199,7 +208,9 @@ export default function Main({ background, stars = [] }) {
                 </View>
             </View>
 
-            <Help visible={helpVisible} onClose={() => setHelpVisible(false)} />
+            <Help visible={helpVisible} onClose={() => {
+                playButtonSound();
+                setHelpVisible(false);}} />
         </View>
     );
 }
@@ -305,5 +316,20 @@ const styles = StyleSheet.create({
         justifyContent: "flex-start",
         alignItems: "center",
         width: "100%",
+    },
+    menuButton: {
+        backgroundColor: "#412F7E",
+        borderRadius: 30,
+        paddingVertical: 15,
+        paddingHorizontal: 30,
+        marginTop: 20,
+        elevation: 5,
+    },
+    menuButtonText: {
+        color: "white",
+        fontSize: 18,
+        fontWeight: "bold",
+        textAlign: "center",
+        fontFamily: "OutfitBold",
     },
 });

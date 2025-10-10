@@ -2,6 +2,7 @@ import Slider from "@react-native-community/slider";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { playButtonSound } from "../utils/playButtonSound";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
 export default function MatchSettings() {
@@ -87,7 +88,9 @@ export default function MatchSettings() {
                                             styles.optionButton,
                                             genre === option && styles.optionButtonSelected,
                                         ]}
-                                        onPress={() => setGenre(option)}
+                                        onPress={() => {
+                                            playButtonSound();
+                                            setGenre(option)}}
                                     >
                                         <Text
                                             style={
@@ -114,7 +117,10 @@ export default function MatchSettings() {
                                             styles.optionButton,
                                             points === option && styles.optionButtonSelected,
                                         ]}
-                                        onPress={() => setPoints(option)}
+                                        onPress={() => {
+                                            playButtonSound();
+                                            setPoints(option)
+                                        }}
                                     >
                                         <Text
                                             style={
@@ -141,7 +147,10 @@ export default function MatchSettings() {
                                             styles.optionButton,
                                             rounds === option && styles.optionButtonSelected,
                                         ]}
-                                        onPress={() => setRounds(option)}
+                                        onPress={() => {
+                                            playButtonSound();
+                                            setRounds(option);
+                                        }}
                                     >
                                         <Text
                                             style={
@@ -189,7 +198,9 @@ export default function MatchSettings() {
                                             styles.optionButton,
                                             guesses === option && styles.optionButtonSelected,
                                         ]}
-                                        onPress={() => setGuesses(option)}
+                                        onPress={() => {
+                                            playButtonSound();
+                                            setGuesses(option);}}
                                     >
                                         <Text
                                             style={
