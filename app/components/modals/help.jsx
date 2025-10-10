@@ -67,7 +67,7 @@ Song Duration{"\n"}
 - Choose the amount of seconds(5s-29s) the song is played before you have to make your guess.{"\n"}{"\n"}
 Guesses on Board{"\n"}
 - Choose whether there are 2, 3 or 4 songs on the board to choose from when you are making your guess.{"\n"}{"\n"}
-Selection of Genre for Round{"\n"}
+Selection of Genre for Round:{"\n"}
 - If you chose random, the randomized genre for this match is shown on the screen.{"\n"}
 - If you chose alternatives, you are presented with three randomized genres from which you choose one of the genres to be the genre of this match.{"\n"}
 - If you chose custom, you are presented with the list of all available genres from which you choose one of the genres to be the genre of this match.{"\n"}{"\n"}
@@ -78,7 +78,7 @@ Inside the Match: {"\n"}
 - If no player manages to guess right within the timeframe of the song duration, a state of last guess is initiated.{"\n"}
 - If the last guess state is initiated, any player is able to make the last guess. But be careful! If your guess is right you are awarded the point, but if your guess is wrong your opponent is awarded the point.{"\n"}
 - After a point is awarded to a player, a three second countdown is shown and then the next song and the new guesses on board will appear. The above mentioned process is repeated until the number of points to win the round is reached.{"\n"}
-- When a player wins a round, the next round will start with a 3 second countdown. {"\n"}{"\n"}
+- When a player wins a round, the next round will start with a 3 second countdown. {"\n"}
 - The won points of the round for each respective player is shown as the big indicators located next to each player's icon. While the won rounds of the current match for each respective player is shown as the small indicators next to each respective player’s won rounds.{"\n\n"}
 End of Match: {"\n"}
 - At the end of a match, you can either choose to play a rematch with the same settings and player icons, or return to the main menu.{"\n"}
