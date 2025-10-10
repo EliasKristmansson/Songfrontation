@@ -2,12 +2,12 @@ import { Audio } from "expo-av";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useAudio } from "../components/audioContext";
 import GuessBubble from "../components/guessBubble.jsx";
 import RematchModal from "../components/modals/rematch.jsx";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
 import PauseMatch from "./modals/pauseOngoingMatch.jsx";
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
-import { useAudio } from "../components/audioContext";
 
 // --- Official iTunes genres ---
 export const ITUNES_GENRES = [
@@ -921,16 +921,32 @@ export default function Match() {
             if (lastGuessUsed[playerNum]) return;
             setLastGuessUsed(prev => ({ ...prev, [playerNum]: true }));
 
-            let newPoints = playerNum === 1 ? player1Points : player2Points;
-            newPoints += isCorrect ? 1 : 0;
-            if (playerNum === 1) setPlayer1Points(newPoints); else setPlayer2Points(newPoints);
+            const guesser = playerNum; // the one who guessed
+            const opponent = playerNum === 1 ? 2 : 1; // the other player
 
-            if (isCorrect) triggerGreenGlow(playerNum, idx); else triggerRedGlow(playerNum, idx);
+            if (isCorrect) {
+                // ✅ Correct: point to guesser
+                if (guesser === 1) setPlayer1Points(prev => prev + 1);
+                else setPlayer2Points(prev => prev + 1);
+                triggerGreenGlow(guesser, idx);
+            } else {
+                // ❌ Wrong: point to opponent
+                if (opponent === 1) setPlayer1Points(prev => prev + 1);
+                else setPlayer2Points(prev => prev + 1);
+                triggerRedGlow(guesser, idx);
+            }
 
-            if (newPoints >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(playerNum);
+            // Check if anyone reached win condition
+            const updatedP1 = (guesser === 1 ? player1Points + (isCorrect ? 1 : 0) : player1Points + (!isCorrect ? 1 : 0));
+            const updatedP2 = (guesser === 2 ? player2Points + (isCorrect ? 1 : 0) : player2Points + (!isCorrect ? 1 : 0));
+
+            if (updatedP1 >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(1);
+            else if (updatedP2 >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(2);
             else handlePlayCore();
+
             return;
         }
+
 
         // --- Respect active cooldown (only in normal play) ---
         if ((playerNum === 1 && player1Cooldown) || (playerNum === 2 && player2Cooldown)) {
