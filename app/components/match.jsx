@@ -582,7 +582,6 @@ export default function Match() {
     };
 
     // --- Core play logic ---
-    // Uppdaterad för rematch sak funka
     const handlePlayCore = async (opts = {}) => {
         try {
             if (showRematch && !opts.force) {
@@ -705,6 +704,16 @@ export default function Match() {
                     return;
                 }
             }
+
+            // --- Deduplicate tracks by artist (only one song per artist) ---
+            const seenArtists = new Set();
+            tracksWithPreview = tracksWithPreview.filter(track => {
+                const artist = track.artistName || "Unknown Artist";
+                if (seenArtists.has(artist)) return false;
+                seenArtists.add(artist);
+                return true;
+            });
+
 
             const optionsTracks = [];
 
