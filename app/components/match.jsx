@@ -136,8 +136,9 @@ export default function Match() {
 
     //Shader background color context
     const { setPrimaryBackgroundColor, primaryBackgroundColor } = useContext(BackgroundShaderContext);
-    const { secondaryBackgroundColor, setSecondaryBackgroundColor } = useContext(BackgroundShaderContext);
+    const { setSecondaryBackgroundColor, secondaryBackgroundColor } = useContext(BackgroundShaderContext);
     const glowAnim = useRef(new Animated.Value(0)).current;
+    const glowAnimRight = useRef(new Animated.Value(0)).current;
 
     // Player and round state
     const matchSettings = new MatchSettings({
@@ -377,6 +378,44 @@ export default function Match() {
             glowAnim.removeListener(listener);
         };
     }, [glowAnim, setPrimaryBackgroundColor]);
+
+    const triggerGreenGlowBackgroundRight = () => {
+        // Animate from 0 → 1 → 0
+        glowAnimRight.setValue(0);
+        Animated.sequence([
+            Animated.timing(glowAnimRight, {
+                toValue: 1,
+                duration: 400,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: false,
+            }),
+            Animated.timing(glowAnimRight, {
+                toValue: 0,
+                duration: 1200,
+                easing: Easing.in(Easing.quad),
+                useNativeDriver: false,
+            }),
+        ]).start();
+    };
+
+    useEffect(() => {
+        const normalColor = [0.337, 0.388, 0.769]; // your purple base
+        const greenColor = [0.0, 0.6, 0.4]; // bright green flash
+
+        const listener = glowAnimRight.addListener(({ value }) => {
+            // linear interpolation
+            const mixed = [
+                normalColor[0] + (greenColor[0] - normalColor[0]) * value,
+                normalColor[1] + (greenColor[1] - normalColor[1]) * value,
+                normalColor[2] + (greenColor[2] - normalColor[2]) * value,
+            ];
+            setSecondaryBackgroundColor(mixed);
+        });
+
+        return () => {
+            glowAnimRight.removeListener(listener);
+        };
+    }, [glowAnimRight, setSecondaryBackgroundColor]);
 
 
 
@@ -982,14 +1021,14 @@ export default function Match() {
                 }
                 else {
                     startSongTransition();
-                    triggerGreenGlowBackground(playerNum);
+                    triggerGreenGlowBackground();
                 }
             } else {
                 const newPoints = player2Points + 1;
                 setPlayer2Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(2);
                 else startSongTransition();
-                triggerGreenGlowBackground(playerNum);
+                triggerGreenGlowBackgroundRight();
             }
 
             triggerGreenGlow(playerNum, idx);
