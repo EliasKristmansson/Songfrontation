@@ -90,8 +90,8 @@ export default function GuessBubble({
                         end={{ x: 1, y: 1 }}
                         style={styles.bubbleOptionInner}
                     >
-                        <Text style={styles.optionText}>{option.title}</Text>
-                        <Text style={styles.optionArtist}>{option.artist}</Text>
+                       {/*  <Text style={styles.optionText}>{option.title}</Text>*/}
+                        <Text style={styles.optionText}>{option.artist}</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             </Animated.View>

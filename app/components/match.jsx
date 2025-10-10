@@ -582,6 +582,8 @@ export default function Match() {
         setPlayedTrackIds(new Set());
         setRoundWinner(null);
         setShowRematch(false);
+        setLastGuessPhase(false);
+        resetRound();
 
 
         startInitialCountdown(() => {
@@ -625,7 +627,6 @@ export default function Match() {
         try {
             if (showRematch && !opts.force) {
                 setShowRematch(false);
-                return;
             }
 
             setLoading(true);
@@ -1127,7 +1128,7 @@ export default function Match() {
                         </View>
 
                         {shouldShowCounter && (
-                            <RoundsRow won={player1RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
+                            <RoundsRow won={player2RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
                         )}
                         <PointsRow points={player2Points} />
                     </View>
