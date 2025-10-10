@@ -1,29 +1,23 @@
 import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useContext, useState, useRef, useEffect } from "react";
-import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useContext, useEffect, useRef, useState } from "react";
+import { Animated, Easing, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ShaderBackground from "./backgroundShader";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
 import PreGameMenuHeader from "./preGameMenuHeader";
-import { LinearGradient } from "expo-linear-gradient";
-import { Animated, Easing } from "react-native";
 
-const ICONS = Array.from({ length: 20 }, (_, i) => i + 1);
-
-// Array of 20 pastel colors
-const PASTEL_COLORS = [
-    "#FFD1DC", "#B5EAD7", "#FFDAC1", "#C7CEEA", "#E2F0CB",
-    "#FFB7B2", "#B5EAD7", "#FF9AA2", "#C7CEEA", "#E2F0CB",
-    "#FFB347", "#B0E0E6", "#F3E5AB", "#D4A5A5", "#B2F9FC",
-    "#E0BBE4", "#FFDFD3", "#C2F784", "#F1CBFF", "#A0CED9"
+// Path till ikonerna
+const ICON_IMAGES = [
+    require("../../assets/images/greenIcon.png"),
+    require("../../assets/images/redIcon.png"),
 ];
 
-function PlaceholderIcon({ selected, style, color, children }) {
+function PlaceholderIcon({ selected, style, children }) {
     return (
         <View
             style={[
                 styles.icon,
-                { backgroundColor: color },
                 selected && styles.selectedIcon,
                 style,
             ]}
@@ -76,12 +70,12 @@ export default function Icon() {
                     toValue: 10,
                     duration: 100,
                     useNativeDriver: false,
-                    easing: Easing.out(Easing.quad), // ease out on the way down
+                    easing: Easing.out(Easing.quad),
                 }),
                 Animated.spring(animatedVal, {
                     toValue: 0,
-                    friction: 10,   // lower = bouncier
-                    tension: 40,   // higher = snappier
+                    friction: 10,
+                    tension: 40,
                     useNativeDriver: false,
                 }),
             ]).start();
@@ -102,6 +96,7 @@ export default function Icon() {
         };
     }, []);
 
+    // Renderar ikonval för en spelare
     const renderIcon = (idx, player) => {
         if (idx === 0) {
             const customImage = player === 1 ? customImage1 : customImage2;
@@ -119,7 +114,7 @@ export default function Icon() {
                             style={[styles.icon, styles.selectedIcon]}
                         />
                     ) : (
-                        <PlaceholderIcon selected={selected} color="#fff" style={{ justifyContent: "center", alignItems: "center" }}>
+                        <PlaceholderIcon selected={selected} style={{ justifyContent: "center", alignItems: "center" }}>
                             <Text style={{ fontSize: 32 }}>📷</Text>
                         </PlaceholderIcon>
                     )}
@@ -134,12 +129,25 @@ export default function Icon() {
                 onPress={() => player === 1 ? setSelected1(idx) : setSelected2(idx)}
                 style={styles.iconWrapper}
             >
-                <PlaceholderIcon
-                    selected={selected}
-                    color={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
-                />
+                <PlaceholderIcon selected={selected}>
+                    <Image
+                        source={ICON_IMAGES[(idx - 1) % ICON_IMAGES.length]}
+                        style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                    />
+                </PlaceholderIcon>
             </TouchableOpacity>
         );
+    };
+
+    // Spara path/uri till ikonerna som valts
+    const getPlayerIcon = (selected, customImage) => {
+        if (selected === 0 && customImage) {
+            return customImage; // URI till selfie
+        }
+        if (selected !== null && selected > 0) {
+            return ICON_IMAGES[(selected - 1) % ICON_IMAGES.length]; // require-path till bild
+        }
+        return null;
     };
 
     return (
@@ -161,14 +169,20 @@ export default function Icon() {
             <PreGameMenuHeader
                 title="Icon Select"
                 onBack={() => {
-                    setDividerPos(1.1); // update shader
-                    router.push("../components/main"); // navigate
+                    setDividerPos(1.1);
+                    router.push("../components/main");
                 }}
-                onProceed={() => router.push({ pathname: "../components/matchSettings", params: { from: "icon", nrOfPlayers: 2 } })}
+                onProceed={() => router.push({
+                    pathname: "../components/matchSettings",
+                    params: {
+                        from: "icon",
+                        nrOfPlayers: 2,
+                        icon1: getPlayerIcon(selected1, customImage1),
+                        icon2: getPlayerIcon(selected2, customImage2),
+                    }
+                })}
                 canProceed={selected1 !== null && selected2 !== null}
             />
-
-
 
             {/* Main content: two halves side by side */}
             <View style={styles.mainRow}>
@@ -177,17 +191,18 @@ export default function Icon() {
                     <View style={styles.headerRow}>
                         <Text style={styles.header}>Player 1</Text>
                         {selected1 !== null && (
-                            <PlaceholderIcon
-                                selected
-                                style={styles.previewIcon}
-                                color={selected1 === 0 && customImage1 ? "#fff" : PASTEL_COLORS[selected1 % PASTEL_COLORS.length]}
-                            >
-                                {selected1 === 0 && customImage1 && (
+                            <PlaceholderIcon selected style={styles.previewIcon}>
+                                {selected1 === 0 && customImage1 ? (
                                     <Image
                                         source={{ uri: customImage1 }}
                                         style={{ width: "100%", height: "100%", borderRadius: 50 }}
                                     />
-                                )}
+                                ) : selected1 > 0 ? (
+                                    <Image
+                                        source={ICON_IMAGES[(selected1 - 1) % ICON_IMAGES.length]}
+                                        style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                    />
+                                ) : null}
                             </PlaceholderIcon>
                         )}
                     </View>
@@ -198,10 +213,8 @@ export default function Icon() {
                             contentContainerStyle={styles.iconList}
                             showsVerticalScrollIndicator={false}
                         >
-                            {ICONS.map((icon, idx) => renderIcon(idx, 1))}
+                            {[0, 1, 2].map((idx) => renderIcon(idx, 1))}
                         </ScrollView>
-
-
                         <LinearGradient
                             colors={["transparent", "#20163B"]}
                             style={styles.scrollFadeBottom}
@@ -209,7 +222,6 @@ export default function Icon() {
                         />
                     </View>
                 </View>
-
 
                 {/* Divider */}
                 <View style={styles.divider} />
@@ -219,17 +231,18 @@ export default function Icon() {
                     <View style={styles.headerRow}>
                         <Text style={styles.header}>Player 2</Text>
                         {selected2 !== null && (
-                            <PlaceholderIcon
-                                selected
-                                style={styles.previewIcon}
-                                color={selected2 === 0 && customImage2 ? "#fff" : PASTEL_COLORS[selected2 % PASTEL_COLORS.length]}
-                            >
-                                {selected2 === 0 && customImage2 && (
+                            <PlaceholderIcon selected style={styles.previewIcon}>
+                                {selected2 === 0 && customImage2 ? (
                                     <Image
                                         source={{ uri: customImage2 }}
                                         style={{ width: "100%", height: "100%", borderRadius: 50 }}
                                     />
-                                )}
+                                ) : selected2 > 0 ? (
+                                    <Image
+                                        source={ICON_IMAGES[(selected2 - 1) % ICON_IMAGES.length]}
+                                        style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                    />
+                                ) : null}
                             </PlaceholderIcon>
                         )}
                     </View>
@@ -240,9 +253,8 @@ export default function Icon() {
                             contentContainerStyle={styles.iconList}
                             showsVerticalScrollIndicator={false}
                         >
-                            {ICONS.map((icon, idx) => renderIcon(idx, 2))}
+                            {[0, 1, 2].map((idx) => renderIcon(idx, 2))}
                         </ScrollView>
-
                         <LinearGradient
                             colors={["transparent", "#283059"]}
                             style={styles.scrollFadeBottom}
@@ -250,7 +262,6 @@ export default function Icon() {
                         />
                     </View>
                 </View>
-
             </View>
         </View>
     );
