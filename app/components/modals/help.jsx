@@ -3,39 +3,43 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import {
     Dimensions,
-    Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    useWindowDimensions,
 } from "react-native";
 
 const windowWidth = Dimensions.get("window").width;
+const windowHeight = Dimensions.get("window").height;
 
 export default function Help({ visible, onClose }) {
+    const { width, height } = useWindowDimensions();
 
-    // Scroller
+    // Scroller state...
     const [scrollPos, setScrollPos] = useState(0);
     const [scrollContentHeight, setScrollContentHeight] = useState(1);
     const [scrollViewHeight, setScrollViewHeight] = useState(1);
 
     const content = (
         <View style={styles.overlay}>
-            <View style={styles.modalContent}>
+            <View style={[styles.modalContent, { width: width * 0.75, maxHeight: height * 0.65 }]}>
                 <LinearGradient
                     colors={["#1A123B", "#242F7D", "#412F59", "#804D58"]}
                     start={{ x: 0.2, y: 0 }}
                     end={{ x: 0.8, y: 1 }}
                     style={styles.gradient}
                 >
-                    {/* Header row with title + close button */}
+                    {/* Header row */}
                     <View style={styles.headerRow}>
                         <Text style={[styles.title, { fontFamily: "OutfitBold" }]}>
                             Help & Instructions
                         </Text>
-                        <TouchableOpacity
-                            onPress={onClose}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                            <Text style={[styles.closeText, { fontFamily: "OutfitBold" }]}>
-                                ✕
-                            </Text>
+                        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                            <Text style={[styles.closeText, { fontFamily: "OutfitBold" }]}>✕</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -84,13 +88,13 @@ export default function Help({ visible, onClose }) {
                             - At the end of a match, you can either choose to play a rematch with the same settings and player icons, or return to the main menu.{"\n"}
                             - At any point during the game you can pause the game by pressing the pause button in the top right corner. In the paused state you can choose to resume or exit to the main menu.{"\n\n"}
                             Have fun battling with music! 🎶{"\n"}{"\n"}
-
                         </Text>
                     </ScrollView>
                 </LinearGradient>
             </View>
         </View>
     );
+
 
     if (Platform.OS === "ios") {
         if (!visible) return null;
@@ -131,10 +135,10 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(0,0,0,0.6)",
         justifyContent: "center",
         alignItems: "center",
-        padding: 20,
+        paddingVertical: 40, // more breathing room vertically
+        paddingHorizontal: 20,
     },
     modalContent: {
-        width: windowWidth * 0.86,
         borderRadius: 25,
         borderColor: "white",
         borderWidth: 2,
@@ -143,11 +147,14 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
         elevation: 12,
         backgroundColor: "#1A123B",
+        overflow: "hidden", // ✅ Prevents ScrollView content from overflowing
     },
+
     gradient: {
         width: "100%",
         borderRadius: 25,
         padding: 20,
+        flexGrow: 1,
     },
     headerRow: {
         flexDirection: "row",
@@ -159,10 +166,15 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: "white",
     },
+    scrollContainer: {
+        maxHeight: windowHeight * 0.5,
+    },
+    scrollContent: {
+        paddingBottom: 0,
+    },
     body: {
         fontSize: 15,
         lineHeight: 22,
-        marginBottom: 20,
         textAlign: "left",
         color: "white",
     },
