@@ -1101,8 +1101,17 @@ export default function Match() {
                 </TouchableOpacity>
             </View>
 
+            {/* Singleplayer Cooldown Overlay */}
+            {player1Cooldown && isSinglePlayer && (
+                <View style={[styles.cooldownOverlayFull]} pointerEvents="auto">
+                    <View style={styles.cooldownBubble}>
+                        <Text style={styles.cooldownTextBig}>{player1CooldownTime}</Text>
+                    </View>
+                </View>
+            )}
+
             {/* Player 1 Cooldown Overlay */}
-            {player1Cooldown && (
+            {player1Cooldown && !isSinglePlayer && (
                 <View style={[styles.cooldownOverlay, styles.cooldownOverlayLeft]} pointerEvents="auto">
                     <View style={styles.cooldownBubble}>
                         <Text style={styles.cooldownTextBig}>{player1CooldownTime}</Text>
@@ -1119,40 +1128,59 @@ export default function Match() {
                 </View>
             )}
 
-
             {/* Header */}
             <View style={styles.headerRow}>
-                <View style={styles.sideRow}>
-                    <PointsRow points={player1Points} />
-                    {/* The RoundsRow component is only rendered if shouldShowCounter is true */}
-                    {shouldShowCounter && (
-                        <RoundsRow won={player1RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
-                    )}
-                    <View style={styles.largeIconCircle}>
-                        <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
+                {/* Left side (Player 1) */}
+                <View style={styles.sideWrapper}>
+                    <View style={styles.sideRow}>
+                        <PointsRow points={player1Points} />
+                        {shouldShowCounter && (
+                            <RoundsRow
+                                won={player1RoundsWon}
+                                total={matchSettings.nrOfRoundsToWinMatch}
+                                filledStyle={styles.roundCircleFilledP1}
+                            />
+                        )}
+                        <View style={styles.largeIconCircle}>
+                            <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
+                        </View>
                     </View>
                 </View>
 
+                {/* Center divider */}
                 <View style={styles.dividerContainer}>
                     <View style={styles.dividerBlock}>
                         <Text style={styles.dividerTimerText}>{dividerTimer}</Text>
-                        <View style={[styles.dividerBar, { width: `${(dividerTimer / matchSettings.songDuration) * 100}%` }]} />
+                        <View
+                            style={[
+                                styles.dividerBar,
+                                { width: `${(dividerTimer / matchSettings.songDuration) * 100}%` },
+                            ]}
+                        />
                     </View>
                 </View>
 
-                {!isSinglePlayer && (
-                    <View style={styles.sideRow}>
-                        <View style={styles.largeIconCircle}>
-                            <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
-                        </View>
+                {/* Right side (Player 2 placeholder or actual player) */}
+                <View style={styles.sideWrapper}>
+                    {!isSinglePlayer && (
+                        <View style={styles.sideRow}>
+                            <View style={styles.largeIconCircle}>
+                                <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
+                            </View>
 
-                        {shouldShowCounter && (
-                            <RoundsRow won={player2RoundsWon} total={matchSettings.nrOfRoundsToWinMatch} filledStyle={styles.roundCircleFilledP1} />
-                        )}
-                        <PointsRow points={player2Points} />
-                    </View>
-                )}
+                            {shouldShowCounter && (
+                                <RoundsRow
+                                    won={player2RoundsWon}
+                                    total={matchSettings.nrOfRoundsToWinMatch}
+                                    filledStyle={styles.roundCircleFilledP2}
+                                />
+                            )}
+                            <PointsRow points={player2Points} />
+                        </View>
+                    )}
+                </View>
             </View>
+
 
             {/* Last Guess Phase Overlay */}
             {lastGuessPhase && (
@@ -1278,6 +1306,20 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(248,113,113,0.25)', // semi-transparent red
         zIndex: 100,
     },
+    cooldownOverlayFull: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(248,113,113,0.25)', // semi-transparent red
+        zIndex: 100,
+    },
+
     cooldownOverlayLeft: {
         left: 0,
         borderTopLeftRadius: 40,
@@ -1301,17 +1343,23 @@ const styles = StyleSheet.create({
     },
     cooldownTextBig: {
         color: 'white',
-        fontWeight: 'bold',
+        fontFamily: 'OutfitBold',
         fontSize: 54,
     },
     headerRow: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "space-between",
+        width: "100%",
+    },
+    sideWrapper: {
+        flex: 1, // ensures equal space left and right
+        alignItems: "center",
     },
     sideRow: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "center",
         marginHorizontal: 8,
     },
     playArea: {
@@ -1377,7 +1425,11 @@ const styles = StyleSheet.create({
         borderColor: "#4ecdc4",
     },
 
-    dividerContainer: { width: 80, alignItems: "center" },
+    dividerContainer: {
+        width: 100, // or match your dividerBlock width
+        alignItems: "center",
+        justifyContent: "center",
+    },
     dividerBlock: {
         width: 80,
         height: 46,
@@ -1386,7 +1438,7 @@ const styles = StyleSheet.create({
         borderBottomRightRadius: 10,
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 1000,
+        zIndex: 10,
     },
     dividerTimerText: { color: "black", fontSize: 18 },
     loaderOverlay: {
