@@ -1,16 +1,58 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useContext, useEffect, useRef, useState } from "react";
-import { Animated, Easing, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+    Animated,
+    Easing,
+    Image,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import ShaderBackground from "./backgroundShader";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
-// Path till ikonerna
-const ICON_IMAGES = [
-    require("../../assets/images/greenIcon.png"),
-    require("../../assets/images/redIcon.png"),
+const ICONS = [
+    "face-man",
+    "face-woman",
+    "alien",
+    "robot",
+    "dog",
+    "cat",
+    "panda",
+    "unicorn-variant",
+    "ninja",
+    "ghost",
+    "emoticon-cool",
+    "account-cowboy-hat",
+    "pirate",
+    "android",
+    "emoticon-devil",
+];
+
+// unique colors for each icon
+const ICON_COLORS = [
+    "#FF8C00", // orange
+    "#FF69B4", // pink
+    "#00CED1", // turquoise
+    "#7FFF00", // green-yellow
+    "#FFD700", // gold
+    "#ADFF2F", // light green
+    "#00BFFF", // deep sky blue
+    "#9370DB", // purple
+    "#FF6347", // tomato
+    "#00FA9A", // medium spring green
+    "#FF4500", // orange-red
+    "#DA70D6", // orchid
+    "#40E0D0", // turquoise
+    "#FF1493", // deep pink
+    "#87CEEB", // sky blue
 ];
 
 function PlaceholderIcon({ selected, style, children }) {
@@ -96,7 +138,6 @@ export default function Icon() {
         };
     }, []);
 
-    // Renderar ikonval för en spelare
     const renderIcon = (idx, player) => {
         if (idx === 0) {
             const customImage = player === 1 ? customImage1 : customImage2;
@@ -114,8 +155,12 @@ export default function Icon() {
                             style={[styles.icon, styles.selectedIcon]}
                         />
                     ) : (
-                        <PlaceholderIcon selected={selected} style={{ justifyContent: "center", alignItems: "center" }}>
-                            <Text style={{ fontSize: 32 }}>📷</Text>
+                        <PlaceholderIcon selected={selected}>
+                            <MaterialCommunityIcons
+                                name="camera"
+                                size={50}
+                                color="#FFB347"
+                            />
                         </PlaceholderIcon>
                     )}
                 </TouchableOpacity>
@@ -123,36 +168,43 @@ export default function Icon() {
         }
 
         const selected = player === 1 ? selected1 === idx : selected2 === idx;
+        const iconName = ICONS[(idx - 1) % ICONS.length];
+        const iconColor = ICON_COLORS[(idx - 1) % ICON_COLORS.length];
+
         return (
             <TouchableOpacity
                 key={idx}
-                onPress={() => player === 1 ? setSelected1(idx) : setSelected2(idx)}
+                onPress={() =>
+                    player === 1 ? setSelected1(idx) : setSelected2(idx)
+                }
                 style={styles.iconWrapper}
             >
                 <PlaceholderIcon selected={selected}>
-                    <Image
-                        source={ICON_IMAGES[(idx - 1) % ICON_IMAGES.length]}
-                        style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                    <MaterialCommunityIcons
+                        name={iconName}
+                        size={55}
+                        color={iconColor}
                     />
                 </PlaceholderIcon>
             </TouchableOpacity>
         );
     };
 
-    // Spara path/uri till ikonerna som valts
     const getPlayerIcon = (selected, customImage) => {
         if (selected === 0 && customImage) {
-            return customImage; // URI till selfie
+            return { type: "image", uri: customImage };
         }
         if (selected !== null && selected > 0) {
-            return ICON_IMAGES[(selected - 1) % ICON_IMAGES.length]; // require-path till bild
+            const iconName = ICONS[(selected - 1) % ICONS.length];
+            const iconColor = ICON_COLORS[(selected - 1) % ICON_COLORS.length]; // new
+            return { type: "icon", name: iconName, color: iconColor }; // include color
         }
         return null;
     };
 
+
     return (
         <View style={styles.container}>
-            {/* Web-only shader */}
             {Platform.OS === "web" && (
                 <ShaderBackground
                     color1={[0.255, 0.184, 0.494]}
@@ -165,28 +217,29 @@ export default function Icon() {
                     style={styles.webShader}
                 />
             )}
-            {/* Header at the top */}
+
             <PreGameMenuHeader
                 title="Icon Select"
                 onBack={() => {
                     setDividerPos(1.1);
                     router.push("../components/main");
                 }}
-                onProceed={() => router.push({
-                    pathname: "../components/matchSettings",
-                    params: {
-                        from: "icon",
-                        nrOfPlayers: 2,
-                        icon1: getPlayerIcon(selected1, customImage1),
-                        icon2: getPlayerIcon(selected2, customImage2),
-                    }
-                })}
+                onProceed={() =>
+                    router.push({
+                        pathname: "../components/matchSettings",
+                        params: {
+                            from: "icon",
+                            nrOfPlayers: 2,
+                            icon1: getPlayerIcon(selected1, customImage1),
+                            icon2: getPlayerIcon(selected2, customImage2),
+                        },
+                    })
+                }
                 canProceed={selected1 !== null && selected2 !== null}
             />
 
-            {/* Main content: two halves side by side */}
             <View style={styles.mainRow}>
-                {/* Player 1 Half */}
+                {/* Player 1 */}
                 <View style={styles.half}>
                     <View style={styles.headerRow}>
                         <Text style={styles.header}>Player 1</Text>
@@ -195,38 +248,38 @@ export default function Icon() {
                                 {selected1 === 0 && customImage1 ? (
                                     <Image
                                         source={{ uri: customImage1 }}
-                                        style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                        style={styles.imagePreview}
                                     />
                                 ) : selected1 > 0 ? (
-                                    <Image
-                                        source={ICON_IMAGES[(selected1 - 1) % ICON_IMAGES.length]}
-                                        style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                    <MaterialCommunityIcons
+                                        name={ICONS[(selected1 - 1) % ICONS.length]}
+                                        size={32}
+                                        color={ICON_COLORS[(selected1 - 1) % ICON_COLORS.length]} // ✅ use the actual color
                                     />
                                 ) : null}
                             </PlaceholderIcon>
                         )}
                     </View>
 
-                    <View style={{ flex: 1 }}>
-                        <ScrollView
-                            ref={scrollRef1}
-                            contentContainerStyle={styles.iconList}
-                            showsVerticalScrollIndicator={false}
-                        >
-                            {[0, 1, 2].map((idx) => renderIcon(idx, 1))}
-                        </ScrollView>
-                        <LinearGradient
-                            colors={["transparent", "#20163B"]}
-                            style={styles.scrollFadeBottom}
-                            pointerEvents="none"
-                        />
-                    </View>
+                    <ScrollView
+                        ref={scrollRef1}
+                        contentContainerStyle={styles.iconList}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {[0, ...ICONS.map((_, i) => i + 1)].map((idx) =>
+                            renderIcon(idx, 1)
+                        )}
+                    </ScrollView>
+                    <LinearGradient
+                        colors={["transparent", "#20163B"]}
+                        style={styles.scrollFadeBottom}
+                        pointerEvents="none"
+                    />
                 </View>
 
-                {/* Divider */}
                 <View style={styles.divider} />
 
-                {/* Player 2 Half */}
+                {/* Player 2 */}
                 <View style={styles.half}>
                     <View style={styles.headerRow}>
                         <Text style={styles.header}>Player 2</Text>
@@ -235,32 +288,33 @@ export default function Icon() {
                                 {selected2 === 0 && customImage2 ? (
                                     <Image
                                         source={{ uri: customImage2 }}
-                                        style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                        style={styles.imagePreview}
                                     />
                                 ) : selected2 > 0 ? (
-                                    <Image
-                                        source={ICON_IMAGES[(selected2 - 1) % ICON_IMAGES.length]}
-                                        style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                                    <MaterialCommunityIcons
+                                        name={ICONS[(selected2 - 1) % ICONS.length]}
+                                        size={32}
+                                        color={ICON_COLORS[(selected2 - 1) % ICON_COLORS.length]} // ✅ use the actual color
                                     />
                                 ) : null}
                             </PlaceholderIcon>
                         )}
                     </View>
 
-                    <View style={{ flex: 1 }}>
-                        <ScrollView
-                            ref={scrollRef2}
-                            contentContainerStyle={styles.iconList}
-                            showsVerticalScrollIndicator={false}
-                        >
-                            {[0, 1, 2].map((idx) => renderIcon(idx, 2))}
-                        </ScrollView>
-                        <LinearGradient
-                            colors={["transparent", "#283059"]}
-                            style={styles.scrollFadeBottom}
-                            pointerEvents="none"
-                        />
-                    </View>
+                    <ScrollView
+                        ref={scrollRef2}
+                        contentContainerStyle={styles.iconList}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {[0, ...ICONS.map((_, i) => i + 1)].map((idx) =>
+                            renderIcon(idx, 2)
+                        )}
+                    </ScrollView>
+                    <LinearGradient
+                        colors={["transparent", "#283059"]}
+                        style={styles.scrollFadeBottom}
+                        pointerEvents="none"
+                    />
                 </View>
             </View>
         </View>
@@ -276,25 +330,12 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         zIndex: 0,
         position: "absolute",
-        backgroundColor: "transparent"
+        backgroundColor: "transparent",
     },
     container: {
         flex: 1,
         height: "100%",
         position: "relative",
-    },
-    settingsButton: {
-        position: "absolute",
-        top: 30,
-        right: 20,
-        zIndex: 10,
-        backgroundColor: "#5C66C5",
-        borderRadius: 20,
-        padding: 4,
-        elevation: 2,
-    },
-    settingsText: {
-        fontSize: 24,
     },
     half: {
         flex: 1,
@@ -312,7 +353,6 @@ const styles = StyleSheet.create({
         height: 30,
         zIndex: 5,
     },
-
     headerRow: {
         flexDirection: "row",
         alignItems: "center",
@@ -331,7 +371,11 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         width: 48,
         height: 48,
-        borderRadius: 32,
+        borderRadius: 24,
+        borderWidth: 2,
+        borderColor: "white",
+        alignItems: "center",
+        justifyContent: "center",
     },
     iconList: {
         flexDirection: "row",
@@ -347,12 +391,13 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     icon: {
-        width: 90,
-        height: 90,
+        width: 80,
+        height: 80,
         borderRadius: 50,
-        backgroundColor: "#bbb",
         borderWidth: 2,
         borderColor: "transparent",
+        alignItems: "center",
+        justifyContent: "center",
     },
     selectedIcon: {
         shadowColor: "#FFFFFF",
@@ -362,15 +407,9 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: "white",
     },
-    backButton: {
-        position: "absolute",
-        top: 20,
-        left: 20,
-        zIndex: 10,
-        padding: 8,
-    },
-    backArrow: {
-        color: "white",
-        fontSize: 28,
+    imagePreview: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 50,
     },
 });

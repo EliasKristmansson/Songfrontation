@@ -167,13 +167,19 @@ export default function Match() {
         nrOfRoundsToWinMatch: params.rounds ? parseInt(params.rounds) : 1,
         songDuration: params.duration ? parseInt(params.duration) : 30,
         nrOfGuessesOnBoard: params.guesses ? parseInt(params.guesses) : 3,
+        icon1: params.icon1 || null,  // <--- assign the object directly
+        icon2: params.icon2 || null,  // <--- assign the object directly
     });
 
     const isSinglePlayer = matchSettings.nrOfPlayers === 1;
     const { nrOfGuessesOnBoard } = matchSettings;
 
-    const [player1, setPlayer1] = useState(new Player({ playerId: 1, playerIcon: "🎤" }));
-    const [player2, setPlayer2] = useState(isSinglePlayer ? null : new Player({ playerId: 2, playerIcon: "🎸" }));
+    const [player1, setPlayer1] = useState(
+        new Player({ playerId: 1, playerIcon: params.icon1 || null })
+    );
+    const [player2, setPlayer2] = useState(
+        isSinglePlayer ? null : new Player({ playerId: 2, playerIcon: params.icon2 || null })
+    );
 
     const [player1Points, setPlayer1Points] = useState(0);
     const [player2Points, setPlayer2Points] = useState(0);
@@ -1383,7 +1389,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 24,
-        backgroundColor: "#111827",
+        backgroundColor: "transparent",
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 2,
