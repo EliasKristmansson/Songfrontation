@@ -1131,7 +1131,7 @@ export default function Match() {
             {/* Header */}
             <View style={styles.headerRow}>
                 {/* Left side (Player 1) */}
-                <View style={styles.sideWrapper}>
+                <View style={styles.sideWrapperLeft}>
                     <View style={styles.sideRow}>
                         <PointsRow points={player1Points} />
                         {shouldShowCounter && (
@@ -1161,7 +1161,7 @@ export default function Match() {
                 </View>
 
                 {/* Right side (Player 2 placeholder or actual player) */}
-                <View style={styles.sideWrapper}>
+                <View style={styles.sideWrapperRight}>
                     {!isSinglePlayer && (
                         <View style={styles.sideRow}>
                             <View style={styles.largeIconCircle}>
@@ -1352,9 +1352,13 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         width: "100%",
     },
-    sideWrapper: {
+    sideWrapperLeft: {
         flex: 1, // ensures equal space left and right
-        alignItems: "center",
+        alignItems: "flex-end",
+    },
+    sideWrapperRight: {
+        flex: 1, // ensures equal space left and right
+        alignItems: "flex-start",
     },
     sideRow: {
         flexDirection: "row",
