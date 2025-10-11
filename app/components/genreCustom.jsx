@@ -92,20 +92,25 @@ export default function GenreCustom() {
                                 <TouchableOpacity
                                     key={g.id}
                                     onPress={() => setSelectedGenre(g)}
-                                    style={styles.iconWrapper}
+                                    style={[styles.iconWrapper, isSelected && styles.iconWrapperSelected]}
                                     activeOpacity={0.85}
                                 >
-                                    <LinearGradient
-                                        colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 1 }}
-                                        style={[styles.icon, isSelected && styles.selectedIcon]}
-                                    >
-                                        <Text style={styles.iconText}>{g.name.split(" > ").pop()}</Text>
-                                    </LinearGradient>
+                                    <View style={styles.iconOuter}>
+                                        <LinearGradient
+                                            colors={["#896DA3", "#5663C4", "#412F7E"]}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.iconInner}
+                                        >
+                                            <Text style={styles.iconText}>
+                                                {g.name.split(" > ").pop()}
+                                            </Text>
+                                        </LinearGradient>
+                                    </View>
                                 </TouchableOpacity>
                             );
                         })}
+
                     </ScrollView>
 
                     {/* Scrollindikator/gradient längst ner */}
@@ -145,41 +150,6 @@ const styles = StyleSheet.create({
         paddingBottom: 32,
         paddingHorizontal: 12,
     },
-    iconWrapper: {
-        width: "20%",
-        aspectRatio: 1,
-        marginHorizontal: "2%",
-        marginVertical: 10,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    icon: {
-        width: "100%",
-        height: "100%",
-        borderRadius: 999,
-        borderWidth: 2,
-        borderColor: "transparent",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 6,
-        shadowColor: "#412F7E",
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    selectedIcon: {
-        borderColor: "#fff",
-        shadowColor: "#896DA3",
-        shadowOpacity: 0.5,
-        shadowRadius: 12,
-        elevation: 10,
-    },
-    iconText: {
-        textAlign: "center",
-        fontSize: 16,
-        fontWeight: "bold",
-        color: "#fff",
-    },
     scrollFadeBottom: {
         position: "absolute",
         bottom: 0,
@@ -188,4 +158,47 @@ const styles = StyleSheet.create({
         height: 30,
         zIndex: 5,
     },
+    iconWrapper: {
+        width: "20%",
+        aspectRatio: 1,
+        marginHorizontal: "2%",
+        marginVertical: 10,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    iconWrapperSelected: {
+        shadowColor: "#B2A2E2",   // soft purple glow
+        shadowOpacity: 0.8,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 0 },
+        elevation: 10,
+        zIndex: 10000,
+    },
+    iconOuter: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 999,
+        borderWidth: 2,
+        borderColor: "#FFFFFF", // always visible white border
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "transparent", // needed for shadow to show
+    },
+    iconInner: {
+        flex: 1,
+        width: "100%",
+        height: "100%",
+        borderRadius: 999,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 6,
+        overflow: "hidden",
+    },
+    iconText: {
+        textAlign: "center",
+        fontSize: 16,
+        fontWeight: "bold",
+        color: "#fff",
+    },
+
 });

@@ -54,7 +54,7 @@ export default function GenreAlternatives() {
                                 activeOpacity={0.85}
                             >
                                 <LinearGradient
-                                    colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
+                                    colors={["#896DA3", "#5663C4", "#412F7E"]}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 1 }}
                                     style={[
@@ -91,16 +91,16 @@ const styles = StyleSheet.create({
         gap: 20,
     },
     genreButtonWrapper: {
-        width: 110,
-        height: 110,
-        borderRadius: 55,
+        width: 160,
+        height: 160,
+        borderRadius: 80,
         alignItems: "center",
         justifyContent: "center",
     },
     genreButton: {
         width: "100%",
         height: "100%",
-        borderRadius: 55,
+        borderRadius: 80,
         borderWidth: 2,
         borderColor: "transparent",
         alignItems: "center",
@@ -109,6 +109,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 8,
         elevation: 6,
+        borderColor: "#FFFFFF",
+
     },
     genreButtonSelected: {
         borderColor: "#fff",
@@ -119,8 +121,8 @@ const styles = StyleSheet.create({
     },
     genreText: {
         color: "#fff",
-        fontSize: 14,
-        fontWeight: "bold",
+        fontSize: 20,
+        fontFamily: "OutfitBold",
         textAlign: "center",
     },
 });

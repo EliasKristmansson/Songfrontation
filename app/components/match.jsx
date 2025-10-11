@@ -62,18 +62,18 @@ const RIGHT_BUBBLE_POSITIONS = {
 
 const SINGLE_BUBBLE_POSITIONS = {
     2: [
-        { top: 50, left: 250 }, 
+        { top: 50, left: 250 },
         { top: 50, left: 420 }
     ],
     3: [
-        { top: 50, left: 150 }, 
-        { top: 50, left: 330 }, 
+        { top: 50, left: 150 },
+        { top: 50, left: 330 },
         { top: 50, left: 510 }
     ],
     4: [
-        { top: 50, left: 80 }, 
-        { top: 50, left: 250 }, 
-        { top: 50, left: 420 }, 
+        { top: 50, left: 80 },
+        { top: 50, left: 250 },
+        { top: 50, left: 420 },
         { top: 50, left: 590 }
     ],
 };
@@ -1237,13 +1237,14 @@ export default function Match() {
                 )}
             </View>
 
-            {/* Loading Overlay 
+            {/* Loading Overlay
             {loading && (
                 <View style={styles.loaderOverlay}>
                     <ActivityIndicator size="large" color="#5C66C5" />
-                    <Text style={{ color: "#fff", marginTop: 10 }}>Loading song preview...</Text>
+                    <Text style={styles.loaderText}>Loading song preview..</Text>
                 </View>
-            )}*/}
+            )} */}
+
 
             {/* Return Overlay */}
             <RematchModal
@@ -1388,7 +1389,24 @@ const styles = StyleSheet.create({
         zIndex: 1000,
     },
     dividerTimerText: { color: "black", fontSize: 18 },
-    loader: { marginTop: 20 },
+    loaderOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.6)", // semi-transparent overlay
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 999, // keep above everything else
+    },
+
+    loaderText: {
+        color: "#fff",
+        marginTop: 10,
+        fontSize: 16,
+    },
+
     footer: { marginTop: 22, alignItems: "center" },
     lastGuessText: {
         fontFamily: "OutfitBold",
