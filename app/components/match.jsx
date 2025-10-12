@@ -411,7 +411,6 @@ export default function Match() {
                 normalColor[1] + (greenColor[1] - normalColor[1]) * value,
                 normalColor[2] + (greenColor[2] - normalColor[2]) * value,
             ];
-            console.log("Mixed right color:", mixed);
 
             primaryBackgroundColorRef.current = mixed;});
 
@@ -432,7 +431,7 @@ export default function Match() {
             }),
             Animated.timing(glowAnimRight, {
                 toValue: 0,
-                duration: 1200,
+                duration: 150,
                 easing: Easing.in(Easing.quad),
                 useNativeDriver: false,
             }),
@@ -1120,7 +1119,6 @@ export default function Match() {
             }
 
             bubbleScalesRef.current.forEach((anim, i) => {
-                console.log("Animating bubble", i, "out");
                 Animated.spring(anim, {
                     toValue: 0,
                     friction: 6,
@@ -1633,6 +1631,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.5,
         shadowRadius: 8,
         elevation: 10,
+        zindex: 9999,
     },
     settingsText: {
         fontSize: 24,
