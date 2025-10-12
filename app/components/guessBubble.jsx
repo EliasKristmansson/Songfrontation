@@ -11,11 +11,15 @@ export default function GuessBubble({
     positionStyle,
     glowColor = null, // "green" | "red" | null
     externalScale,
+    exitTrigger = false,
+    pressedShrink = false,
 }) {
-    const scaleRef = useRef(new Animated.Value(1)).current;
+    const scaleRef = useRef(new Animated.Value(0)).current;
     const glowRef = useRef(new Animated.Value(0)).current;
+    const opacityRef = useRef(new Animated.Value(1)).current;
+
     const scaleAnim = externalScale || scaleRef;
-    const scaleAnimReverse = externalScale || scaleRef;
+
     useEffect(() => {
         if (glowColor) {
             glowRef.setValue(1);
@@ -31,29 +35,49 @@ export default function GuessBubble({
         scaleAnim.setValue(0);
         Animated.spring(scaleAnim, {
             toValue: 1,
-            friction: 6,
-            tension: 100,
+            friction: 5,
+            tension: 10,
             useNativeDriver: true,
         }).start();
     }, []);
 
     useEffect(() => {
-        scaleAnimReverse.setValue(0);
-        Animated.spring(scaleAnimReverse, {
-            toValue: 1,
-            friction: 6,
-            tension: 100,
-            useNativeDriver: true,
-        }).start();
-    }, []);
+  if (exitTrigger) {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 0,
+        friction: 6,
+        tension: 10,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityRef, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }
+}, [exitTrigger]);
 
+ useEffect(() => {
+    if (pressedShrink) {
+      Animated.spring(scaleAnim, {
+        toValue: 0.75, 
+        friction: 6,
+        tension: 10,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [pressedShrink]);
+
+    //Var tvungen kommentera bort pga shrink till 0.75 när knapp trycks ner. Om vi kan göra toValue dynamisk så kan vi använda det här igen
     const handlePressIn = () => {
-        Animated.spring(scaleRef, { toValue: 0.92, useNativeDriver: true }).start();
-    };
+    //     Animated.spring(scaleAnim, { toValue: 0.92, useNativeDriver: true }).start();
+     };
 
-    const handlePressOut = () => {
-        Animated.spring(scaleRef, { toValue: 1, friction: 4, useNativeDriver: true }).start();
-    };
+     const handlePressOut = () => {
+    //     Animated.spring(scaleAnim, { toValue: 1, friction: 4, useNativeDriver: true }).start();
+     };
 
     const animatedShadowStyle = {
         shadowColor: glowColor === "green" ? "#4ADE80" : "#F87171",
@@ -75,7 +99,7 @@ export default function GuessBubble({
                 animatedShadowStyle, // JS-driven glow here
             ]}
         >
-            <Animated.View style={{ transform: [{ scale: scaleRef }] }}>
+            <Animated.View style={{ transform: [{ scale: scaleAnim }], opacity: opacityRef }}>
                 <TouchableOpacity
                     activeOpacity={0.8}
                     onPress={onPress}

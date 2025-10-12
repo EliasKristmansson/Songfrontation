@@ -212,9 +212,23 @@ export default function Match() {
     const [showInitialCountdown, setShowInitialCountdown] = useState(true);
     const initialCountdownRef = useRef(null);
 
+    const bubbleScalesRef = useRef([]);
+    //const bubbleScalesRef = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]);
+    const [exitTriggers, setExitTriggers] = useState([]);
 
-    const bubbleScalesRef = useRef([new Animated.Value(1), new Animated.Value(1), new Animated.Value(1)]);
     const bubbleScalesRefShrinkGrow = useRef([]);
+    const [pressedShrink, setPressedShrink] = useState({
+        1: {}, // player 1
+        2: {}, // player 2
+    });
+    const [pressedOnce, setPressedOnce] = useState({
+        1: {}, // player 1
+        2: {}, // player 2
+    });
+    //global tracker to ensure player 1/2 cant press buttons after player 1/2 has already won the round
+    const [correctBubblePressed, setCorrectBubblePressed] = useState(false);
+
+
 
     const [wrongGlowIndices, setWrongGlowIndices] = useState({});
     const [correctGlowIndices, setCorrectGlowIndices] = useState({});
@@ -238,6 +252,10 @@ export default function Match() {
         setPlayer2CooldownTime(0);
         setLastGuessPhase(false);
         setLastGuessUsed({ 1: false, 2: false });
+        setPressedOnce({
+            1: {},
+            2: {},
+        });
         if (player1CooldownTimer.current) clearInterval(player1CooldownTimer.current);
         if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
     };
@@ -325,20 +343,16 @@ export default function Match() {
         }
     };
 
-
-    const animateBubblesOut = () => {
-        const animations = bubbleScalesRef.current.map(scale =>
-            Animated.timing(scale, { toValue: 0, duration: 250, useNativeDriver: true })
-        );
-        Animated.stagger(50, animations).start(() => {
-            setSongOptions([]); // only clear after animation completes
-        });
-    };
     // --- Helper to start the song transition ---
     const startSongTransition = () => {
-        setSongOptions([]);
         const glowDuration = 1600;
 
+        setTimeout(() => {
+            songOptions.forEach((_, idx) => {
+                triggerBubbleExit(idx);
+            });
+        }, 1000);
+        
         isSongTransitionPendingRef.current = true; // ✅ mark pending
 
         // Clear any previous timeout
@@ -351,14 +365,15 @@ export default function Match() {
             transitionTimeoutRef.current = null;
             isSongTransitionPendingRef.current = false; // ✅ not pending anymore
             startInitialCountdown(() => {
+                setSongOptions([]);
                 handlePlayCore();
+                setPressedOnce({
+                    1: {},
+                    2: {},
+                });
             });
         }, glowDuration);
     };
-
-    useEffect(() => {
-        bubbleScalesRefShrinkGrow.current = songOptions.map(() => new Animated.Value(1));
-    }, [songOptions]);
 
     const mix = (a, b, t) => [
         a[0] + (b[0] - a[0]) * t,
@@ -844,6 +859,8 @@ export default function Match() {
 
             setSongOptions(options);
 
+            
+
             const { sound: newSound } = await Audio.Sound.createAsync(
                 { uri: correctTrack.previewUrl },
                 { shouldPlay: true }
@@ -902,6 +919,18 @@ export default function Match() {
         };
     }, []);
 
+    useEffect(() => {
+        setExitTriggers(songOptions.map(() => false));
+    }, [songOptions]);
+
+    // useEffect(() => {
+    //     bubbleScalesRef.current = songOptions.map(() => new Animated.Value(1));
+    // }, [songOptions]);
+
+    useEffect(() => {
+        setExitTriggers(songOptions.map(() => false));
+        setPressedShrink({ 1: {}, 2: {} });
+    }, [songOptions]);
 
     // Initial countdown
     useEffect(() => {
@@ -942,6 +971,39 @@ export default function Match() {
             setCorrectGlowIndices(prev => ({ ...prev, [playerNum]: (prev[playerNum] || []).filter(i => i !== idx) }));
         }, 300);
     };
+
+    const triggerBubbleExit = (index) => {
+        setExitTriggers(prev => {
+            const updated = [...prev];
+            updated[index] = true;
+            return updated;
+        });
+    };
+
+    const triggerPressedShrink = (playerNumber, index) => {
+        setPressedShrink((prev) => ({
+            ...prev,
+            [playerNumber]: {
+            ...prev[playerNumber],
+            [index]: true,
+            },
+        }));
+    };
+
+    const shrinkAllExceptCorrect = (playerNum) => {
+    // playerNum = the player who pressed the correct bubble
+
+    [1, 2].forEach((side) => {
+        songOptions.forEach((option, idx) => {
+            // On the side of the player who pressed correctly, skip correct bubble
+            if (side === playerNum && option.isCorrect) return;
+
+            // Otherwise, shrink
+            triggerPressedShrink(side, idx);
+        });
+    });
+    };
+
 
     // seconds to block after a wrong guess — tweak as you like
     const WRONG_GUESS_COOLDOWN = 2;
@@ -991,6 +1053,23 @@ export default function Match() {
 
 
     const handleGuess = async (isCorrect, playerNum, idx) => {
+
+        //Refuse guesses after right guess has been made this song, needed now when buttons dont disappear immediately
+        if (correctPressed) return;
+        
+        // Prevent multiple presses on same bubble 
+        if (pressedOnce[playerNum]?.[idx]) return;
+
+        // mark bubble as pressed
+        setPressedOnce(prev => ({
+            ...prev,
+            [playerNum]: {
+                ...prev[playerNum],
+                [idx]: true,
+            },
+        }));
+
+
         // --- Last-guess-phase handling (unchanged) ---
         if (lastGuessPhase) {
             if (lastGuessUsed[playerNum]) return;
@@ -1039,6 +1118,16 @@ export default function Match() {
                 if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
             }
 
+            bubbleScalesRef.current.forEach((anim, i) => {
+                console.log("Animating bubble", i, "out");
+                Animated.spring(anim, {
+                    toValue: 0,
+                    friction: 6,
+                    tension: 100,
+                    useNativeDriver: true,
+                }).start();
+            });
+
             if (playerNum === 1) {
                 const newPoints = player1Points + 1;
                 setPlayer1Points(newPoints);
@@ -1046,7 +1135,9 @@ export default function Match() {
                     handleEndOfRound(1);
                 }
                 else {
+                    shrinkAllExceptCorrect(1)
                     startSongTransition();
+                    
                     triggerGreenGlowBackground();
                 }
             } else {
@@ -1054,6 +1145,8 @@ export default function Match() {
                 setPlayer2Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(2);
                 else startSongTransition();
+                shrinkAllExceptCorrect(2)
+
                 triggerGreenGlowBackgroundRight();
             }
 
@@ -1061,6 +1154,7 @@ export default function Match() {
         } else {
             // wrong guess -> glow + start cooldown
             triggerRedGlow(playerNum, idx);
+            triggerPressedShrink(playerNum, idx);
             startCooldown(playerNum);
         }
     };
@@ -1211,6 +1305,9 @@ export default function Match() {
                                     onPress={() => handleGuess(option.isCorrect, 1, idx)}
                                     animatedIndex={idx}
                                     positionStyle={SINGLE_BUBBLE_POSITIONS[nrOfGuessesOnBoard][idx]}
+                                    externalScale={bubbleScalesRef.current[idx]}
+                                    exitTrigger={exitTriggers[idx]}
+                                    pressedShrink={pressedShrink[1]?.[idx]}
                                     glowColor={
                                         correctGlowIndices[1]?.includes(idx)
                                             ? "green"
@@ -1235,6 +1332,8 @@ export default function Match() {
                                         onPress={() => handleGuess(option.isCorrect, 1, idx)}
                                         animatedIndex={idx}
                                         positionStyle={LEFT_BUBBLE_POSITIONS[nrOfGuessesOnBoard][idx]}
+                                        exitTrigger={exitTriggers[idx]}
+                                        pressedShrink={pressedShrink[1]?.[idx]}
                                         glowColor={
                                             correctGlowIndices[1]?.includes(idx)
                                                 ? "green"
@@ -1257,6 +1356,8 @@ export default function Match() {
                                         onPress={() => handleGuess(option.isCorrect, 2, idx)}
                                         animatedIndex={idx}
                                         positionStyle={RIGHT_BUBBLE_POSITIONS[nrOfGuessesOnBoard][idx]}
+                                        exitTrigger={exitTriggers[idx]}
+                                        pressedShrink={pressedShrink[2]?.[idx]}
                                         glowColor={
                                             correctGlowIndices[2]?.includes(idx)
                                                 ? "green"
