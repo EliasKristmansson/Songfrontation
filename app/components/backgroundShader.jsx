@@ -51,10 +51,10 @@ const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.cu
   if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
   const {
-    timeUniform,
+    // timeUniform, // not required for pulse, optional
     resUniform,
     motionUniform,
-    speedUniform,
+    // speedUniform, // only needed if you want to upload it directly
     scaleUniform,
     color1Uniform,
     color2Uniform,
@@ -62,11 +62,14 @@ const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.cu
     color4Uniform,
     dividerUniform,
     scrollOffsetUniform,
+    pulseTimeUniform, // <-- make sure we destructure the new uniform
   } = uniforms;
 
   let lastTime = performance.now();
+  // shaderTime kept for other uses if you had them; you can remove if unused
   shaderTime.current = 0;
   let scrollOffset = 0;
+  let pulseTime = 0;
 
   const render = () => {
     const now = performance.now();
@@ -74,15 +77,24 @@ const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.cu
     lastTime = now;
 
     const { speed, scale } = latestProps.current;
+
+    // accumulate both animations with delta
     shaderTime.current += delta * speed;
     scrollOffset = (scrollOffset + delta * speed * 0.05) % 1.0;
+    pulseTime = (pulseTime + delta * speed * 1.0) % (2.0 * Math.PI);
+
 
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-    gl.uniform1f(timeUniform, shaderTime.current);
+    // If you still want to keep timeUniform for something else, set it here.
+    // gl.uniform1f(timeUniform, shaderTime.current);
+
     gl.uniform2f(resUniform, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.uniform1f(motionUniform, disableMotion ? 0.0 : 1.0);
     gl.uniform1f(scrollOffsetUniform, scrollOffset);
+
+    // <-- Set pulse uniform that the shader uses
+    gl.uniform1f(pulseTimeUniform, pulseTime);
 
     const { dividerPos } = latestProps.current;
     const color1Val = resolveColor(color1);
@@ -128,49 +140,48 @@ const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.cu
     const fragShaderSource = `
   precision mediump float;
 
-  uniform float u_time;
-  uniform vec2 u_resolution;
-  uniform float u_motionEnabled;
-  uniform float u_speed;
-  uniform float u_scale;
-  uniform float u_dividerPos;
-  uniform vec3 u_color1;
-  uniform vec3 u_color2;
-  uniform vec3 u_color3;
-  uniform vec3 u_color4;
+uniform float u_pulseTime;
+uniform vec2 u_resolution;
+uniform float u_motionEnabled;
+uniform float u_speed;
+uniform float u_scale;
+uniform float u_dividerPos;
+uniform vec3 u_color1;
+uniform vec3 u_color2;
+uniform vec3 u_color3;
+uniform vec3 u_color4;
 
-  uniform sampler2D u_perlinTex;
-  uniform sampler2D u_grainTex;
-  uniform float u_scrollOffset;
+uniform sampler2D u_perlinTex;
+uniform sampler2D u_grainTex;
+uniform float u_scrollOffset;
 
-  void main() {
-    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_resolution.xy;
 
-    // Pulse animation with bounded time
-    float pulse = sin(mod(u_time, 1000.0) * -2.0 + uv.y * 2.0) * 0.3 + 0.2;
+  // ✅ Pulse now uses accumulated delta time
+  float pulse = sin(u_pulseTime * -2.0 + uv.y * 2.0) * 0.3 + 0.2;
 
-    // Scrolling texture using injected offset
-    vec2 perlinUV = fract(uv * u_scale + vec2(0.0, u_scrollOffset));
-    vec4 perlinSample = texture2D(u_perlinTex, perlinUV);
+  vec2 perlinUV = fract(uv * u_scale + vec2(0.0, u_scrollOffset));
+  vec4 perlinSample = texture2D(u_perlinTex, perlinUV);
 
-    float factor = perlinSample.r * pulse;
+  float factor = perlinSample.r * pulse;
 
-    vec3 firstHalf = mix(u_color1, u_color2, factor);
-    vec3 secondHalf = mix(u_color3, u_color4, factor);
+  vec3 firstHalf = mix(u_color1, u_color2, factor);
+  vec3 secondHalf = mix(u_color3, u_color4, factor);
 
-    float secondHalfMask = step(u_dividerPos, uv.x);
-    vec3 baseColor = mix(firstHalf, secondHalf, secondHalfMask);
+  float secondHalfMask = step(u_dividerPos, uv.x);
+  vec3 baseColor = mix(firstHalf, secondHalf, secondHalfMask);
 
-    float dividerDist = abs(uv.x - u_dividerPos);
-    float dividerLine = smoothstep(0.0, 0.003, 0.003 - dividerDist);
-    vec3 dividerColor = vec3(1.0);
-    baseColor = mix(baseColor, dividerColor, dividerLine);
+  float dividerDist = abs(uv.x - u_dividerPos);
+  float dividerLine = smoothstep(0.0, 0.003, 0.003 - dividerDist);
+  vec3 dividerColor = vec3(1.0);
+  baseColor = mix(baseColor, dividerColor, dividerLine);
 
-    vec4 grainSample = texture2D(u_grainTex, uv * 4.0);
-    vec3 color = mix(baseColor, grainSample.rgb, 0.15);
+  vec4 grainSample = texture2D(u_grainTex, uv * 4.0);
+  vec3 color = mix(baseColor, grainSample.rgb, 0.15);
 
-    gl_FragColor = vec4(color, 1.0);
-  }
+  gl_FragColor = vec4(color, 1.0);
+}
 `;
 
     const vertShader = gl.createShader(gl.VERTEX_SHADER);
@@ -203,7 +214,6 @@ const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.cu
     gl.vertexAttribPointer(positionAttrib, 2, gl.FLOAT, false, 0, 0);
 
     const uniforms = {
-      timeUniform: gl.getUniformLocation(program, "u_time"),
       resUniform: gl.getUniformLocation(program, "u_resolution"),
       motionUniform: gl.getUniformLocation(program, "u_motionEnabled"),
       speedUniform: gl.getUniformLocation(program, "u_speed"),
@@ -214,6 +224,8 @@ const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.cu
       color4Uniform: gl.getUniformLocation(program, "u_color4"),
       dividerUniform: gl.getUniformLocation(program, "u_dividerPos"),
       scrollOffsetUniform: gl.getUniformLocation(program, "u_scrollOffset"),
+      pulseTimeUniform: gl.getUniformLocation(program, "u_pulseTime"),
+
     };
 
     const perlinUniform = gl.getUniformLocation(program, "u_perlinTex");

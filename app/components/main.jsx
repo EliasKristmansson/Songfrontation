@@ -66,6 +66,7 @@ function PlayerButton({ label, onPress }) {
         </Pressable>
     );
 }
+    
 
 export default function Main({ background, stars = [] }) {
     const { dividerPos, setDividerPos } = useContext(BackgroundShaderContext);
@@ -79,6 +80,26 @@ export default function Main({ background, stars = [] }) {
         guesses: 3,
         points: 3,
     };
+
+    const swipeAnimationAndRouteToNextView = (toCustom) => {
+        
+        if(toCustom){
+            router.push({
+                pathname: "../components/icon",
+                params: { nrOfPlayers: 2 },
+            });
+            return;
+        } else{
+            router.push({
+                pathname: "../components/genreRandom",
+                params: { ...defaultQuickMatch, nrOfPlayers: 2, from: "main" },
+            });
+            return;
+        }
+    };
+
+
+
 
     return (
         <View style={styles.container}>
@@ -153,10 +174,7 @@ export default function Main({ background, stars = [] }) {
                             label="2 Players"
                             onPress={() =>
                                 {
-                                    router.push({
-                                        pathname: "../components/genreRandom",
-                                        params: { ...defaultQuickMatch, nrOfPlayers: 2, from: "main" },
-                                    });
+                                    swipeAnimationAndRouteToNextView(false);
                                     playButtonSound();
                                     setDividerPos(0.5);
                                 }
@@ -196,10 +214,8 @@ export default function Main({ background, stars = [] }) {
                         <PlayerButton
                             label="2 Players"
                             onPress={() => {
-                                router.push({
-                                    pathname: "../components/icon",
-                                    params: { nrOfPlayers: 2 },
-                                });
+                                
+                                swipeAnimationAndRouteToNextView(1);
                                 playButtonSound();
                                 setDividerPos(0.5);
                             }}
