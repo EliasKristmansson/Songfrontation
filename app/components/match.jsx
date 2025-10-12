@@ -450,7 +450,6 @@ export default function Match() {
                 normalColor[1] + (greenColor[1] - normalColor[1]) * value,
                 normalColor[2] + (greenColor[2] - normalColor[2]) * value,
             ];
-            console.log("Mixed right color:", mixed);
             secondaryBackgroundColorRef.current = mixed;
         });
 
