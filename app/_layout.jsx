@@ -8,20 +8,21 @@ import FontProvider from "./components/fontProvider";
 
 export default function RootLayout() {
     // State for shader properties
-    const [dividerPos, setDividerPos] = useState(1.1);
+    //const [dividerPos, setDividerPos] = useState(1.1);
     const [animationSpeed, setAnimationSpeed] = useState(0.2);
     const primaryBackgroundColorRef = useRef([0.255, 0.184, 0.494]);
     const secondaryBackgroundColorRef = useRef([0.337, 0.388, 0.769]);
+    const dividerPosRef = useRef(1.1);
 
 
     return (
         <AudioProvider>
             <FontProvider>
                 <BackgroundShaderContext.Provider value={{
-                    dividerPos, setDividerPos,
                     animationSpeed, setAnimationSpeed,
                     primaryBackgroundColorRef,
                     secondaryBackgroundColorRef,
+                    dividerPosRef,
                 }}>
 
                     <ShaderBackground
@@ -33,7 +34,7 @@ export default function RootLayout() {
 
                         speed={animationSpeed} // updated dynamically
                         scale={1}
-                        dividerPos={dividerPos} // updated dynamically
+                        dividerPos={dividerPosRef} // updated dynamically
                         style={styles.shader}
                     >
 
@@ -44,7 +45,6 @@ export default function RootLayout() {
                                 animation: "none",
                                 contentStyle: { backgroundColor: "transparent" }
                             }}
-                            initialParams={{ setDividerPos }}
                         // pass setter to pages
                         />
                     </ShaderBackground>

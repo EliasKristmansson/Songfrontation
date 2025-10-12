@@ -97,13 +97,14 @@ const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.cu
     gl.uniform1f(pulseTimeUniform, pulseTime);
 
     const { dividerPos } = latestProps.current;
+    const dividerVal = resolveColor(dividerPos);
     const color1Val = resolveColor(color1);
     const color2Val = resolveColor(color2);
     const color3Val = resolveColor(color3);
     const color4Val = resolveColor(color4);
 
     gl.uniform1f(scaleUniform, scale);
-    gl.uniform1f(dividerUniform, dividerPos);
+    gl.uniform1f(dividerUniform, dividerVal);
     gl.uniform3f(color1Uniform, color1Val[0], color1Val[1], color1Val[2]);
     gl.uniform3f(color2Uniform, color2Val[0], color2Val[1], color2Val[2]);
     gl.uniform3f(color3Uniform, color3Val[0], color3Val[1], color3Val[2]);

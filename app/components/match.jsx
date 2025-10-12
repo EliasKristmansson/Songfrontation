@@ -126,7 +126,7 @@ class MatchSettings {
 export default function Match() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { dividerPos, setDividerPos } = useContext(BackgroundShaderContext);
+    //const { dividerPos, setDividerPos } = useContext(BackgroundShaderContext);
     const [showPause, setShowPause] = useState(false);
     const { masterVolume, musicVolume } = useAudio();
 
@@ -633,13 +633,13 @@ export default function Match() {
     const handleBackToMenu = () => {
         setShowRematch(false);
         router.push("/");
-        setDividerPos(1.1);
+        //setDividerPos(1.1);
     };
 
     const handleBackToMenuFromPause = () => {
         setShowPause(false);
         router.push("/");
-        setDividerPos(1.1);
+        //setDividerPos(1.1);
     };
 
     const nextRound = () => {

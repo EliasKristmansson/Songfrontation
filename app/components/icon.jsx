@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Animated,
     Easing,
@@ -15,7 +15,6 @@ import {
     View,
 } from "react-native";
 import ShaderBackground from "./backgroundShader";
-import { BackgroundShaderContext } from "./backgroundShaderContext";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
 const ICONS = [
@@ -75,11 +74,31 @@ export default function Icon() {
     const [selected2, setSelected2] = useState(null);
     const [customImage1, setCustomImage1] = useState(null);
     const [customImage2, setCustomImage2] = useState(null);
-    const { dividerPos, setDividerPos } = useContext(BackgroundShaderContext);
     const scrollY1 = useRef(new Animated.Value(0)).current;
     const scrollY2 = useRef(new Animated.Value(0)).current;
     const scrollRef1 = useRef(null);
     const scrollRef2 = useRef(null);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
+
+    const fadeContent = (callback, newOpacity) => {
+        Animated.timing(fadeAnim, {
+            toValue: newOpacity,
+            duration: 300,
+            useNativeDriver: true,
+        }).start(() => callback?.());
+    };
+
+    useEffect(() => {
+        fadeContent(null, 1)
+    }, []);
+
+    const handleBackToMainMenu = () => {
+        fadeContent(null,0);
+        setTimeout(() => {
+            router.push("../components/main");
+        }, 200);
+    }
 
     const takeSelfie = async (player) => {
         const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
@@ -217,106 +236,107 @@ export default function Icon() {
                     style={styles.webShader}
                 />
             )}
+            <Animated.View style={{ flex: 1, width: "100%", opacity: fadeAnim }}>
+                <PreGameMenuHeader
+                    title="Icon Select"
+                    onBack={() => {
+                        handleBackToMainMenu();
+                    }}
+                    onProceed={() =>
+                        router.push({
+                            pathname: "../components/matchSettings",
+                            params: {
+                                from: "icon",
+                                nrOfPlayers: 2,
+                                icon1: getPlayerIcon(selected1, customImage1),
+                                icon2: getPlayerIcon(selected2, customImage2),
+                            },
+                        })
+                    }
+                    canProceed={selected1 !== null && selected2 !== null}
+                />
 
-            <PreGameMenuHeader
-                title="Icon Select"
-                onBack={() => {
-                    setDividerPos(1.1);
-                    router.push("../components/main");
-                }}
-                onProceed={() =>
-                    router.push({
-                        pathname: "../components/matchSettings",
-                        params: {
-                            from: "icon",
-                            nrOfPlayers: 2,
-                            icon1: getPlayerIcon(selected1, customImage1),
-                            icon2: getPlayerIcon(selected2, customImage2),
-                        },
-                    })
-                }
-                canProceed={selected1 !== null && selected2 !== null}
-            />
+                <View style={styles.mainRow}>
+                    {/* Player 1 */}
+                    <View style={styles.half}>
+                        <View style={styles.headerRow}>
+                            <Text style={styles.header}>Player 1</Text>
+                            {selected1 !== null && (
+                                <PlaceholderIcon selected style={styles.previewIcon}>
+                                    {selected1 === 0 && customImage1 ? (
+                                        <Image
+                                            source={{ uri: customImage1 }}
+                                            style={styles.imagePreview}
+                                        />
+                                    ) : selected1 > 0 ? (
+                                        <MaterialCommunityIcons
+                                            name={ICONS[(selected1 - 1) % ICONS.length]}
+                                            size={32}
+                                            color={ICON_COLORS[(selected1 - 1) % ICON_COLORS.length]} // ✅ use the actual color
+                                        />
+                                    ) : null}
+                                </PlaceholderIcon>
+                            )}
+                        </View>
 
-            <View style={styles.mainRow}>
-                {/* Player 1 */}
-                <View style={styles.half}>
-                    <View style={styles.headerRow}>
-                        <Text style={styles.header}>Player 1</Text>
-                        {selected1 !== null && (
-                            <PlaceholderIcon selected style={styles.previewIcon}>
-                                {selected1 === 0 && customImage1 ? (
-                                    <Image
-                                        source={{ uri: customImage1 }}
-                                        style={styles.imagePreview}
-                                    />
-                                ) : selected1 > 0 ? (
-                                    <MaterialCommunityIcons
-                                        name={ICONS[(selected1 - 1) % ICONS.length]}
-                                        size={32}
-                                        color={ICON_COLORS[(selected1 - 1) % ICON_COLORS.length]} // ✅ use the actual color
-                                    />
-                                ) : null}
-                            </PlaceholderIcon>
-                        )}
+                        <ScrollView
+                            ref={scrollRef1}
+                            contentContainerStyle={styles.iconList}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {[0, ...ICONS.map((_, i) => i + 1)].map((idx) =>
+                                renderIcon(idx, 1)
+                            )}
+                        </ScrollView>
+                        <LinearGradient
+                            colors={["transparent", "#20163B"]}
+                            style={styles.scrollFadeBottom}
+                            pointerEvents="none"
+                        />
                     </View>
 
-                    <ScrollView
-                        ref={scrollRef1}
-                        contentContainerStyle={styles.iconList}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {[0, ...ICONS.map((_, i) => i + 1)].map((idx) =>
-                            renderIcon(idx, 1)
-                        )}
-                    </ScrollView>
-                    <LinearGradient
-                        colors={["transparent", "#20163B"]}
-                        style={styles.scrollFadeBottom}
-                        pointerEvents="none"
-                    />
-                </View>
+                    <View style={styles.divider} />
 
-                <View style={styles.divider} />
+                    {/* Player 2 */}
+                    <View style={styles.half}>
+                        <View style={styles.headerRow}>
+                            <Text style={styles.header}>Player 2</Text>
+                            {selected2 !== null && (
+                                <PlaceholderIcon selected style={styles.previewIcon}>
+                                    {selected2 === 0 && customImage2 ? (
+                                        <Image
+                                            source={{ uri: customImage2 }}
+                                            style={styles.imagePreview}
+                                        />
+                                    ) : selected2 > 0 ? (
+                                        <MaterialCommunityIcons
+                                            name={ICONS[(selected2 - 1) % ICONS.length]}
+                                            size={32}
+                                            color={ICON_COLORS[(selected2 - 1) % ICON_COLORS.length]} // ✅ use the actual color
+                                        />
+                                    ) : null}
+                                </PlaceholderIcon>
+                            )}
+                        </View>
 
-                {/* Player 2 */}
-                <View style={styles.half}>
-                    <View style={styles.headerRow}>
-                        <Text style={styles.header}>Player 2</Text>
-                        {selected2 !== null && (
-                            <PlaceholderIcon selected style={styles.previewIcon}>
-                                {selected2 === 0 && customImage2 ? (
-                                    <Image
-                                        source={{ uri: customImage2 }}
-                                        style={styles.imagePreview}
-                                    />
-                                ) : selected2 > 0 ? (
-                                    <MaterialCommunityIcons
-                                        name={ICONS[(selected2 - 1) % ICONS.length]}
-                                        size={32}
-                                        color={ICON_COLORS[(selected2 - 1) % ICON_COLORS.length]} // ✅ use the actual color
-                                    />
-                                ) : null}
-                            </PlaceholderIcon>
-                        )}
+                        <ScrollView
+                            ref={scrollRef2}
+                            contentContainerStyle={styles.iconList}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {[0, ...ICONS.map((_, i) => i + 1)].map((idx) =>
+                                renderIcon(idx, 2)
+                            )}
+                        </ScrollView>
+                        <LinearGradient
+                            colors={["transparent", "#283059"]}
+                            style={styles.scrollFadeBottom}
+                            pointerEvents="none"
+                        />
                     </View>
-
-                    <ScrollView
-                        ref={scrollRef2}
-                        contentContainerStyle={styles.iconList}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {[0, ...ICONS.map((_, i) => i + 1)].map((idx) =>
-                            renderIcon(idx, 2)
-                        )}
-                    </ScrollView>
-                    <LinearGradient
-                        colors={["transparent", "#283059"]}
-                        style={styles.scrollFadeBottom}
-                        pointerEvents="none"
-                    />
                 </View>
-            </View>
+            </Animated.View>
+            
         </View>
     );
 }

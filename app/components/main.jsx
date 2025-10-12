@@ -1,9 +1,10 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import {
     Animated,
     Dimensions,
+    Easing,
     Platform,
     Pressable,
     StyleSheet,
@@ -66,10 +67,15 @@ function PlayerButton({ label, onPress }) {
         </Pressable>
     );
 }
+
+
     
 
 export default function Main({ background, stars = [] }) {
-    const { dividerPos, setDividerPos } = useContext(BackgroundShaderContext);
+    const { dividerPosRef } = useContext(BackgroundShaderContext);
+    const anim = useRef(new Animated.Value(dividerPosRef.current)).current;
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
     const [helpVisible, setHelpVisible] = useState(false);
     const router = useRouter();
 
@@ -81,21 +87,53 @@ export default function Main({ background, stars = [] }) {
         points: 3,
     };
 
+    useEffect(() => {
+        animateDivider(1.1);
+        setTimeout(() => {
+            fadeContent(null,1)
+        }, 200);
+    }, []);
+
+    const animateDivider = (toValue, callback) => {
+    Animated.timing(anim, {
+      toValue,
+      duration: 600,
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: false, // ✅ shader ref, not a style prop
+    }).start(() => callback?.());
+
+    anim.addListener(({ value }) => {
+        dividerPosRef.current = value;
+        });
+    };
+
+    const fadeContent = (callback, newOpacity) => {
+        Animated.timing(fadeAnim, {
+            toValue: newOpacity,
+            duration: 500,
+            useNativeDriver: true,
+        }).start(() => callback?.());
+    };
+
     const swipeAnimationAndRouteToNextView = (toCustom) => {
+        animateDivider(0.5);
+        fadeContent(null,0);
+        setTimeout(() => {
+            if(toCustom){
+                router.push({
+                    pathname: "../components/icon",
+                    params: { nrOfPlayers: 2 },
+                });
+                return;
+            } else{
+                router.push({
+                    pathname: "../components/genreRandom",
+                    params: { ...defaultQuickMatch, nrOfPlayers: 2, from: "main" },
+                });
+                return;
+            }
+        }, 600);
         
-        if(toCustom){
-            router.push({
-                pathname: "../components/icon",
-                params: { nrOfPlayers: 2 },
-            });
-            return;
-        } else{
-            router.push({
-                pathname: "../components/genreRandom",
-                params: { ...defaultQuickMatch, nrOfPlayers: 2, from: "main" },
-            });
-            return;
-        }
     };
 
 
@@ -115,114 +153,115 @@ export default function Main({ background, stars = [] }) {
                     style={styles.webShader}
                 />
             )}
-            <View style={styles.titleContainer}>
-                <Text style={styles.title}>Welcome to Songfrontation!</Text>
+            <Animated.View style={{ flex: 1, width: "100%", opacity: fadeAnim }}>
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>Welcome to Songfrontation!</Text>
 
-                <View style={styles.topRightButtons}>
-                    <TouchableOpacity
-                        style={styles.settingsButton}
-                        onPress={() => {
-                            playButtonSound();
-                            setHelpVisible(true);}}
-                    >
-                        <Text style={styles.settingsText}>❔</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.settingsButton}
-                        onPress={() => {
-                            playButtonSound();
-                            router.push("../components/settings");}}
-                    >
-                        <Text style={styles.settingsText}>⚙️</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {/* Center Content */}
-            <View style={styles.centerContent}>
-                <View
-                    style={{
-                        width: BUTTON_WIDTH,
-                        alignItems: "flex-start",
-                        paddingLeft: 10,
-                    }}
-                >
-                    <Text style={styles.sectionLabel}>Quick Match</Text>
-                </View>
-                <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
-                    <LinearGradient
-                        colors={["#412F7E", "#5663C4", "#896DA3", "#B77586"]}
-                        start={[0.1, 0]}
-                        end={[0.9, 1]}
-                        style={styles.buttonRow}
-                    >
-                        <PlayerButton
-                            label="1 Player"
-                            onPress={() =>  {
-                                router.push({
-                                    pathname: "../components/genreRandom",
-                                    params: { ...defaultQuickMatch, nrOfPlayers: 1, from: "main" },
-                                });
-                                playButtonSound();
-                            }
-                            }
-                                
-                        />
-                        <View style={styles.divider} />
-                        <PlayerButton
-                            label="2 Players"
-                            onPress={() =>
-                                {
-                                    swipeAnimationAndRouteToNextView(false);
-                                    playButtonSound();
-                                    setDividerPos(0.5);
-                                }
-                            }
-                            
-                        />
-                    </LinearGradient>
-                </View>
-
-                <View
-                    style={{
-                        width: BUTTON_WIDTH,
-                        alignItems: "flex-start",
-                        paddingLeft: 10,
-                        marginTop: 30,
-                    }}
-                >
-                    <Text style={styles.sectionLabel}>Custom Match</Text>
-                </View>
-                <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
-                    <LinearGradient
-                        colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
-                        start={[0.1, 0]}
-                        end={[0.9, 1]}
-                        style={styles.buttonRow}
-                    >
-                        <PlayerButton
-                            label="1 Player"
-                            onPress={() =>
-                                router.push({
-                                    pathname: "../components/iconSinglePlayer",
-                                    params: { nrOfPlayers: 1 },
-                                })
-                            }
-                        />
-                        <View style={styles.divider} />
-                        <PlayerButton
-                            label="2 Players"
+                    <View style={styles.topRightButtons}>
+                        <TouchableOpacity
+                            style={styles.settingsButton}
                             onPress={() => {
-                                
-                                swipeAnimationAndRouteToNextView(1);
                                 playButtonSound();
-                                setDividerPos(0.5);
-                            }}
-                        />
-                    </LinearGradient>
+                                setHelpVisible(true);}}
+                        >
+                            <Text style={styles.settingsText}>❔</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.settingsButton}
+                            onPress={() => {
+                                playButtonSound();
+                                router.push("../components/settings");}}
+                        >
+                            <Text style={styles.settingsText}>⚙️</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
+
+                {/* Center Content */}
+                <View style={styles.centerContent}>
+                    <View
+                        style={{
+                            width: BUTTON_WIDTH,
+                            alignItems: "flex-start",
+                            paddingLeft: 10,
+                        }}
+                    >
+                        <Text style={styles.sectionLabel}>Quick Match</Text>
+                    </View>
+                    <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
+                        <LinearGradient
+                            colors={["#412F7E", "#5663C4", "#896DA3", "#B77586"]}
+                            start={[0.1, 0]}
+                            end={[0.9, 1]}
+                            style={styles.buttonRow}
+                        >
+                            <PlayerButton
+                                label="1 Player"
+                                onPress={() =>  {
+                                    router.push({
+                                        pathname: "../components/genreRandom",
+                                        params: { ...defaultQuickMatch, nrOfPlayers: 1, from: "main" },
+                                    });
+                                    playButtonSound();
+                                }
+                                }
+                                    
+                            />
+                            <View style={styles.divider} />
+                            <PlayerButton
+                                label="2 Players"
+                                onPress={() =>
+                                    {
+                                        swipeAnimationAndRouteToNextView(false);
+                                        playButtonSound();
+                                    }
+                                }
+                                
+                            />
+                        </LinearGradient>
+                    </View>
+
+                    <View
+                        style={{
+                            width: BUTTON_WIDTH,
+                            alignItems: "flex-start",
+                            paddingLeft: 10,
+                            marginTop: 30,
+                        }}
+                    >
+                        <Text style={styles.sectionLabel}>Custom Match</Text>
+                    </View>
+                    <View style={[styles.buttonRowShadow, { width: BUTTON_WIDTH }]}>
+                        <LinearGradient
+                            colors={["#B77586", "#896DA3", "#5663C4", "#412F7E"]}
+                            start={[0.1, 0]}
+                            end={[0.9, 1]}
+                            style={styles.buttonRow}
+                        >
+                            <PlayerButton
+                                label="1 Player"
+                                onPress={() =>
+                                    router.push({
+                                        pathname: "../components/iconSinglePlayer",
+                                        params: { nrOfPlayers: 1 },
+                                    })
+                                }
+                            />
+                            <View style={styles.divider} />
+                            <PlayerButton
+                                label="2 Players"
+                                onPress={() => {
+                                    swipeAnimationAndRouteToNextView(1);
+                                    playButtonSound();
+                                }}
+                            />
+                        </LinearGradient>
+                    </View>
+                </View>
+            </Animated.View>
+
+           
 
             <Help visible={helpVisible} onClose={() => {
                 playButtonSound();
