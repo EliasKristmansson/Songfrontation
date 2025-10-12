@@ -22,9 +22,19 @@ export default function ShaderBackground({
   const lastFrameTime = useRef(null);
   const shaderTime = useRef(0);
   // Update ref when props change
-  useEffect(() => {
-    latestProps.current = { speed, scale, color1, color2, color3, color4, dividerPos };
-  }, [speed, scale, color1, color2, color3, color4, dividerPos]);
+useEffect(() => {
+  latestProps.current = {
+    speed,
+    scale,
+    color1,
+    color2,
+    color3,
+    color4,
+    dividerPos,
+  };
+}, [speed, scale, color1, color2, color3, color4, dividerPos]);
+
+const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.current : c);
 
   const createTexture = (gl, asset) => {
         const texture = gl.createTexture();
@@ -78,20 +88,25 @@ export default function ShaderBackground({
     const {
       speed,
       scale,
-      color1,
-      color2,
-      color3,
-      color4,
+      // color1,
+      // color2,
+      // color3,
+      // color4,
       dividerPos,
     } = latestProps.current;
+
+    const color1Val = resolveColor(color1);
+    const color2Val = resolveColor(color2);
+    const color3Val = resolveColor(color3);
+    const color4Val = resolveColor(color4);
 
     gl.uniform1f(speedUniform, speed);
     gl.uniform1f(scaleUniform, scale);
     gl.uniform1f(dividerUniform, dividerPos);
-    gl.uniform3f(color1Uniform, color1[0], color1[1], color1[2]);
-    gl.uniform3f(color2Uniform, color2[0], color2[1], color2[2]);
-    gl.uniform3f(color3Uniform, color3[0], color3[1], color3[2]);
-    gl.uniform3f(color4Uniform, color4[0], color4[1], color4[2]);
+    gl.uniform3f(color1Uniform, color1Val[0], color1Val[1], color1Val[2]);
+    gl.uniform3f(color2Uniform, color2Val[0], color2Val[1], color2Val[2]);
+    gl.uniform3f(color3Uniform, color3Val[0], color3Val[1], color3Val[2]);
+    gl.uniform3f(color4Uniform, color4Val[0], color4Val[1], color4Val[2]);
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);

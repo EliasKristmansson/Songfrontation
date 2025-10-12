@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import { AudioProvider } from "./components/audioContext";
 import ShaderBackground from "./components/backgroundShader";
@@ -10,8 +10,9 @@ export default function RootLayout() {
     // State for shader properties
     const [dividerPos, setDividerPos] = useState(1.1);
     const [animationSpeed, setAnimationSpeed] = useState(0.2);
-    const [primaryBackgroundColor, setPrimaryBackgroundColor] = useState([0.255, 0.184, 0.494]);
-    const [secondaryBackgroundColor, setSecondaryBackgroundColor] = useState([0.337, 0.388, 0.769]);
+    const primaryBackgroundColorRef = useRef([0.255, 0.184, 0.494]);
+    const secondaryBackgroundColorRef = useRef([0.337, 0.388, 0.769]);
+
 
     return (
         <AudioProvider>
@@ -19,15 +20,15 @@ export default function RootLayout() {
                 <BackgroundShaderContext.Provider value={{
                     dividerPos, setDividerPos,
                     animationSpeed, setAnimationSpeed,
-                    primaryBackgroundColor, setPrimaryBackgroundColor,
-                    secondaryBackgroundColor, setSecondaryBackgroundColor,
+                    primaryBackgroundColorRef,
+                    secondaryBackgroundColorRef,
                 }}>
 
                     <ShaderBackground
-                        color1={primaryBackgroundColor}
+                        color1={primaryBackgroundColorRef}
                         color2={[0.439, 0.506, 1.000]}
 
-                        color3={secondaryBackgroundColor}
+                        color3={secondaryBackgroundColorRef}
                         color4={[0.718, 0.459, 0.525]}
 
                         speed={animationSpeed} // updated dynamically

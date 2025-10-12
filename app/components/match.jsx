@@ -154,8 +154,8 @@ export default function Match() {
     const [songTransitionCountdown, setSongTransitionCountdown] = useState(3);
 
     //Shader background color context
-    const { setPrimaryBackgroundColor, primaryBackgroundColor } = useContext(BackgroundShaderContext);
-    const { setSecondaryBackgroundColor, secondaryBackgroundColor } = useContext(BackgroundShaderContext);
+    const { primaryBackgroundColorRef } = useContext(BackgroundShaderContext);
+    const { secondaryBackgroundColorRef } = useContext(BackgroundShaderContext);
     const glowAnim = useRef(new Animated.Value(0)).current;
     const glowAnimRight = useRef(new Animated.Value(0)).current;
 
@@ -411,13 +411,14 @@ export default function Match() {
                 normalColor[1] + (greenColor[1] - normalColor[1]) * value,
                 normalColor[2] + (greenColor[2] - normalColor[2]) * value,
             ];
-            setPrimaryBackgroundColor(mixed);
-        });
+            console.log("Mixed right color:", mixed);
+
+            primaryBackgroundColorRef.current = mixed;});
 
         return () => {
             glowAnim.removeListener(listener);
         };
-    }, [glowAnim, setPrimaryBackgroundColor]);
+    }, [glowAnim]);
 
     const triggerGreenGlowBackgroundRight = () => {
         // Animate from 0 → 1 → 0
@@ -425,7 +426,7 @@ export default function Match() {
         Animated.sequence([
             Animated.timing(glowAnimRight, {
                 toValue: 1,
-                duration: 400,
+                duration: 150,
                 easing: Easing.out(Easing.quad),
                 useNativeDriver: false,
             }),
@@ -449,13 +450,14 @@ export default function Match() {
                 normalColor[1] + (greenColor[1] - normalColor[1]) * value,
                 normalColor[2] + (greenColor[2] - normalColor[2]) * value,
             ];
-            setSecondaryBackgroundColor(mixed);
+            console.log("Mixed right color:", mixed);
+            secondaryBackgroundColorRef.current = mixed;
         });
 
         return () => {
             glowAnimRight.removeListener(listener);
         };
-    }, [glowAnimRight, setSecondaryBackgroundColor]);
+    }, [glowAnimRight]);
 
 
 
