@@ -26,6 +26,7 @@ export default function GenreRandom() {
                     router.push({
                         pathname: "../components/match",
                         params: {
+                            genreSetting: String("Random"),
                             genreId: randomGenre.id,
                             genreName: randomGenre.name,
                             rounds: String(rounds ?? "3"),
