@@ -344,13 +344,14 @@ export default function Match() {
     };
 
     // --- Helper to start the song transition ---
-    const startSongTransition = () => {
+    const startSongTransition = (whichPlayerWonTheRound) => {
         const glowDuration = 1600;
 
         setTimeout(() => {
             songOptions.forEach((_, idx) => {
                 triggerBubbleExit(idx);
             });
+            setLastGuessPhase(false);
         }, 1000);
         
         isSongTransitionPendingRef.current = true; // ✅ mark pending
@@ -364,7 +365,13 @@ export default function Match() {
         transitionTimeoutRef.current = setTimeout(() => {
             transitionTimeoutRef.current = null;
             isSongTransitionPendingRef.current = false; // ✅ not pending anymore
-            startInitialCountdown(() => {
+            
+            if (whichPlayerWonTheRound == 1){
+                handleEndOfRound(1);
+            } else if(whichPlayerWonTheRound == 2){
+                handleEndOfRound(2);
+            } else{
+                startInitialCountdown(() => {
                 setSongOptions([]);
                 handlePlayCore();
                 setPressedOnce({
@@ -372,6 +379,9 @@ export default function Match() {
                     2: {},
                 });
             });
+            }
+            
+            
         }, glowDuration);
     };
 
@@ -1080,23 +1090,65 @@ export default function Match() {
 
             if (isCorrect) {
                 // ✅ Correct: point to guesser
-                if (guesser === 1) setPlayer1Points(prev => prev + 1);
-                else setPlayer2Points(prev => prev + 1);
-                triggerGreenGlow(guesser, idx);
+                if (guesser === 1){
+                    const newPoints = player1Points + 1;
+                    setPlayer1Points(newPoints);
+                    triggerGreenGlowBackground();
+                    shrinkAllExceptCorrect(1)
+                    triggerGreenGlow(guesser, idx);
+
+                    if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                        startSongTransition(1);
+                    } else{startSongTransition(null);}
+                } 
+                else {
+                    const newPoints = player2Points + 1;
+                    setPlayer2Points(newPoints);
+                    triggerGreenGlowBackgroundRight();
+                    shrinkAllExceptCorrect(2)
+                    triggerGreenGlow(guesser, idx);
+
+                    if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                        startSongTransition(2);
+                    } else{startSongTransition(null);}
+                }
+              
+                
             } else {
                 // ❌ Wrong: point to opponent
-                if (opponent === 1) setPlayer1Points(prev => prev + 1);
-                else setPlayer2Points(prev => prev + 1);
-                triggerRedGlow(guesser, idx);
+                if (opponent === 1){
+                    const newPoints = player1Points + 1;
+                    setPlayer1Points(newPoints);
+                    triggerGreenGlowBackground();
+                    shrinkAllExceptCorrect(1)
+                    triggerRedGlow(guesser, idx);
+
+                    if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                        startSongTransition(1);
+                    } else{startSongTransition(null);}
+
+                } 
+                else{
+                    const newPoints = player2Points + 1;
+                    setPlayer2Points(newPoints);
+                    triggerGreenGlowBackgroundRight();
+                    shrinkAllExceptCorrect(2)
+                    triggerRedGlow(guesser, idx);
+
+                    if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                        startSongTransition(2);
+                    } else{startSongTransition(null);}
+                } 
+                
             }
 
-            // Check if anyone reached win condition
-            const updatedP1 = (guesser === 1 ? player1Points + (isCorrect ? 1 : 0) : player1Points + (!isCorrect ? 1 : 0));
-            const updatedP2 = (guesser === 2 ? player2Points + (isCorrect ? 1 : 0) : player2Points + (!isCorrect ? 1 : 0));
+            // Check if anyone reached win condition, oved into if-statements above
+            // const updatedP1 = (guesser === 1 ? player1Points + (isCorrect ? 1 : 0) : player1Points + (!isCorrect ? 1 : 0));
+            // const updatedP2 = (guesser === 2 ? player2Points + (isCorrect ? 1 : 0) : player2Points + (!isCorrect ? 1 : 0));
 
-            if (updatedP1 >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(1);
-            else if (updatedP2 >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(2);
-            else handlePlayCore();
+            // if (updatedP1 >= matchSettings.nrOfSongsToWinRound) startSongTransition(1);
+            // else if (updatedP2 >= matchSettings.nrOfSongsToWinRound) startSongTransition(2);
+            // else handlePlayCore();
 
             return;
         }
@@ -1126,24 +1178,31 @@ export default function Match() {
                     useNativeDriver: true,
                 }).start();
             });
-
             if (playerNum === 1) {
                 const newPoints = player1Points + 1;
                 setPlayer1Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) {
-                    handleEndOfRound(1);
+                    startSongTransition(1);
+                    //handleEndOfRound(1); moved into songtransition
+                    triggerGreenGlowBackground();
+                    shrinkAllExceptCorrect(1)
                 }
                 else {
                     shrinkAllExceptCorrect(1)
-                    startSongTransition();
+                    startSongTransition(null);
                     
                     triggerGreenGlowBackground();
                 }
             } else {
                 const newPoints = player2Points + 1;
                 setPlayer2Points(newPoints);
-                if (newPoints >= matchSettings.nrOfSongsToWinRound) handleEndOfRound(2);
-                else startSongTransition();
+                if (newPoints >= matchSettings.nrOfSongsToWinRound){
+                    //handleEndOfRound(2);
+                    startSongTransition(2);
+                    shrinkAllExceptCorrect(2)
+                    triggerGreenGlowBackgroundRight();
+                } 
+                else startSongTransition(null);
                 shrinkAllExceptCorrect(2)
 
                 triggerGreenGlowBackgroundRight();
