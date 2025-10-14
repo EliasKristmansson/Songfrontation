@@ -212,6 +212,7 @@ export default function Match() {
     //Check if there was a track playing before pausing game
     const wasPlayingBeforePause = useRef(false);
     const pausedForModal = useRef(false);
+    const canPause = useRef(false);
 
     const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
     const dividerTimerRef = useRef(null);
@@ -563,7 +564,8 @@ export default function Match() {
 
     // --- Pause everything (audio + intervals) ---
     const pauseAll = async () => {
-        try {
+        if (canPause.current === true){
+            try {
             pausedForModal.current = true;
             wasPlayingBeforePause.current = isPlaying; // remember if we were playing
             // pause audio if it exists and is playing
@@ -593,13 +595,14 @@ export default function Match() {
                 clearTimeout(transitionTimeoutRef.current);
                 transitionTimeoutRef.current = null;
             }
-
+            setShowPause(true);
 
             // stop UI play flag
             setIsPlaying(false);
-        } catch (e) {
-            console.error("pauseAll error", e);
-        }
+            } catch (e) {
+                console.error("pauseAll error", e);
+            }
+        };
     };
 
     // --- Resume everything (continue from remaining times) ---
@@ -898,13 +901,11 @@ export default function Match() {
 
             setSongOptions(options);
 
-            
-
             const { sound: newSound } = await Audio.Sound.createAsync(
                 { uri: correctTrack.previewUrl },
                 { shouldPlay: true }
             );
-
+            canPause.current = true;
             setSound(newSound);
             setIsPlaying(true);
 
@@ -1282,7 +1283,7 @@ export default function Match() {
             <View style={styles.topRightButtons}>
                 <TouchableOpacity
                     style={styles.settingsButton}
-                    onPress={() => { setShowPause(true); pauseAll(); }}
+                    onPress={() => { pauseAll(); }}
                 >
                     <Text style={styles.settingsText}>⏸</Text>
                 </TouchableOpacity>
