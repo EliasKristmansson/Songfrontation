@@ -40,7 +40,7 @@ export default function MatchSettings() {
             guesses: String(guesses),
             points: String(points),
             nrOfPlayers: from === "iconSinglePlayer" ? 1 : 2,
-            from, // ✅ preserve the original 'from'
+            from,
         };
 
         router.push({ pathname: nextPath, params });
@@ -77,11 +77,11 @@ export default function MatchSettings() {
                     scrollEventThrottle={16}
                 >
                     <View style={styles.cardsColumn}>
-                        {/* Genre Selection */}
+                        {/* Genre Alternatives */}
                         <View style={styles.card}>
-                            <Text style={styles.cardLabel}>Selection of Genre</Text>
+                            <Text style={styles.cardLabel}>Choose Genre</Text>
                             <View style={styles.optionsRow}>
-                                {["Random", "Alternatives", "Custom"].map((option) => (
+                                {["Random", "Pick from 3", "Pick from all"].map((option) => (
                                     <TouchableOpacity
                                         key={option}
                                         style={[
