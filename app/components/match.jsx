@@ -12,15 +12,18 @@ const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 // --- Official iTunes genres ---
 export const ITUNES_GENRES = [
-    { id: 14, name: "Pop" },
-    { id: 21, name: "Rock" },
-    { id: 6, name: "Country" },
-    { id: 17, name: "Dance" },
-    { id: 15, name: "R&B/Soul" },
-    { id: 11, name: "Jazz" },
-    { id: 7, name: "Hip-Hop/Rap" },
-    { id: 5, name: "Classical" },
-    { id: 3, name: "Blues" },
+  { id: 14, name: "Pop" }, 
+  { id: 21, name: "Rock" },
+  { id: 7, name: "Hip-Hop/Rap" },
+  { id: 6, name: "Country" }, 
+  { id: 15, name: "R&B/Soul" }, 
+  { id: 17, name: "Dance" }, 
+  { id: 19, name: "Alternative" }, 
+  { id: 12, name: "Latino" }, 
+  { id: 3, name: "Blues" }, 
+  { id: 5, name: "Classical" }, 
+  { id: 11, name: "Jazz" },
+  { id: 2, name: "Soundtrack" }, //Kan ofta ge fel då den bara spelar låtar som varit med i filmer/serier
 ];
 
 // --- Predefined bubble positions ---
@@ -825,6 +828,7 @@ export default function Match() {
                 if (tracksWithPreview.length === 0) {
                     Alert.alert("No Preview", `Could not find at least ${nrOfGuesses} tracks even in previously played songs.`);
                     setLoading(false);
+                    router.push("/");
                     return;
                 }
             }
