@@ -27,8 +27,9 @@ export default function BetweenRoundModalRandom({
   const content = (
     <View style={styles.overlay}>
       <Text style={styles.buttonText}>
-        Player {roundWinner} won the round. Next genre is {newGenre?.name}...
+        Player {roundWinner} won the round. Next genre is... 
       </Text>
+      <Text style={styles.genreText}>{newGenre?.name}</Text>
 
       <View style={styles.buttonsWrap}>
         <LinearGradient
@@ -95,5 +96,14 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 18,
     fontFamily: "OutfitBold",
+  },
+    genreText: {
+    fontSize: 40,
+    paddingTop: 60,
+    paddingBottom: 60,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: 1,
+    fontFamily: "OutfitBold"
   },
 });

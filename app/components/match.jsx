@@ -1175,6 +1175,7 @@ export default function Match() {
                     triggerGreenGlow(guesser, idx);
 
                     if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                        setRoundWinner(1);
                         startSongTransition(1);
                     } else{startSongTransition(null);}
                 } 
@@ -1186,6 +1187,7 @@ export default function Match() {
                     triggerGreenGlow(guesser, idx);
 
                     if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                        setRoundWinner(2);
                         startSongTransition(2);
                     } else{startSongTransition(null);}
                 }
@@ -1201,6 +1203,7 @@ export default function Match() {
                     triggerRedGlow(guesser, idx);
 
                     if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                        setRoundWinner(1);
                         startSongTransition(1);
                     } else{startSongTransition(null);}
 
@@ -1213,6 +1216,7 @@ export default function Match() {
                     triggerRedGlow(guesser, idx);
 
                     if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                        setRoundWinner(2);
                         startSongTransition(2);
                     } else{startSongTransition(null);}
                 } 
@@ -1259,6 +1263,7 @@ export default function Match() {
                 const newPoints = player1Points + 1;
                 setPlayer1Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) {
+                    setRoundWinner(1);
                     startSongTransition(1);
                     //handleEndOfRound(1); moved into songtransition
                     triggerGreenGlowBackground();
@@ -1275,6 +1280,7 @@ export default function Match() {
                 setPlayer2Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound){
                     //handleEndOfRound(2);
+                    setRoundWinner(2);
                     startSongTransition(2);
                     shrinkAllExceptCorrect(2)
                     triggerGreenGlowBackgroundRight();
