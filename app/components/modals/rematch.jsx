@@ -7,11 +7,15 @@ export default function RematchModal({ visible, onRematch, onBackToMenu, matchWi
     const content = (
         <View style={styles.overlay}>
                 {/* Winner Text */}
-            <linearGradient>
+            <LinearGradient          
+            colors={["#1A123B", "#242F7D", "#412F59", "#804D58"]}
+            start={{ x: 0.2, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={styles.gradient}>
                     <Text style={[styles.body, { fontFamily: "OutfitRegular" }]}>
                         Player {matchWinnerId} has won the match!
                     </Text>
-                </linearGradient>
+                </LinearGradient>
 
             <View style={styles.buttonsWrap}>
                 
