@@ -15,7 +15,7 @@ export const ITUNES_GENRES = [
     { id: 14, name: "Pop" },
     { id: 21, name: "Rock" },
     { id: 6, name: "Country" },
-    { id: 17, name: "EDM" },
+    { id: 17, name: "Dance" },
     { id: 15, name: "R&B/Soul" },
     { id: 11, name: "Jazz" },
     { id: 7, name: "Hip-Hop/Rap" },
@@ -212,6 +212,8 @@ export default function Match() {
     const wasPlayingBeforePause = useRef(false);
     const pausedForModal = useRef(false);
     const canPause = useRef(false);
+    const playedSongs = useRef([]); // starts as an empty array
+
 
     const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
     const dividerTimerRef = useRef(null);
@@ -861,6 +863,11 @@ export default function Match() {
 
             let correctTrackIdx = Math.floor(Math.random() * optionsTracks.length);
             let correctTrack = optionsTracks[correctTrackIdx];
+            playedSongs.current.push({
+                trackName: correctTrack.trackName,
+                artistName: correctTrack.artistName
+            });
+            console.log("Songs Played:", playedSongs.current);
 
             setPlayedTrackIds(prev => {
                 const newSet = new Set(prev);
