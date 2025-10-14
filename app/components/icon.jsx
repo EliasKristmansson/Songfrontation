@@ -94,7 +94,7 @@ export default function Icon() {
     }, []);
 
     const handleBackToMainMenu = () => {
-        fadeContent(null,0);
+        fadeContent(null, 0);
         setTimeout(() => {
             router.push("../components/main");
         }, 200);
@@ -174,17 +174,19 @@ export default function Icon() {
                             style={[styles.icon, styles.selectedIcon]}
                         />
                     ) : (
-                        <PlaceholderIcon selected={selected}>
-                            <MaterialCommunityIcons
-                                name="camera"
-                                size={50}
-                                color="#FFB347"
-                            />
-                        </PlaceholderIcon>
+                        <View style={{ alignItems: "center" }}>
+                            <LinearGradient
+                                colors={["#5663C4", "#412F7E"]}
+                                style={[styles.icon, { borderWidth: 2, borderColor: "white", alignItems: "center", justifyContent: "center", borderRadius: 50 }]}
+                            >
+                                <MaterialCommunityIcons name="camera" size={50} color="white" />
+                            </LinearGradient>
+                        </View>
                     )}
                 </TouchableOpacity>
             );
         }
+
 
         const selected = player === 1 ? selected1 === idx : selected2 === idx;
         const iconName = ICONS[(idx - 1) % ICONS.length];
@@ -336,7 +338,7 @@ export default function Icon() {
                     </View>
                 </View>
             </Animated.View>
-            
+
         </View>
     );
 }
