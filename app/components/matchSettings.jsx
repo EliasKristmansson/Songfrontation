@@ -22,8 +22,8 @@ export default function MatchSettings() {
 
     const getSelectedMatchMode = () => {
         if (genre === "Random") return "../components/genreRandom";
-        if (genre === "Alternatives") return "../components/genreAlternatives";
-        if (genre === "Custom") return "../components/genreCustom";
+        if (genre === "Pick from 3") return "../components/genreAlternatives";
+        if (genre === "Pick from all") return "../components/genreCustom";
         return null;
     };
 
@@ -85,7 +85,7 @@ export default function MatchSettings() {
                     <View style={styles.cardsColumn}>
                         {/* Genre Alternatives */}
                         <View style={styles.card}>
-                            <Text style={styles.cardLabel}>Choose Genre</Text>
+                            <Text style={styles.cardLabel}>Genre Alternatives</Text>
                             <View style={styles.optionsRow}>
                                 {["Random", "Pick from 3", "Pick from all"].map((option) => (
                                     <TouchableOpacity
