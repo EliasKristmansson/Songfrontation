@@ -64,7 +64,13 @@ export default function MatchSettings() {
                 proceedLabel="Next"
                 onProceed={canProceed ? handleNext : undefined}
                 proceedDisabled={!canProceed}
-                onBack={() => router.push("../components/icon")}
+                onBack={() => {
+                    if (from === "iconSinglePlayer") {
+                        router.push("../components/iconSinglePlayer");
+                    } else {
+                        router.push("../components/icon");
+                    }
+                }}
             />
 
             <View style={{ flex: 1 }}>
@@ -90,7 +96,8 @@ export default function MatchSettings() {
                                         ]}
                                         onPress={() => {
                                             playButtonSound();
-                                            setGenre(option)}}
+                                            setGenre(option)
+                                        }}
                                     >
                                         <Text
                                             style={
@@ -105,7 +112,7 @@ export default function MatchSettings() {
                                 ))}
                             </View>
                         </View>
-                        
+
                         {/* Points to Win Round */}
                         <View style={styles.card}>
                             <Text style={styles.cardLabel}>Songs to Win Round</Text>
@@ -200,7 +207,8 @@ export default function MatchSettings() {
                                         ]}
                                         onPress={() => {
                                             playButtonSound();
-                                            setGuesses(option);}}
+                                            setGuesses(option);
+                                        }}
                                     >
                                         <Text
                                             style={
@@ -216,7 +224,7 @@ export default function MatchSettings() {
                             </View>
                         </View>
 
-                        
+
                     </View>
                 </ScrollView>
 

@@ -177,7 +177,7 @@ export default function Icon() {
                         <View style={{ alignItems: "center" }}>
                             <LinearGradient
                                 colors={["#5663C4", "#412F7E"]}
-                                style={[styles.icon, { borderWidth: 2, borderColor: "white", alignItems: "center", justifyContent: "center", borderRadius: 50 }]}
+                                style={[styles.icon, { borderWidth: 3, borderColor: "white", alignItems: "center", justifyContent: "center", borderRadius: 50 }]}
                             >
                                 <MaterialCommunityIcons name="camera" size={50} color="white" />
                             </LinearGradient>
