@@ -172,7 +172,7 @@ export default function Match() {
     const matchSettings = new MatchSettings({
         nrOfPlayers: params.nrOfPlayers ? parseInt(params.nrOfPlayers) : 2,
         genreSetting: params.genreSetting,
-        selectionOfGenre: params.genre ? JSON.parse(params.genre) : [],
+        //selectionOfGenre: params.genre ? JSON.parse(params.genre) : [], Moved up to all other consts bcs it needs to be dynamic
         nrOfSongsToWinRound: params.points ? parseInt(params.points) : 3,
         nrOfRoundsToWinMatch: params.rounds ? parseInt(params.rounds) : 1,
         songDuration: params.duration ? parseInt(params.duration) : 30,
@@ -217,6 +217,15 @@ export default function Match() {
     const canPause = useRef(false);
     const playedSongs = useRef([]); // starts as an empty array
 
+    //Between-round modal and the next genre gathered from it
+    const [isBetweenRoundModalVisible, setBetweenRoundModalVisible] = useState(false);
+    const [nextGenre, setNextGenre] = useState(null);
+
+    const [selectionOfGenre, setSelectionOfGenre] = useState(
+        params.genre
+            ? JSON.parse(params.genre) // if params.genre is already {id, name}, this works
+            : { id: params.genreId ? parseInt(params.genreId) : null, name: params.genreName || "Unknown" } // fallback object with shape
+    );
 
     const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
     const dividerTimerRef = useRef(null);
@@ -249,7 +258,7 @@ export default function Match() {
     // --- Helper functions ---
 
     const resetRound = () => {
-        setCurrentRoundGenre(null);
+        //setCurrentRoundGenre(null);
         setPlayer1Points(0);
         setPlayer2Points(0);
         setCorrectPressed(false);
@@ -349,7 +358,7 @@ export default function Match() {
             console.log("ERROR: Unexpected genre setting provided")
             executeNextRound();
         }
-            
+        setBetweenRoundModalVisible(true);
         
     }
 
@@ -689,8 +698,31 @@ export default function Match() {
         //setDividerPos(1.1);
     };
 
-    const executeNextRound = () => {
+    const executeNextRound = (newGenre) => {
 
+
+        if(matchSettings.genreSetting == "Random"){
+                setSelectionOfGenre(newGenre);
+                console.log("New genre: ", selectionOfGenre.id, "name: ", selectionOfGenre.name);
+        } else if(matchSettings.genreSetting == "Custom"){
+
+        } else if(matchSettings.genreSetting == "Alternatives"){
+
+        } else{
+            console.log("ERROR: Unexpected genre setting provided")
+
+        }
+
+
+
+
+
+        
+
+
+        
+
+        //setMatchSettings(prev => ({ ...prev, selectionOfGenre: newGenre }));
         // Immediately start the countdown for the next round
         setShowInitialCountdown(true);
         let count = 3;
@@ -704,7 +736,7 @@ export default function Match() {
                 clearInterval(countdown);
                 setShowInitialCountdown(false);
                 resetRound();
-                setTimeout(() => handlePlayCore(), 100);
+                setTimeout(() => handlePlayCore({ genreOverride: newGenre }), 100);
             }
         }, 900);
     };
@@ -730,14 +762,18 @@ export default function Match() {
                 setSound(null);
             }
 
-            let expectedGenreId = genreId;
-            let expectedGenreName = genreName;
+            //let expectedGenreId = selectionOfGenre?.id;//genreId;
+            //let expectedGenreName = selectionOfGenre?.name;    //genreName; //
+
+            let expectedGenreId = opts.genreOverride?.id ?? selectionOfGenre?.id;
+            let expectedGenreName = opts.genreOverride?.name ?? selectionOfGenre?.name;
 
             if (!expectedGenreId) {
                 const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
                 expectedGenreId = randomGenre.id;
                 expectedGenreName = randomGenre.name;
                 setCurrentRoundGenre(randomGenre);
+                console.log(" not expectedgenreID HDFJKASHDKJLASHDLKJASHDJKLASHDLJKAS")
             }
 
             console.log("Searching for genre:", expectedGenreName, "with genreId:", expectedGenreId);
@@ -1498,8 +1534,14 @@ export default function Match() {
 
             <BetweenRoundModalRandom
                 visible={showBetweenRoundRandom}
-                proceedToNextRound={() => {setShowBetweenRoundRandom(false); executeNextRound();}}
+                roundWinner={roundWinner}
+                currentGenre={matchSettings.selectionOfGenre}
+                onCloseAndProceed={(newGenre) => {
+                    setShowBetweenRoundRandom(false);
+                    executeNextRound(newGenre);
+                }}
             />
+            
         </View>
     );
 }
