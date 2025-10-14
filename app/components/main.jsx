@@ -69,7 +69,7 @@ function PlayerButton({ label, onPress }) {
 }
 
 
-    
+
 
 export default function Main({ background, stars = [] }) {
     const { dividerPosRef } = useContext(BackgroundShaderContext);
@@ -90,20 +90,20 @@ export default function Main({ background, stars = [] }) {
     useEffect(() => {
         animateDivider(1.1);
         setTimeout(() => {
-            fadeContent(null,1)
+            fadeContent(null, 1)
         }, 200);
     }, []);
 
     const animateDivider = (toValue, callback) => {
-    Animated.timing(anim, {
-      toValue,
-      duration: 600,
-      easing: Easing.inOut(Easing.cubic),
-      useNativeDriver: false, // ✅ shader ref, not a style prop
-    }).start(() => callback?.());
+        Animated.timing(anim, {
+            toValue,
+            duration: 600,
+            easing: Easing.inOut(Easing.cubic),
+            useNativeDriver: false, // ✅ shader ref, not a style prop
+        }).start(() => callback?.());
 
-    anim.addListener(({ value }) => {
-        dividerPosRef.current = value;
+        anim.addListener(({ value }) => {
+            dividerPosRef.current = value;
         });
     };
 
@@ -117,15 +117,15 @@ export default function Main({ background, stars = [] }) {
 
     const swipeAnimationAndRouteToNextView = (toCustom) => {
         animateDivider(0.5);
-        fadeContent(null,0);
+        fadeContent(null, 0);
         setTimeout(() => {
-            if(toCustom){
+            if (toCustom) {
                 router.push({
                     pathname: "../components/icon",
                     params: { nrOfPlayers: 2 },
                 });
                 return;
-            } else{
+            } else {
                 router.push({
                     pathname: "../components/genreRandom",
                     params: { ...defaultQuickMatch, nrOfPlayers: 2, from: "main" },
@@ -133,7 +133,7 @@ export default function Main({ background, stars = [] }) {
                 return;
             }
         }, 600);
-        
+
     };
 
 
@@ -162,16 +162,18 @@ export default function Main({ background, stars = [] }) {
                             style={styles.settingsButton}
                             onPress={() => {
                                 playButtonSound();
-                                setHelpVisible(true);}}
+                                setHelpVisible(true);
+                            }}
                         >
-                            <Text style={styles.settingsText}>❔</Text>
+                            <Text style={styles.settingsText}>ℹ️</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={styles.settingsButton}
                             onPress={() => {
                                 playButtonSound();
-                                router.push("../components/settings");}}
+                                router.push("../components/settings");
+                            }}
                         >
                             <Text style={styles.settingsText}>⚙️</Text>
                         </TouchableOpacity>
@@ -198,7 +200,7 @@ export default function Main({ background, stars = [] }) {
                         >
                             <PlayerButton
                                 label="1 Player"
-                                onPress={() =>  {
+                                onPress={() => {
                                     router.push({
                                         pathname: "../components/genreRandom",
                                         params: { ...defaultQuickMatch, nrOfPlayers: 1, from: "main" },
@@ -206,18 +208,17 @@ export default function Main({ background, stars = [] }) {
                                     playButtonSound();
                                 }
                                 }
-                                    
+
                             />
                             <View style={styles.divider} />
                             <PlayerButton
                                 label="2 Players"
-                                onPress={() =>
-                                    {
-                                        swipeAnimationAndRouteToNextView(false);
-                                        playButtonSound();
-                                    }
+                                onPress={() => {
+                                    swipeAnimationAndRouteToNextView(false);
+                                    playButtonSound();
                                 }
-                                
+                                }
+
                             />
                         </LinearGradient>
                     </View>
@@ -261,11 +262,12 @@ export default function Main({ background, stars = [] }) {
                 </View>
             </Animated.View>
 
-           
+
 
             <Help visible={helpVisible} onClose={() => {
                 playButtonSound();
-                setHelpVisible(false);}} />
+                setHelpVisible(false);
+            }} />
         </View>
     );
 }
