@@ -5,7 +5,6 @@ import { Animated, Easing, Platform, ScrollView, StyleSheet, Text, TouchableOpac
 import { ITUNES_GENRES } from "./match";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
-// Helper for string params
 const asStr = (v) => (Array.isArray(v) ? v[0] : v ?? "");
 
 export default function GenreCustom() {
@@ -14,7 +13,6 @@ export default function GenreCustom() {
 
     const [selectedGenre, setSelectedGenre] = useState(null);
 
-    // Bounce scrollindikator ---
     const scrollY = useRef(new Animated.Value(0)).current;
     const scrollRef = useRef(null);
 
@@ -96,6 +94,19 @@ export default function GenreCustom() {
                                     style={[styles.iconWrapper, isSelected && styles.iconWrapperSelected]}
                                     activeOpacity={0.85}
                                 >
+                                    {isSelected && (
+                                        <LinearGradient
+                                            colors={[
+                                                "rgba(137,109,163,0.45)",
+                                                "rgba(86,99,196,0.35)",
+                                                "rgba(65,47,126,0.25)",
+                                            ]}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.genreGlowHalo}
+                                        />
+                                    )}
+
                                     <View style={styles.iconOuter}>
                                         <LinearGradient
                                             colors={["#896DA3", "#5663C4", "#412F7E"]}
@@ -166,9 +177,10 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         alignItems: "center",
         justifyContent: "center",
+        position: "relative",
     },
     iconWrapperSelected: {
-        shadowColor: "#B2A2E2",   // soft purple glow
+        shadowColor: "#B2A2E2",
         shadowOpacity: 0.8,
         shadowRadius: 10,
         shadowOffset: { width: 0, height: 0 },
@@ -180,10 +192,10 @@ const styles = StyleSheet.create({
         height: "100%",
         borderRadius: 999,
         borderWidth: 2,
-        borderColor: "#FFFFFF", // always visible white border
+        borderColor: "#FFFFFF",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "transparent", // needed for shadow to show
+        backgroundColor: "transparent",
     },
     iconInner: {
         flex: 1,
@@ -201,5 +213,15 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#fff",
     },
-
+    genreGlowHalo: {
+        position: "absolute",
+        top: 0, left: 0, right: 0, bottom: 0,
+        borderRadius: 999,
+        shadowColor: "white",
+        shadowOpacity: 0.75,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 0 },
+        elevation: 16,
+        transform: [{ scale: 1.15 }],
+    },
 });

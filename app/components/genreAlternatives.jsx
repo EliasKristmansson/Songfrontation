@@ -43,6 +43,10 @@ export default function GenreAlternatives() {
                 proceedLabel="Start"
             />
 
+            <Text style={styles.subHeader}>
+                {selectedGenre ? `Selected: ${selectedGenre.name.split(" > ").pop()}` : "Choose one genre"}
+            </Text>
+
             <View style={styles.centerArea}>
                 <View style={styles.genreButtonRow}>
                     {randomGenres.map((genreObj) => {
@@ -54,6 +58,18 @@ export default function GenreAlternatives() {
                                 onPress={() => setSelectedGenre(genreObj)}
                                 activeOpacity={0.85}
                             >
+                                {isSelected && (
+                                    <LinearGradient
+                                        colors={[
+                                            "rgba(137,109,163,0.45)",
+                                            "rgba(86,99,196,0.35)",
+                                            "rgba(65,47,126,0.25)",
+                                        ]}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={styles.genreGlowHalo}
+                                    />
+                                )}
                                 <LinearGradient
                                     colors={["#896DA3", "#5663C4", "#412F7E"]}
                                     start={{ x: 0, y: 0 }}
@@ -79,6 +95,12 @@ const styles = StyleSheet.create({
         flex: 1,
         minHeight: Platform.OS === "web" ? "100vh" : undefined,
     },
+    subHeader: {
+        textAlign: "center",
+        marginBottom: 16,
+        color: "#fff",
+        opacity: 0.8,
+    },
     centerArea: {
         flex: 1,
         alignItems: "center",
@@ -97,6 +119,7 @@ const styles = StyleSheet.create({
         borderRadius: 80,
         alignItems: "center",
         justifyContent: "center",
+        position: "relative",
     },
     genreButton: {
         width: "100%",
@@ -125,5 +148,18 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontFamily: "OutfitBold",
         textAlign: "center",
+    },
+    genreGlowHalo: {
+        position: "absolute",
+        top: -12,
+        left: -12,
+        width: 184,
+        height: 184,
+        borderRadius: 92,
+        shadowColor: "white",
+        shadowOpacity: 0.75,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 0 },
+        elevation: 16,
     },
 });
