@@ -3,10 +3,23 @@ import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from "rea
 
 const windowWidth = Dimensions.get("window").width;
 
-export default function RematchModal({ visible, onRematch, onBackToMenu }) {
+export default function RematchModal({ visible, onRematch, onBackToMenu, matchWinnerId }) {
     const content = (
         <View style={styles.overlay}>
+                {/* Winner Text */}
+            <LinearGradient          
+            colors={["#1A123B", "#242F7D", "#412F59", "#804D58"]}
+            start={{ x: 0.2, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={styles.gradient}>
+                    <Text style={[styles.body, { fontFamily: "OutfitRegular" }]}>
+                        Player {matchWinnerId} has won the match!
+                    </Text>
+                </LinearGradient>
+
             <View style={styles.buttonsWrap}>
+                
+
                 {/* Rematch */}
                 <LinearGradient
                     colors={["#242F7D", "#412F59", "#804D58"]}

@@ -9,7 +9,7 @@ const asStr = (v) => (Array.isArray(v) ? v[0] : v ?? "");
 
 export default function GenreCustom() {
     const router = useRouter();
-    const { rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
+    const { rounds, duration, guesses, points, nrOfPlayers, from } = useLocalSearchParams();
 
     const [selectedGenre, setSelectedGenre] = useState(null);
 
@@ -60,6 +60,7 @@ export default function GenreCustom() {
                 guesses: String(asStr(guesses)),
                 points: String(asStr(points)),
                 nrOfPlayers,
+                from,
             },
         });
     };
@@ -68,7 +69,7 @@ export default function GenreCustom() {
         <View style={styles.container}>
             <PreGameMenuHeader
                 title="Selection of Genre"
-                onBack={() => router.push("../components/matchSettings")}
+                onBack={() => router.push({ pathname: "../components/matchSettings", params: { from } })}
                 onProceed={onStartMatch}
                 canProceed={!!selectedGenre}
                 proceedLabel="Start"

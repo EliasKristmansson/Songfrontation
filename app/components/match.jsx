@@ -1483,6 +1483,7 @@ export default function Match() {
                 visible={showRematch}
                 onRematch={handleRematch}
                 onBackToMenu={handleBackToMenu}
+                matchWinnerId={matchWinner}
             />
             <PauseMatch
                 visible={showPause}

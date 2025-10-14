@@ -14,7 +14,7 @@ const asStr = (v) => (Array.isArray(v) ? v[0] : v ?? "");
 
 export default function GenreAlternatives() {
     const router = useRouter();
-    const { rounds, duration, guesses, points, nrOfPlayers } = useLocalSearchParams();
+    const { rounds, duration, guesses, points, nrOfPlayers, from } = useLocalSearchParams();
 
     const randomGenres = useMemo(() => getRandomGenres(ITUNES_GENRES, 3), []);
     const [selectedGenre, setSelectedGenre] = useState(null);
@@ -23,7 +23,7 @@ export default function GenreAlternatives() {
         <View style={styles.container}>
             <PreGameMenuHeader
                 title="Selection of Genre"
-                onBack={() => router.push("../components/matchSettings")}
+                onBack={() => router.push({ pathname: "../components/matchSettings", params: { from } })}
                 onProceed={() => {
                     router.push({
                         pathname: "../components/match",
@@ -36,6 +36,7 @@ export default function GenreAlternatives() {
                             guesses: String(asStr(guesses) ?? ""),
                             points: String(asStr(points) ?? ""),
                             nrOfPlayers,
+                            from,
                         }
                     });
                 }}

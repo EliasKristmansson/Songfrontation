@@ -297,8 +297,6 @@ export default function Icon() {
                         />
                     </View>
 
-                    <View style={styles.divider} />
-
                     {/* Player 2 */}
                     <View style={styles.half}>
                         <View style={styles.headerRow}>
@@ -361,11 +359,6 @@ const styles = StyleSheet.create({
     },
     half: {
         flex: 1,
-    },
-    divider: {
-        width: 2,
-        backgroundColor: "#ccc",
-        height: "100%",
     },
     scrollFadeBottom: {
         position: "absolute",
