@@ -1,27 +1,61 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
-import { useContext, useState, useRef, useEffect } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import PreGameMenuHeader from "./preGameMenuHeader";
 import { LinearGradient } from "expo-linear-gradient";
-import { Animated, Easing } from "react-native";
+import { useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import {
+    Animated,
+    Easing,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from "react-native";
+import PreGameMenuHeader from "./preGameMenuHeader";
 
-const ICONS = Array.from({ length: 20 }, (_, i) => i + 1);
-
-// Array of 20 pastel colors
-const PASTEL_COLORS = [
-    "#FFD1DC", "#B5EAD7", "#FFDAC1", "#C7CEEA", "#E2F0CB",
-    "#FFB7B2", "#B5EAD7", "#FF9AA2", "#C7CEEA", "#E2F0CB",
-    "#FFB347", "#B0E0E6", "#F3E5AB", "#D4A5A5", "#B2F9FC",
-    "#E0BBE4", "#FFDFD3", "#C2F784", "#F1CBFF", "#A0CED9"
+const ICONS = [
+    "face-man",
+    "face-woman",
+    "alien",
+    "robot",
+    "dog",
+    "cat",
+    "panda",
+    "unicorn-variant",
+    "ninja",
+    "ghost",
+    "emoticon-cool",
+    "account-cowboy-hat",
+    "pirate",
+    "android",
+    "emoticon-devil",
 ];
 
-function PlaceholderIcon({ selected, style, color, children }) {
+const ICON_COLORS = [
+    "#FF8C00",
+    "#FF69B4",
+    "#00CED1",
+    "#7FFF00",
+    "#FFD700",
+    "#ADFF2F",
+    "#00BFFF",
+    "#9370DB",
+    "#FF6347",
+    "#00FA9A",
+    "#FF4500",
+    "#DA70D6",
+    "#40E0D0",
+    "#FF1493",
+    "#87CEEB",
+];
+
+function PlaceholderIcon({ selected, style, children }) {
     return (
         <View
             style={[
                 styles.icon,
-                { backgroundColor: color },
                 selected && styles.selectedIcon,
                 style,
             ]}
@@ -31,14 +65,25 @@ function PlaceholderIcon({ selected, style, color, children }) {
     );
 }
 
-export default function Icon() {
+export default function IconSinglePlayer({ nrOfPlayers }) {
     const router = useRouter();
-    const [selected1, setSelected1] = useState(null);
-    const [customImage1, setCustomImage1] = useState(null);
-    const scrollY1 = useRef(new Animated.Value(0)).current;
-    const scrollY2 = useRef(new Animated.Value(0)).current;
-    const scrollRef1 = useRef(null);
-    const scrollRef2 = useRef(null);
+    const [selected, setSelected] = useState(null);
+    const [customImage, setCustomImage] = useState(null);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const scrollY = useRef(new Animated.Value(0)).current;
+    const scrollRef = useRef(null);
+
+    const fadeContent = (callback, newOpacity) => {
+        Animated.timing(fadeAnim, {
+            toValue: newOpacity,
+            duration: 300,
+            useNativeDriver: true,
+        }).start(() => callback?.());
+    };
+
+    useEffect(() => {
+        fadeContent(null, 1);
+    }, []);
 
     const takeSelfie = async () => {
         const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
@@ -54,8 +99,8 @@ export default function Icon() {
         });
 
         if (!result.canceled) {
-            setCustomImage1(result.assets[0].uri);
-            setSelected1(0);
+            setCustomImage(result.assets[0].uri);
+            setSelected(0);
         }
     };
 
@@ -66,12 +111,12 @@ export default function Icon() {
                     toValue: 10,
                     duration: 100,
                     useNativeDriver: false,
-                    easing: Easing.out(Easing.quad), // ease out on the way down
+                    easing: Easing.out(Easing.quad),
                 }),
                 Animated.spring(animatedVal, {
                     toValue: 0,
-                    friction: 10,   // lower = bouncier
-                    tension: 40,   // higher = snappier
+                    friction: 10,
+                    tension: 40,
                     useNativeDriver: false,
                 }),
             ]).start();
@@ -82,119 +127,118 @@ export default function Icon() {
         };
 
         setTimeout(() => {
-            bounce(scrollRef1, scrollY1);
-            bounce(scrollRef2, scrollY2);
+            bounce(scrollRef, scrollY);
         }, 400);
 
         return () => {
-            scrollY1.removeAllListeners();
-            scrollY2.removeAllListeners();
+            scrollY.removeAllListeners();
         };
     }, []);
 
     const renderIcon = (idx) => {
         if (idx === 0) {
+            const selectedCamera = selected === 0;
             return (
-                <TouchableOpacity
-                    key={0}
-                    onPress={takeSelfie}
-                    style={styles.iconWrapper}
-                >
-                    {customImage1 ? (
-                        <Image
-                            source={{ uri: customImage1 }}
-                            style={[styles.icon, styles.selectedIcon]}
-                        />
+                <TouchableOpacity key={0} onPress={takeSelfie} style={styles.iconWrapper}>
+                    {customImage ? (
+                        <Image source={{ uri: customImage }} style={[styles.icon, styles.selectedIcon]} />
                     ) : (
-                        <PlaceholderIcon selected={selected1 === 0} color="#fff" style={{ justifyContent: "center", alignItems: "center" }}>
-                            <Text style={{ fontSize: 32 }}>📷</Text>
-                        </PlaceholderIcon>
+                        <View style={styles.cameraContainer}>
+                            <LinearGradient
+                                colors={["#5663C4", "#412F7E"]}
+                                style={[styles.icon, { borderWidth: 2, borderColor: "white", alignItems: "center", justifyContent: "center", borderRadius: 50 }]}
+                            >
+                                <MaterialCommunityIcons name="camera" size={50} color="white" />
+                            </LinearGradient>
+                        </View>
                     )}
                 </TouchableOpacity>
             );
         }
 
+        const isSelected = selected === idx;
+        const iconName = ICONS[(idx - 1) % ICONS.length];
+        const iconColor = ICON_COLORS[(idx - 1) % ICON_COLORS.length];
+
         return (
             <TouchableOpacity
                 key={idx}
-                onPress={() => setSelected1(idx)}
+                onPress={() => setSelected(idx)}
                 style={styles.iconWrapper}
             >
-                <PlaceholderIcon
-                    selected={selected1 === idx}
-                    color={PASTEL_COLORS[idx % PASTEL_COLORS.length]}
-                />
+                <PlaceholderIcon selected={isSelected}>
+                    <MaterialCommunityIcons name={iconName} size={55} color={iconColor} />
+                </PlaceholderIcon>
             </TouchableOpacity>
         );
     };
 
+    const getPlayerIcon = () => {
+        if (selected === 0 && customImage) {
+            return { type: "image", uri: customImage };
+        }
+        if (selected !== null && selected > 0) {
+            const iconName = ICONS[(selected - 1) % ICONS.length];
+            const iconColor = ICON_COLORS[(selected - 1) % ICON_COLORS.length];
+            return { type: "icon", name: iconName, color: iconColor };
+        }
+        return null;
+    };
+
     return (
         <View style={styles.container}>
+            <Animated.View style={{ flex: 1, width: "100%", opacity: fadeAnim }}>
+                <PreGameMenuHeader
+                    title="Icon Select"
+                    onBack={() => router.push("../components/main")}
+                    onProceed={() =>
+                        router.push({
+                            pathname: "../components/matchSettings",
+                            params: {
+                                from: "iconSinglePlayer",
+                                nrOfPlayers: 1,
+                                icon: getPlayerIcon(),
+                            },
+                        })
 
-            {/* Header at the top */}
-            <PreGameMenuHeader
-                title="Icon Select"
-                onBack={() => router.push("../components/main")}
-                onProceed={() => router.push({ pathname: "../components/matchSettings", params: { from: "iconSinglePlayer", nrOfPlayers: 1 } })}
-                canProceed={selected1 !== null}
-            />
+                        
+                    }
+                    canProceed={selected !== null}
+                />
 
-            {/* Player 1 Half */}
-            <View style={styles.half}>
-                <View style={styles.headerRow}>
-                    <Text style={styles.header}>Player 1</Text>
-                    {selected1 !== null && (
-                        <PlaceholderIcon
-                            selected
-                            style={styles.previewIcon}
-                            color={selected1 === 0 && customImage1 ? "#fff" : PASTEL_COLORS[selected1 % PASTEL_COLORS.length]}
+                <View style={styles.mainRow}>
+                    <View style={styles.half}>
+                        <Text style={styles.header}>Your Icon</Text>
+                        <ScrollView
+                            ref={scrollRef}
+                            contentContainerStyle={styles.iconList}
+                            showsVerticalScrollIndicator={false}
                         >
-                            {selected1 === 0 && customImage1 && (
-                                <Image
-                                    source={{ uri: customImage1 }}
-                                    style={{ width: "100%", height: "100%", borderRadius: 50 }}
-                                />
-                            )}
-                        </PlaceholderIcon>
-                    )}
+                            {[0, ...ICONS.map((_, i) => i + 1)].map((idx) => renderIcon(idx))}
+                        </ScrollView>
+                        <LinearGradient
+                            colors={["transparent", "#20163B"]}
+                            style={styles.scrollFadeBottom}
+                            pointerEvents="none"
+                        />
+                    </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                    <ScrollView
-                        ref={scrollRef1}
-                        contentContainerStyle={styles.iconList}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {ICONS.map((icon, idx) => renderIcon(idx, 1))}
-                    </ScrollView>
-
-
-                    <LinearGradient
-                        colors={["transparent", "#20163B"]}
-                        style={styles.scrollFadeBottom}
-                        pointerEvents="none"
-                    />
-                </View>
-            </View>
+            </Animated.View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        height: "100%",
-        position: "relative",
-        flexDirection: "column", // Make sure the layout is vertical
-    },
-    settingsButton: {
-        position: "absolute",
-        top: 30,
-        right: 20,
-        zIndex: 10,
-        backgroundColor: "#5C66C5",
-        borderRadius: 20,
-        padding: 4,
-        elevation: 2,
+    container: { flex: 1, backgroundColor: "transparent" },
+    mainRow: { flex: 1, flexDirection: "row" },
+    half: { flex: 1 },
+    header: {
+        fontSize: 32,
+        fontWeight: "bold",
+        textAlign: "center",
+        color: "white",
+        fontFamily: "OutfitBold",
+        marginVertical: 10,
     },
     scrollFadeBottom: {
         position: "absolute",
@@ -204,51 +248,27 @@ const styles = StyleSheet.create({
         height: 30,
         zIndex: 5,
     },
-    settingsText: {
-        fontSize: 24,
-    },
-    half: {
-        flex: 1,
-    },
-    headerRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 10,
-        gap: 8,
-    },
-    header: {
-        fontSize: 36,
-        fontFamily: "OutfitBold",
-        textAlign: "center",
-        color: "white",
-    },
-    previewIcon: {
-        marginLeft: 8,
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-    },
     iconList: {
         flexDirection: "row",
         flexWrap: "wrap",
         justifyContent: "center",
         alignItems: "center",
+        paddingBottom: 40,
     },
     iconWrapper: {
-        width: "12%",
+        width: "15%",
         aspectRatio: 1,
-        margin: "1.5%",
         alignItems: "center",
         justifyContent: "center",
     },
     icon: {
-        width: 90,
-        height: 90,
+        width: 80,
+        height: 80,
         borderRadius: 50,
-        backgroundColor: "#bbb",
         borderWidth: 2,
         borderColor: "transparent",
+        alignItems: "center",
+        justifyContent: "center",
     },
     selectedIcon: {
         shadowColor: "#FFFFFF",
@@ -258,15 +278,23 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: "white",
     },
-    backButton: {
-        position: "absolute",
-        top: 20,
-        left: 20,
-        zIndex: 10,
-        padding: 8,
+    cameraContainer: {
+        alignItems: "center",
     },
-    backArrow: {
-        color: "white",
-        fontSize: 28,
+    cameraGradient: {
+        width: 80,
+        height: 80,
+        borderRadius: 50,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    cameraLabel: {
+        color: "#fff",
+        fontSize: 14,
+        marginTop: 5,
+        fontWeight: "600",
+        textShadowColor: "rgba(0,0,0,0.4)",
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
 });
