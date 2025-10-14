@@ -6,6 +6,7 @@ import { useAudio } from "../components/audioContext";
 import GuessBubble from "../components/guessBubble.jsx";
 import RematchModal from "../components/modals/rematch.jsx";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
+import BetweenRoundModalRandom from "./modals/betweenRoundModalRandom.jsx";
 import PauseMatch from "./modals/pauseOngoingMatch.jsx";
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
@@ -112,8 +113,9 @@ class Song {
 }
 
 class MatchSettings {
-    constructor({ nrOfPlayers, selectionOfGenre, nrOfSongsToWinRound, nrOfRoundsToWinMatch, songDuration, nrOfGuessesOnBoard }) {
+    constructor({ nrOfPlayers, genreSetting, selectionOfGenre, nrOfSongsToWinRound, nrOfRoundsToWinMatch, songDuration, nrOfGuessesOnBoard }) {
         this.nrOfPlayers = nrOfPlayers;
+        this.genreSetting = genreSetting;
         this.selectionOfGenre = selectionOfGenre || [];
         this.nrOfSongsToWinRound = nrOfSongsToWinRound;
         this.nrOfRoundsToWinMatch = nrOfRoundsToWinMatch;
@@ -133,6 +135,11 @@ export default function Match() {
     // Tillagda för att rematch sa funka
     const [showRematch, setShowRematch] = useState(false);
     const [matchWinner, setMatchWinner] = useState(null);
+
+    //Between round modals visibility
+    const [showBetweenRoundRandom, setShowBetweenRoundRandom] = useState(false);
+    const [showBetweenRoundCustom, setShowBetweenRoundCustom] = useState(false);
+    const [showBetweenRoundAlternatives, setShowBetweenRoundAlternatives] = useState(false);
 
     const genreId = params.genreId ? parseInt(params.genreId) : null;
     const genreName = params.genreName || "Unknown";
@@ -162,6 +169,7 @@ export default function Match() {
     // Player and round state
     const matchSettings = new MatchSettings({
         nrOfPlayers: params.nrOfPlayers ? parseInt(params.nrOfPlayers) : 2,
+        genreSetting: params.genreSetting,
         selectionOfGenre: params.genre ? JSON.parse(params.genre) : [],
         nrOfSongsToWinRound: params.points ? parseInt(params.points) : 3,
         nrOfRoundsToWinMatch: params.rounds ? parseInt(params.rounds) : 1,
@@ -302,7 +310,8 @@ export default function Match() {
                 if (newVal >= matchSettings.nrOfRoundsToWinMatch) {
                     endMatch(1);
                 } else {
-                    nextRound(1);
+                    setupNextRound();
+                    //nextRound(1);
                 }
                 return newVal;
             });
@@ -312,12 +321,32 @@ export default function Match() {
                 if (newVal >= matchSettings.nrOfRoundsToWinMatch) {
                     endMatch(2);
                 } else {
-                    nextRound(2);
+                    setupNextRound();
+                    //nextRound(2);
                 }
                 return newVal;
             });
         }
     };
+
+    const setupNextRound = () =>{
+        if(matchSettings.genreSetting == "Random"){
+            console.log("spawn between round RANDOM genre modal here");
+            setShowBetweenRoundRandom(true);
+            //executeNextRound();
+        } else if(matchSettings.genreSetting == "Custom"){
+            console.log("spawn between round CUSTOM genre modal here");
+            executeNextRound();
+        } else if(matchSettings.genreSetting == "Alternatives"){
+            console.log("spawn between round ALTERNATIVES genre modal here")
+            executeNextRound();
+        } else{
+            console.log("ERROR: Unexpected genre setting provided")
+            executeNextRound();
+        }
+            
+        
+    }
 
     const stopAllActivity = async () => {
         try {
@@ -652,7 +681,7 @@ export default function Match() {
         //setDividerPos(1.1);
     };
 
-    const nextRound = () => {
+    const executeNextRound = () => {
 
         // Immediately start the countdown for the next round
         setShowInitialCountdown(true);
@@ -1449,6 +1478,11 @@ export default function Match() {
                 visible={showPause}
                 resumeMatch={() => { setShowPause(false); resumeAll(); }}
                 onBackToMenu={handleBackToMenuFromPause}
+            />
+
+            <BetweenRoundModalRandom
+                visible={showBetweenRoundRandom}
+                proceedToNextRound={() => {setShowBetweenRoundRandom(false); executeNextRound();}}
             />
         </View>
     );

@@ -55,6 +55,7 @@ export default function GenreCustom() {
             pathname: "../components/match",
             params: {
                 genreId: selectedGenre.id,
+                genreSetting: String("Custom"),
                 genreName: selectedGenre.name,
                 rounds: String(asStr(rounds)),
                 duration: String(asStr(duration)),

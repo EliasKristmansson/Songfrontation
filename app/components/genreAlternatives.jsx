@@ -29,6 +29,7 @@ export default function GenreAlternatives() {
                         pathname: "../components/match",
                         params: {
                             genreId: selectedGenre.id,
+                            genreSetting: String("Alternatives"),
                             genreName: selectedGenre.name,
                             rounds: String(asStr(rounds) ?? ""),
                             duration: String(asStr(duration) ?? ""),
