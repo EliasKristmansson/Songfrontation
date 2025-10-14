@@ -15,13 +15,12 @@ export const ITUNES_GENRES = [
     { id: 14, name: "Pop" },
     { id: 21, name: "Rock" },
     { id: 6, name: "Country" },
-    { id: 17, name: "Dance" },
+    { id: 17, name: "EDM" },
     { id: 15, name: "R&B/Soul" },
     { id: 11, name: "Jazz" },
     { id: 7, name: "Hip-Hop/Rap" },
     { id: 5, name: "Classical" },
     { id: 3, name: "Blues" },
-    { id: 50, name: "Electronic" },
 ];
 
 // --- Predefined bubble positions ---
