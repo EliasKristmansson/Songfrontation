@@ -1,25 +1,31 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const windowWidth = Dimensions.get("window").width;
 
-export default function RematchModal({ visible, onRematch, onBackToMenu, matchWinnerId }) {
+export default function RematchModal({ visible, onRematch, onBackToMenu, matchWinnerId, playedSongs }) {
     const content = (
         <View style={styles.overlay}>
-                {/* Winner Text */}
-            <LinearGradient          
-            colors={["#1A123B", "#242F7D", "#412F59", "#804D58"]}
-            start={{ x: 0.2, y: 0 }}
-            end={{ x: 0.8, y: 1 }}
-            style={styles.gradient}>
-                    <Text style={[styles.body, { fontFamily: "OutfitRegular" }]}>
-                        Player {matchWinnerId} has won the match!
-                    </Text>
-                </LinearGradient>
+            {/* Winner Text */}
+            <Text style={[styles.body, styles.winnerText]}>
+                Player {matchWinnerId} has won the match!
+            </Text>
+
+            {/* Played Songs List */}
+            <View style={styles.playedSongsContainer}>
+                <ScrollView
+                    style={styles.playedSongsScroll}
+                    contentContainerStyle={{ paddingVertical: 4 }}
+                >
+                    {playedSongs.map((song, index) => (
+                        <Text key={index} style={styles.playedSongsText}>
+                            {song.trackName} — {song.artistName}
+                        </Text>
+                    ))}
+                </ScrollView>
+            </View>
 
             <View style={styles.buttonsWrap}>
-                
-
                 {/* Rematch */}
                 <LinearGradient
                     colors={["#242F7D", "#412F59", "#804D58"]}
@@ -70,6 +76,7 @@ const styles = StyleSheet.create({
     },
 
     buttonsWrap: {
+        marginBottom: 24,
         width: "100%",
         alignItems: "center",
         shadowColor: "#8e7cc3",
@@ -108,5 +115,31 @@ const styles = StyleSheet.create({
         color: "#804D58",
         fontSize: 18,
         fontFamily: "OutfitBold",
+    },
+    winnerText: {
+        fontFamily: "OutfitBold",
+        color: "white",
+        fontSize: 24,
+        marginBottom: 8,
+        marginTop: 12,
+    },
+    playedSongsContainer: {
+        maxHeight: 100,       // adjust to how much vertical space you want
+        width: '60%',          // doesn't stretch fully to screen edges
+        alignSelf: 'center',   // center horizontally
+        borderWidth: 2,        // optional: border to separate from background
+        borderColor: "white",
+        borderRadius: 24,
+        padding: 8,
+        backgroundColor: 'rgba(0,0,0,0.2)', // optional background
+    },
+
+    playedSongsScroll: {
+        width: '100%',
+    },
+    playedSongsText: {
+        color: "white",
+        fontSize: 16,
+        fontFamily: "OutfitLight",
     },
 });

@@ -1484,6 +1484,7 @@ export default function Match() {
                 onRematch={handleRematch}
                 onBackToMenu={handleBackToMenu}
                 matchWinnerId={matchWinner}
+                playedSongs={playedSongs.current}
             />
             <PauseMatch
                 visible={showPause}
