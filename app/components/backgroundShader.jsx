@@ -176,7 +176,7 @@ void main() {
   float dividerDist = abs(uv.x - u_dividerPos);
   float dividerLine = smoothstep(0.0, 0.003, 0.003 - dividerDist);
   vec3 dividerColor = vec3(1.0);
-  baseColor = mix(baseColor, dividerColor, dividerLine);
+  baseColor = mix(baseColor, baseColor, dividerLine);
 
   vec4 grainSample = texture2D(u_grainTex, uv * 4.0);
   vec3 color = mix(baseColor, grainSample.rgb, 0.15);
