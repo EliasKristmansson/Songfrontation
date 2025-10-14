@@ -376,6 +376,7 @@ export default function Match() {
     // --- Helper to start the song transition ---
     const startSongTransition = (whichPlayerWonTheRound) => {
         const glowDuration = 1600;
+        canPause.current = false; // ⛔ disable pausing during transition
 
         setTimeout(() => {
             songOptions.forEach((_, idx) => {
@@ -1280,14 +1281,16 @@ export default function Match() {
                 </View>
             )}
 
-            <View style={styles.topRightButtons}>
-                <TouchableOpacity
-                    style={styles.settingsButton}
-                    onPress={() => { pauseAll(); }}
-                >
-                    <Text style={styles.settingsText}>⏸</Text>
-                </TouchableOpacity>
-            </View>
+                {canPause.current && (
+                    <View style={styles.topRightButtons}>
+                            <TouchableOpacity
+                            onPress={() => { pauseAll(); }}
+                            style={styles.settingsButton}
+                            >
+                                <Text style={styles.settingsText}>⏸</Text>
+                            </TouchableOpacity>
+                    </View>
+                )}
 
             {/* Singleplayer Cooldown Overlay */}
             {player1Cooldown && isSinglePlayer && (
