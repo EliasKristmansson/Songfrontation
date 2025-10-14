@@ -199,11 +199,12 @@ export default function Main({ background, stars = [] }) {
                             <PlayerButton
                                 label="1 Player"
                                 onPress={() =>  {
+                                    playButtonSound();
                                     router.push({
                                         pathname: "../components/genreRandom",
                                         params: { ...defaultQuickMatch, nrOfPlayers: 1, from: "main" },
                                     });
-                                    playButtonSound();
+
                                 }
                                 }
                                     
@@ -213,8 +214,8 @@ export default function Main({ background, stars = [] }) {
                                 label="2 Players"
                                 onPress={() =>
                                     {
-                                        swipeAnimationAndRouteToNextView(false);
                                         playButtonSound();
+                                        swipeAnimationAndRouteToNextView(false);
                                     }
                                 }
                                 
@@ -241,19 +242,20 @@ export default function Main({ background, stars = [] }) {
                         >
                             <PlayerButton
                                 label="1 Player"
-                                onPress={() =>
+                                onPress={() => {
+                                    playButtonSound();
                                     router.push({
                                         pathname: "../components/iconSinglePlayer",
                                         params: { nrOfPlayers: 1 },
-                                    })
+                                    })}
                                 }
                             />
                             <View style={styles.divider} />
                             <PlayerButton
                                 label="2 Players"
                                 onPress={() => {
-                                    swipeAnimationAndRouteToNextView(1);
                                     playButtonSound();
+                                    swipeAnimationAndRouteToNextView(1);
                                 }}
                             />
                         </LinearGradient>
