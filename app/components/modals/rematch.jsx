@@ -25,7 +25,7 @@ export default function RematchModal({ visible, onRematch, onBackToMenu, matchWi
                         >
                             {playedSongs.map((song, index) => (
                                 <Text key={index} style={styles.playedSongsText}>
-                                    {song.trackName} — {song.artistName}
+                                    {index + 1}. {song.trackName} — {song.artistName}
                                 </Text>
                             ))}
                         </ScrollView>
