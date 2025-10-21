@@ -1368,14 +1368,17 @@ export default function Match() {
                 {/* Left side (Player 1) */}
                 <View style={styles.sideWrapperLeft}>
                     <View style={styles.sideRow}>
-                        <PointsRow points={player1Points} />
-                        {shouldShowCounter && (
-                            <RoundsRow
-                                won={player1RoundsWon}
-                                total={matchSettings.nrOfRoundsToWinMatch}
-                                filledStyle={styles.roundCircleFilledP1}
-                            />
-                        )}
+                        <View style={styles.pointsAndRoundRowPlayer1}>
+                            <PointsRow points={player1Points} style={styles.player1PointsCss} />
+                            {shouldShowCounter && (
+                                <RoundsRow
+                                    won={player1RoundsWon}
+                                    total={matchSettings.nrOfRoundsToWinMatch}
+                                    filledStyle={styles.roundCircleFilledP1}
+                                />
+                            )}
+                        </View>
+
                         <View style={styles.largeIconCircle}>
                             <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
                         </View>
@@ -1403,14 +1406,16 @@ export default function Match() {
                                 <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
                             </View>
 
-                            {shouldShowCounter && (
-                                <RoundsRow
-                                    won={player2RoundsWon}
-                                    total={matchSettings.nrOfRoundsToWinMatch}
-                                    filledStyle={styles.roundCircleFilledP2}
-                                />
-                            )}
-                            <PointsRow points={player2Points} />
+                            <View style={styles.pointsAndRoundRowPlayer2}>
+                                <PointsRow points={player2Points} />
+                                {shouldShowCounter && (
+                                    <RoundsRow
+                                        won={player2RoundsWon}
+                                        total={matchSettings.nrOfRoundsToWinMatch}
+                                        filledStyle={styles.roundCircleFilledP2}
+                                    />
+                                )}
+                            </View>
                         </View>
                     )}
                 </View>
@@ -1606,6 +1611,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
+
     },
     sideWrapperLeft: {
         flex: 1, // ensures equal space left and right
@@ -1620,6 +1626,15 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         marginHorizontal: 8,
+
+    },
+    pointsAndRoundRowPlayer1: {
+        alignItems: "flex-end",
+        gap: 3,
+    },
+    pointsAndRoundRowPlayer2: {
+        alignItems: "flex-start",
+        gap: 3,
     },
     playArea: {
         flexDirection: "row",
@@ -1627,11 +1642,11 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
         position: "relative",
     },
-
     sideColumn: {
         flex: 1,
         height: 320,
         alignItems: "center",
+
     },
 
     largeIconCircle: {
