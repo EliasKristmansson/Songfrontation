@@ -6,6 +6,7 @@ import { useAudio } from "../components/audioContext";
 import GuessBubble from "../components/guessBubble.jsx";
 import RematchModal from "../components/modals/rematch.jsx";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
+import BetweenRoundModalAlternatives from "./modals/betweenRoundModalAlternatives.jsx";
 import BetweenRoundModalRandom from "./modals/betweenRoundModalRandom.jsx";
 import PauseMatch from "./modals/pauseOngoingMatch.jsx";
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
@@ -353,7 +354,8 @@ export default function Match() {
             executeNextRound();
         } else if(matchSettings.genreSetting == "Alternatives"){
             console.log("spawn between round ALTERNATIVES genre modal here")
-            executeNextRound();
+            setShowBetweenRoundAlternatives(true);
+            //executeNextRound();
         } else{
             console.log("ERROR: Unexpected genre setting provided")
             executeNextRound();
@@ -1548,6 +1550,16 @@ export default function Match() {
                 }}
             />
             
+            <BetweenRoundModalAlternatives
+                visible={showBetweenRoundAlternatives}
+                roundWinner={roundWinner}
+                currentGenre={matchSettings.selectionOfGenre}
+                onCloseAndProceed={(newGenre) => {
+                    setShowBetweenRoundAlternatives(false);
+                    executeNextRound(newGenre);
+                }}
+            />
+
         </View>
     );
 }
