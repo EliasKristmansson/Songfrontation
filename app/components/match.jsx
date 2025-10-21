@@ -126,6 +126,22 @@ class MatchSettings {
     }
 }
 
+// Simple stopwatch utility
+const makeTimer = (label) => {
+  const start = Date.now();
+  return {
+    mark: (step) => {
+      const diff = ((Date.now() - start) / 1000).toFixed(2);
+      console.log(`⏱️ ${diff}s — ${step}`);
+    },
+    end: () => {
+      const diff = ((Date.now() - start) / 1000).toFixed(2);
+      console.log(`✅ Total ${diff}s ${label ? `(${label})` : ""}`);
+    },
+  };
+};
+
+
 // --- Main component ---
 export default function Match() {
     const router = useRouter();
@@ -206,6 +222,14 @@ export default function Match() {
     const transitionTimeoutRef = useRef(null);
     const isSongTransitionPendingRef = useRef(false);
 
+    // 🧠 Prefetch state refs (add these near your other useRef hooks)
+    const prewarming = useRef(false);
+    const prewarmedData = useRef(null);
+    const playCoreRunning = useRef(false);      // actual song playback
+    const playCorePrefetching = useRef(false);  // background prefetch
+
+
+
     const shouldShowCounter = matchSettings.nrOfRoundsToWinMatch > 1;
 
 
@@ -282,29 +306,44 @@ export default function Match() {
         if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
     };
 
-    const startInitialCountdown = (onFinish) => {
-        // Clear any leftover interval
-        if (initialCountdownRef.current) {
-            clearInterval(initialCountdownRef.current);
-            initialCountdownRef.current = null;
-        }
+const startInitialCountdown = (onFinish) => {
+    if (initialCountdownRef.current) {
+        clearInterval(initialCountdownRef.current);
+        initialCountdownRef.current = null;
+    }
 
-        setShowInitialCountdown(true);
-        let count = 3;
+    setShowInitialCountdown(true);
+    let count = 3;
+    setInitialCountdown(count);
+
+    // ⚡ Start prefetch for next song during countdown
+    if (!prewarmedData.current && !playCorePrefetching.current) {
+        playCorePrefetching.current = true;
+        handlePlayCore({ prefetch: true }).then(result => {
+            prewarmedData.current = result;
+            playCorePrefetching.current = false;
+        }).catch(e => {
+            console.warn("Prefetch failed:", e);
+            playCorePrefetching.current = false;
+        });
+    }
+
+    initialCountdownRef.current = setInterval(() => {
+        count -= 1;
         setInitialCountdown(count);
 
-        initialCountdownRef.current = setInterval(() => {
-            count -= 1;
-            setInitialCountdown(count);
+        if (count <= 0) {
+            clearInterval(initialCountdownRef.current);
+            initialCountdownRef.current = null;
+            setShowInitialCountdown(false);
+            onFinish();
+        }
+    }, 900);
+};
 
-            if (count <= 0) {
-                clearInterval(initialCountdownRef.current);
-                initialCountdownRef.current = null;
-                setShowInitialCountdown(false);
-                onFinish();
-            }
-        }, 900);
-    };
+
+
+
 
     // Volymkontroll
     useEffect(() => {
@@ -388,46 +427,86 @@ export default function Match() {
 
     // --- Helper to start the song transition ---
     const startSongTransition = (whichPlayerWonTheRound) => {
-        const glowDuration = 1600;
-        canPause.current = false; // ⛔ disable pausing during transition
+    const glowDuration = 1600;
+    canPause.current = false; // ⛔ disable pausing during transition
 
-        setTimeout(() => {
-            songOptions.forEach((_, idx) => {
-                triggerBubbleExit(idx);
-            });
-            setLastGuessPhase(false);
-        }, 1000);
-        
-        isSongTransitionPendingRef.current = true; // ✅ mark pending
+    setTimeout(() => {
+        songOptions.forEach((_, idx) => {
+            triggerBubbleExit(idx);
+        });
+        setLastGuessPhase(false);
+    }, 1000);
+    
+    isSongTransitionPendingRef.current = true; // ✅ mark pending
 
-        // Clear any previous timeout
-        if (transitionTimeoutRef.current) {
-            clearTimeout(transitionTimeoutRef.current);
-            transitionTimeoutRef.current = null;
-        }
+    // Clear any previous timeout
+    if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+        transitionTimeoutRef.current = null;
+    }
 
-        transitionTimeoutRef.current = setTimeout(() => {
-            transitionTimeoutRef.current = null;
-            isSongTransitionPendingRef.current = false; // ✅ not pending anymore
-            
-            if (whichPlayerWonTheRound == 1){
-                handleEndOfRound(1);
-            } else if(whichPlayerWonTheRound == 2){
-                handleEndOfRound(2);
-            } else{
-                startInitialCountdown(() => {
+    transitionTimeoutRef.current = setTimeout(() => {
+        transitionTimeoutRef.current = null;
+        isSongTransitionPendingRef.current = false; // ✅ not pending anymore
+
+        if (whichPlayerWonTheRound == 1) {
+            handleEndOfRound(1);
+        } else if (whichPlayerWonTheRound == 2) {
+            handleEndOfRound(2);
+        } else {
+            // 🧠 During this countdown, prewarming will start automatically
+            startInitialCountdown(async () => {
                 setSongOptions([]);
-                handlePlayCore();
-                setPressedOnce({
-                    1: {},
-                    2: {},
+                setPressedOnce({ 1: {}, 2: {} });
+
+                if (prewarmedData.current) {
+                    const { songObj, options, correctTrack } = prewarmedData.current;
+                    prewarmedData.current = null;
+
+                    console.log("⚡ Instant start from prewarm cache");
+
+                    setCurrentSongObj(songObj);
+                    setSongOptions(options);
+
+                    // 🎵 Create a new Audio.Sound for playback
+                    const { sound: newSound } = await Audio.Sound.createAsync(
+                    { uri: correctTrack.previewUrl },
+                    { shouldPlay: true }
+                    );
+
+                    setSound(newSound);
+                    setIsPlaying(true);
+                    canPause.current = true;
+
+                    // Timer logic for this round
+                    setDividerTimer(matchSettings.songDuration);
+                    if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+                    dividerTimerRef.current = setInterval(() => {
+                    setDividerTimer(prev => {
+                        if (prev <= 1) {
+                        clearInterval(dividerTimerRef.current);
+                        setIsPlaying(false);
+                        setLastGuessPhase(true);
+                        setLastGuessUsed({ 1: false, 2: false });
+                        newSound.unloadAsync().catch(e => console.warn("Unload error:", e));
+                        setSound(null);
+                        return 0;
+                        }
+                        return prev - 1;
+                    });
+                    }, 1000);
+
+                    // Prewarm next round in background
+                    prewarmNextRound();
+                } else {
+                    // 🐢 fallback if prewarm didn’t finish
+                    await handlePlayCore();
+                }
                 });
-            });
-            }
-            
-            
-        }, glowDuration);
-    };
+
+        }
+    }, glowDuration);
+};
 
     const mix = (a, b, t) => [
         a[0] + (b[0] - a[0]) * t,
@@ -741,257 +820,383 @@ export default function Match() {
         }, 900);
     };
 
-    // --- Core play logic ---
-    const handlePlayCore = async (opts = {}) => {
-        try {
-            if (showRematch && !opts.force) {
-                setShowRematch(false);
-            }
+    // Put these near the top of your component
+const searchCacheRef = useRef(new Map()); // key = `${genreId}|${term}`
+const cacheTTL = 60 * 1000; // 60s
+const concurrentLimit = 3; // how many fetches to run at once (tuneable)
+const maxAttempts = 10;
 
+// Utility helpers
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+async function fetchSearchTerm(term, genreId, signal) {
+  const cacheKey = `${genreId}|${term}`;
+  const cached = searchCacheRef.current.get(cacheKey);
+  const now = Date.now();
+  if (cached && (now - cached.ts) < cacheTTL) {
+    return cached.data;
+  }
+
+  const params = new URLSearchParams({
+    term,
+    media: "music",
+    entity: "song",
+    genreId: String(genreId),
+    limit: "200"
+  });
+
+  try {
+    const res = await fetch(`https://itunes.apple.com/search?${params.toString()}`, { signal });
+    const json = await res.json();
+    searchCacheRef.current.set(cacheKey, { ts: Date.now(), data: json });
+    return json;
+  } catch (e) {
+    // fetch aborted or network error
+    if (e.name === "AbortError") return null;
+    console.warn("fetchSearchTerm error", term, e);
+    return null;
+  }
+}
+
+/**
+ * Run batched concurrent searches for a list of terms until we find >= needed tracks.
+ * - terms: array of candidate terms (already shuffled)
+ * - genreId, expectedGenreSub, playedTrackIds (Set), needed (nrOfGuesses)
+ */
+async function findTracksConcurrently({ terms, genreId, expectedGenreSub, playedTrackIds, needed }) {
+  const controllers = [];
+  try {
+    for (let attemptStart = 0, attempts = 0; attempts < maxAttempts && attemptStart < terms.length; ) {
+      // build a small batch
+      const batch = [];
+      for (let i = 0; i < concurrentLimit && attemptStart < terms.length && attempts < maxAttempts; i++, attemptStart++, attempts++) {
+        const term = terms[attemptStart];
+        const controller = new AbortController();
+        controllers.push(controller);
+        batch.push({ term, promise: fetchSearchTerm(term, genreId, controller.signal) });
+      }
+
+      // run batch
+      const settled = await Promise.all(batch.map(b => b.promise.then(data => ({ term: b.term, data })).catch(err => ({ term: b.term, data: null }))));
+
+      // accumulate usable tracks from this batch
+      let candidates = [];
+      for (const s of settled) {
+        if (!s.data?.results?.length) continue;
+        const results = s.data.results;
+        const usable = results.filter(
+          t => t.previewUrl &&
+               !playedTrackIds.has(t.trackId) &&
+               (t.primaryGenreName || "").toLowerCase().includes(expectedGenreSub)
+        );
+        if (usable.length) {
+          candidates = candidates.concat(usable);
+        }
+      }
+
+      // dedupe by trackId here (light)
+      const uniqueById = Array.from(new Map(candidates.map(t => [t.trackId, t])).values());
+
+      if (uniqueById.length >= needed) {
+        // Done — abort other inflight fetches (if any)
+        controllers.forEach(c => c.abort && c.abort());
+        return uniqueById;
+      }
+
+      // otherwise continue to next batch (loop)
+    }
+  } finally {
+    // make sure any leftover controllers are cleaned up
+    controllers.forEach(c => {
+      try { c.abort(); } catch (e) {}
+    });
+  }
+  // if we fall out, found nothing enough
+  return [];
+}
+
+/**
+ * Optional helper: call this during your 3-second countdown to prewarm searches.
+ * It stores result in cache so handlePlayCore can resolve quickly.
+ * Example usage: On countdown start -> prewarmNextRound(selectionOfGenre)
+ */
+const prewarmNextRound = async () => {
+  if (prewarming.current || playCoreRunning.current) return;
+
+  prewarming.current = true;
+  console.log("🔥 Prewarming next round...");
+
+  try {
+    const nextRoundData = await handlePlayCore({ prefetch: true });
+    if (nextRoundData) prewarmedData.current = nextRoundData;
+  } catch (e) {
+    console.warn("Prewarm failed:", e);
+  } finally {
+    prewarming.current = false;
+  }
+};
+
+
+
+
+const handlePlayCore = async (opts = {}) => {
+    const prefetchMode = opts.prefetch ?? false;
+
+    // 🔒 prevent overlapping
+    if (prefetchMode) {
+        if (playCorePrefetching.current) {
+            console.log("⏳ handlePlayCore prefetch skipped — already running");
+            return null;
+        }
+        playCorePrefetching.current = true;
+    } else {
+        if (playCoreRunning.current) {
+            console.log("⏳ handlePlayCore skipped — already running");
+            return null;
+        }
+        playCoreRunning.current = true;
+    }
+
+    const timer = makeTimer("handlePlayCore");
+    const startTime = Date.now();
+    console.log("🎵 handlePlayCore start", prefetchMode ? "(prefetch)" : "");
+
+    try {
+        timer.mark("init start");
+
+        if (!prefetchMode && showRematch && !opts.force) setShowRematch(false);
+
+        if (!prefetchMode) {
             setLoading(true);
             setCorrectPressed(false);
             setLastGuessPhase(false);
-            setLastGuessUsed({ 1: false, 2: false });
+            setLastGuessUsed({1:false,2:false});
+        }
 
-            if (sound) {
-                try {
-                    await sound.unloadAsync();
-                } catch (e) {
-                    console.warn("Warning unloading previous sound:", e);
-                }
-                setSound(null);
-            }
+        timer.mark("pre-sound unload");
 
-            //let expectedGenreId = selectionOfGenre?.id;//genreId;
-            //let expectedGenreName = selectionOfGenre?.name;    //genreName; //
+        if (!prefetchMode && sound) {
+            sound.unloadAsync().catch(e => console.warn("Warning unloading previous sound:", e));
+            setSound(null);
+        }
 
-            let expectedGenreId = opts.genreOverride?.id ?? selectionOfGenre?.id;
-            let expectedGenreName = opts.genreOverride?.name ?? selectionOfGenre?.name;
+        timer.mark("after sound unload");
 
-            if (!expectedGenreId) {
-                const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
-                expectedGenreId = randomGenre.id;
-                expectedGenreName = randomGenre.name;
-                setCurrentRoundGenre(randomGenre);
-                console.log(" not expectedgenreID HDFJKASHDKJLASHDLKJASHDJKLASHDLJKAS")
-            }
+        // 🎯 pick genre
+        let expectedGenreId = opts.genreOverride?.id ?? selectionOfGenre?.id;
+        let expectedGenreName = opts.genreOverride?.name ?? selectionOfGenre?.name;
+        if (!expectedGenreId) {
+            const randomGenre = ITUNES_GENRES[Math.floor(Math.random()*ITUNES_GENRES.length)];
+            expectedGenreId = randomGenre.id;
+            expectedGenreName = randomGenre.name;
+            setCurrentRoundGenre(randomGenre);
+        }
 
-            console.log("Searching for genre:", expectedGenreName, "with genreId:", expectedGenreId);
+        if (!expectedGenreId) {
+            Alert.alert("Error","No genre selected!");
+            if (!prefetchMode) setLoading(false);
+            return;
+        }
 
-            if (!expectedGenreId) {
-                Alert.alert("Error", "No genre selected!");
-                setLoading(false);
-                return;
-            }
+        const nrOfGuesses = matchSettings.nrOfGuessesOnBoard || 3;
 
-            const nrOfGuesses = matchSettings.nrOfGuessesOnBoard || 3;
+        // 🔤 candidate terms
+        const allowedLetters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','r','s','t','u','v','w'];
+        const jazzTerms = ["jazz","sax","swing","blue","bebop","smooth","fusion","cool","trumpet","piano"];
+        const bluesTerms = ["blues","delta","guitar","soul","rhythm","shuffle","harmonica","slide","bottleneck","bluesrock"];
+        let candidateTerms = expectedGenreId===11 ? [...jazzTerms] : expectedGenreId===3 ? [...bluesTerms] : [...allowedLetters];
+        shuffleArray(candidateTerms);
 
-            const allowedLetters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v', 'w'];
-            const jazzTerms = [
-                "jazz", "sax", "swing", "blue", "bebop", "smooth", "fusion", "cool", "trumpet", "piano"
-            ];
-            const bluesTerms = [
-                "blues", "delta", "guitar", "soul", "rhythm", "shuffle", "harmonica", "slide", "bottleneck", "bluesrock"
-            ];
+        const expectedGenreSub = expectedGenreName && expectedGenreName.includes(">") 
+            ? expectedGenreName.split(">")[1].trim().toLowerCase()
+            : (expectedGenreName||"").toLowerCase();
 
-            let failedTerms = new Set();
-            let responseData = null;
-            let tracksWithPreview = [];
+        const playedSet = new Set(Array.from(playedTrackIds||[]));
 
-            for (let attempt = 1; attempt <= 10; attempt++) {
-                const usableLetters = allowedLetters.filter(l => !failedTerms.has(l));
-                const usableJazz = jazzTerms.filter(t => !failedTerms.has(t));
-                const usableBlues = bluesTerms.filter(t => !failedTerms.has(t));
+        timer.mark("before findTracksConcurrently");
 
-                if ((expectedGenreId === 11 && usableJazz.length === 0) ||
-                    (expectedGenreId === 3 && usableBlues.length === 0) ||
-                    (expectedGenreId !== 11 && usableLetters.length === 0)) {
-                    break;
-                }
+        let found = await findTracksConcurrently({
+            terms: candidateTerms,
+            genreId: expectedGenreId,
+            expectedGenreSub,
+            playedTrackIds: playedSet,
+            needed: nrOfGuesses
+        });
 
-                const searchTerm =
-                    expectedGenreId === 11
-                        ? usableJazz[Math.floor(Math.random() * usableJazz.length)]
-                        : expectedGenreId === 3
-                            ? usableBlues[Math.floor(Math.random() * usableBlues.length)]
-                            : usableLetters[Math.floor(Math.random() * usableLetters.length)];
+        timer.mark("after findTracksConcurrently");
 
-                console.log(`Attempt ${attempt}: Trying term "${searchTerm}"`);
+        let tracksWithPreview = found || [];
 
-                const res = await fetch(
-                    `https://itunes.apple.com/search?term=${searchTerm}&media=music&entity=song&genreId=${expectedGenreId}&limit=200`
-                );
+        // fallback to previously played tracks
+        if (tracksWithPreview.length < nrOfGuesses) {
+            tracksWithPreview = allPlayedTracks.filter(t => t.previewUrl && (t.primaryGenreName||"").toLowerCase().includes(expectedGenreSub));
+            tracksWithPreview = tracksWithPreview.filter(t => !playedSet.has(t.trackId));
+        }
 
-                try {
-                    responseData = await res.json();
-                } catch (e) {
-                    console.error("Failed to parse JSON:", e);
-                    responseData = null;
-                }
-
-                const expectedGenreSub = expectedGenreName && expectedGenreName.includes(">")
-                    ? expectedGenreName.split(">")[1].trim().toLowerCase()
-                    : (expectedGenreName || "").toLowerCase();
-
-                tracksWithPreview = (responseData?.results || []).filter(
-                    t =>
-                        t.previewUrl &&
-                        !playedTrackIds.has(t.trackId) &&
-                        (t.primaryGenreName || "").toLowerCase().includes(expectedGenreSub)
-                );
-
-                if (tracksWithPreview.length >= nrOfGuesses) {
-                    console.log(`✅ Success with term "${searchTerm}" — found ${tracksWithPreview.length} usable tracks`);
-                    break;
-                }
-
-                console.warn(`❌ "${searchTerm}" returned only ${tracksWithPreview.length} usable tracks (<${nrOfGuesses}). Skipping next time.`);
-                failedTerms.add(searchTerm);
-            }
-
-            if (tracksWithPreview.length < nrOfGuesses) {
-                console.warn("No new tracks found after all attempts, using previously played tracks.");
-                tracksWithPreview = allPlayedTracks.filter(
-                    t =>
-                        t.previewUrl &&
-                        (t.primaryGenreName || "").toLowerCase().includes(
-                            expectedGenreName && expectedGenreName.includes(">")
-                                ? expectedGenreName.split(">")[1].trim().toLowerCase()
-                                : (expectedGenreName || "").toLowerCase()
-                        )
-                );
-
-                if (tracksWithPreview.length === 0) {
-                    Alert.alert("No Preview", `Could not find at least ${nrOfGuesses} tracks even in previously played songs.`);
-                    setLoading(false);
-                    router.push("/");
-                    return;
-                }
-            }
-
-            // --- Deduplicate tracks by artist (only one song per artist) ---
-            const seenArtists = new Set();
-            tracksWithPreview = tracksWithPreview.filter(track => {
-                const artist = track.artistName || "Unknown Artist";
-                if (seenArtists.has(artist)) return false;
-                seenArtists.add(artist);
-                return true;
-            });
-
-
-            const optionsTracks = [];
-
-            while (optionsTracks.length < nrOfGuesses && tracksWithPreview.length > 0) {
-                const idx = Math.floor(Math.random() * tracksWithPreview.length);
-                const track = tracksWithPreview.splice(idx, 1)[0];
-                if (track && track.previewUrl) optionsTracks.push(track);
-            }
-
-            const playedFallback = allPlayedTracks.filter(t => !optionsTracks.some(o => o.trackId === t.trackId));
-            while (optionsTracks.length < nrOfGuesses && playedFallback.length > 0) {
-                const idx = Math.floor(Math.random() * playedFallback.length);
-                const track = playedFallback.splice(idx, 1)[0];
-                if (track && track.previewUrl) optionsTracks.push(track);
-            }
-
-            if (optionsTracks.length < nrOfGuesses) {
-                Alert.alert("Not Enough Tracks", "Returning to front page.");
+        if (tracksWithPreview.length === 0) {
+            if (!prefetchMode) {
+                Alert.alert("No Preview", `Could not find at least ${nrOfGuesses} tracks.`);
                 setLoading(false);
                 router.push("/");
-                return;
             }
+            return;
+        }
 
-            let correctTrackIdx = Math.floor(Math.random() * optionsTracks.length);
-            let correctTrack = optionsTracks[correctTrackIdx];
-            playedSongs.current.push({
-                trackName: correctTrack.trackName,
-                artistName: correctTrack.artistName
-            });
-            console.log("Songs Played:", playedSongs.current);
+        // dedupe
+        timer.mark("deduplicate by artist");
+        const seenArtists = new Set();
+        const deduped = [];
+        for (const t of tracksWithPreview) {
+            const artist = t.artistName||"Unknown Artist";
+            if (seenArtists.has(artist)) continue;
+            seenArtists.add(artist);
+            deduped.push(t);
+        }
 
-            setPlayedTrackIds(prev => {
-                const newSet = new Set(prev);
-                optionsTracks.forEach(t => newSet.add(t.trackId));
-                return newSet;
-            });
+        // select guesses
+        timer.mark("build optionsTracks");
+        const optionsTracks = [];
+        const pool = deduped.slice();
+        shuffleArray(pool);
+        while (optionsTracks.length < nrOfGuesses && pool.length>0) {
+            const t = pool.pop();
+            if (t?.previewUrl) optionsTracks.push(t);
+        }
 
+        // fallback if still short
+        if (optionsTracks.length < nrOfGuesses) {
+            const playedFallback = allPlayedTracks.filter(t => !optionsTracks.some(o=>o.trackId===t.trackId));
+            shuffleArray(playedFallback);
+            while (optionsTracks.length<nrOfGuesses && playedFallback.length>0) {
+                const t = playedFallback.pop();
+                if (t?.previewUrl) optionsTracks.push(t);
+            }
+        }
+
+        timer.mark("optionsTracks ready");
+
+        if (optionsTracks.length<nrOfGuesses && !prefetchMode) {
+            Alert.alert("Not Enough Tracks","Returning to front page.");
+            setLoading(false);
+            router.push("/");
+            return;
+        }
+
+        let correctTrackIdx = Math.floor(Math.random()*optionsTracks.length);
+        let correctTrack = optionsTracks[correctTrackIdx];
+
+        if (!prefetchMode) {
+            playedSongs.current.push({trackName: correctTrack.trackName, artistName: correctTrack.artistName});
+            timer.mark("update playedTrackIds");
+            setPlayedTrackIds(prev => { const newSet = new Set(prev); optionsTracks.forEach(t=>newSet.add(t.trackId)); return newSet; });
             setAllPlayedTracks(prev => {
-                const existingIds = new Set(prev.map(p => p.trackId));
-                const toAppend = optionsTracks.filter(t => !existingIds.has(t.trackId));
-                return [...prev, ...toAppend];
+                const existingIds = new Set(prev.map(p=>p.trackId));
+                return [...prev, ...optionsTracks.filter(t=>!existingIds.has(t.trackId))];
             });
+        }
 
-            const songObj = new Song({
-                songId: correctTrack.trackId,
-                songGenre: correctTrack.primaryGenreName,
-                songFile: correctTrack.previewUrl,
-                songTitle: correctTrack.trackName,
-                songArtist: correctTrack.artistName,
-                songDuration: matchSettings.songDuration || 30,
-                songArtistAlternatives: [],
-            });
+        timer.mark("created Song object");
+
+        const songObj = new Song({
+            songId: correctTrack.trackId,
+            songGenre: correctTrack.primaryGenreName,
+            songFile: correctTrack.previewUrl,
+            songTitle: correctTrack.trackName,
+            songArtist: correctTrack.artistName,
+            songDuration: matchSettings.songDuration||30,
+            songArtistAlternatives: [],
+        });
+
+        const options = optionsTracks.slice(0,nrOfGuesses).map((t,idx)=>({
+            title: t.trackName||"Unknown Title",
+            artist: t.artistName||"Unknown Artist",
+            previewUrl: t.previewUrl,
+            isCorrect: idx===correctTrackIdx,
+        }));
+
+        if (!options.some(o=>o.isCorrect)) {
+            correctTrackIdx=0; options[0].isCorrect=true; correctTrack=optionsTracks[0];
+        }
+
+        if (!prefetchMode) {
             setCurrentSongObj(songObj);
-
-            const options = optionsTracks.slice(0, nrOfGuesses).map((t, idx) => ({
-                title: t.trackName || "Unknown Title",
-                artist: t.artistName || "Unknown Artist",
-                previewUrl: t.previewUrl,
-                isCorrect: idx === correctTrackIdx,
-            }));
-
-            if (!options.some(o => o.isCorrect)) {
-                console.warn("Correct track fell outside visible options — forcing one to be correct.");
-                correctTrackIdx = 0;
-                options[0].isCorrect = true;
-                correctTrack = optionsTracks[0];
-            }
-
             setSongOptions(options);
+        }
 
-            const { sound: newSound } = await Audio.Sound.createAsync(
-                { uri: correctTrack.previewUrl },
-                { shouldPlay: true }
-            );
-            canPause.current = true;
+        timer.mark("before Audio.Sound.createAsync");
+        const { sound: newSound } = await Audio.Sound.createAsync(
+            { uri: correctTrack.previewUrl },
+            { shouldPlay: !prefetchMode }
+        );
+
+        if (!prefetchMode) {
             setSound(newSound);
             setIsPlaying(true);
+            canPause.current = true;
 
+            // ✅ start countdown timer for song
             setDividerTimer(matchSettings.songDuration);
             if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
             dividerTimerRef.current = setInterval(() => {
-                setDividerTimer(prev => {
-                    if (prev <= 1) {
+                setDividerTimer(prev=>{
+                    if(prev<=1){
                         clearInterval(dividerTimerRef.current);
                         setIsPlaying(false);
                         setLastGuessPhase(true);
-                        setLastGuessUsed({ 1: false, 2: false });
-                        if (newSound) {
-                            newSound.unloadAsync().catch(e => console.warn("Unload error:", e));
-                            setSound(null);
-                        }
+                        setLastGuessUsed({1:false,2:false});
+                        newSound.unloadAsync().catch(e=>console.warn("Unload error:", e));
+                        setSound(null);
                         return 0;
                     }
-                    return prev - 1;
+                    return prev-1;
                 });
-            }, 1000);
+            },1000);
 
-            newSound.setOnPlaybackStatusUpdate(status => {
-                if (status.didJustFinish) {
+            newSound.setOnPlaybackStatusUpdate(status=>{
+                if(status.didJustFinish){
                     setIsPlaying(false);
-                    newSound.unloadAsync().catch(e => console.warn("Unload error:", e));
+                    newSound.unloadAsync().catch(e=>console.warn("Unload error:", e));
                     setSound(null);
-                    if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+                    if(dividerTimerRef.current) clearInterval(dividerTimerRef.current);
                 }
             });
+        }
 
-            setLoading(false);
-        } catch (err) {
-            console.error("Error playing preview:", err);
-            Alert.alert("Error", "Failed to play preview");
+        timer.mark("after Audio.Sound.createAsync (sound ready)");
+
+        if(prefetchMode){
+            console.log(`✅ Prefetched in ${(Date.now()-startTime)/1000}s`);
+            return { songObj, options, newSound, correctTrack };
+        }
+
+        setLoading(false);
+        timer.end();
+
+    } catch(err){
+        console.error("Error playing preview:", err);
+        if(!prefetchMode) {
+            Alert.alert("Error","Failed to play preview");
             setIsPlaying(false);
             setLoading(false);
         }
-    };
+        timer.end();
+    } finally {
+        if(prefetchMode) playCorePrefetching.current=false;
+        else playCoreRunning.current=false;
+    }
+};
+
+
+
+
 
 
 
