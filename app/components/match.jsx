@@ -461,50 +461,48 @@ const startInitialCountdown = (onFinish) => {
                 setSongOptions([]);
                 setPressedOnce({ 1: {}, 2: {} });
 
-                if (prewarmedData.current) {
-                    const { songObj, options, correctTrack } = prewarmedData.current;
-                    prewarmedData.current = null;
+                    if (prewarmedData.current) {
+                        const { songObj, options, correctTrack, newSound } = prewarmedData.current;
+                        prewarmedData.current = null;
 
-                    console.log("⚡ Instant start from prewarm cache");
+                        console.log("⚡ Instant start from prewarm cache");
 
-                    setCurrentSongObj(songObj);
-                    setSongOptions(options);
+                        setCurrentSongObj(songObj);
+                        setSongOptions(options);
 
-                    // 🎵 Create a new Audio.Sound for playback
-                    const { sound: newSound } = await Audio.Sound.createAsync(
-                    { uri: correctTrack.previewUrl },
-                    { shouldPlay: true }
-                    );
+                        // If prewarmed sound exists, play it
+                        if (newSound) {
+                            setSound(newSound);
+                            setIsPlaying(true);
+                            canPause.current = true;
 
-                    setSound(newSound);
-                    setIsPlaying(true);
-                    canPause.current = true;
-
-                    // Timer logic for this round
-                    setDividerTimer(matchSettings.songDuration);
-                    if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
-                    dividerTimerRef.current = setInterval(() => {
-                    setDividerTimer(prev => {
-                        if (prev <= 1) {
-                        clearInterval(dividerTimerRef.current);
-                        setIsPlaying(false);
-                        setLastGuessPhase(true);
-                        setLastGuessUsed({ 1: false, 2: false });
-                        newSound.unloadAsync().catch(e => console.warn("Unload error:", e));
-                        setSound(null);
-                        return 0;
+                            // Timer logic
+                            setDividerTimer(matchSettings.songDuration);
+                            if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+                            dividerTimerRef.current = setInterval(() => {
+                                setDividerTimer(prev => {
+                                    if (prev <= 1) {
+                                        clearInterval(dividerTimerRef.current);
+                                        setIsPlaying(false);
+                                        setLastGuessPhase(true);
+                                        setLastGuessUsed({1:false,2:false});
+                                        newSound.unloadAsync().catch(e=>console.warn("Unload error:", e));
+                                        setSound(null);
+                                        return 0;
+                                    }
+                                    return prev-1;
+                                });
+                            }, 1000);
                         }
-                        return prev - 1;
-                    });
-                    }, 1000);
 
-                    // Prewarm next round in background
-                    prewarmNextRound();
-                } else {
-                    // 🐢 fallback if prewarm didn’t finish
-                    await handlePlayCore();
-                }
-                });
+                        prewarmNextRound(); // Background prefetch next song
+                    } else {
+                        // fallback if prewarm not ready
+                        await handlePlayCore();
+                    }
+
+
+            });
 
         }
     }, glowDuration);
@@ -867,55 +865,58 @@ async function fetchSearchTerm(term, genreId, signal) {
  */
 async function findTracksConcurrently({ terms, genreId, expectedGenreSub, playedTrackIds, needed }) {
   const controllers = [];
-  try {
-    for (let attemptStart = 0, attempts = 0; attempts < maxAttempts && attemptStart < terms.length; ) {
-      // build a small batch
-      const batch = [];
-      for (let i = 0; i < concurrentLimit && attemptStart < terms.length && attempts < maxAttempts; i++, attemptStart++, attempts++) {
-        const term = terms[attemptStart];
-        const controller = new AbortController();
-        controllers.push(controller);
-        batch.push({ term, promise: fetchSearchTerm(term, genreId, controller.signal) });
-      }
+  const maxAttempts = 10; // max retry rounds
+  let attempts = 0;
+  let candidates = [];
 
-      // run batch
-      const settled = await Promise.all(batch.map(b => b.promise.then(data => ({ term: b.term, data })).catch(err => ({ term: b.term, data: null }))));
+  while (candidates.length < needed && attempts < maxAttempts) {
+    attempts++;
+    console.log(`🔄 findTracksConcurrently attempt ${attempts}`);
 
-      // accumulate usable tracks from this batch
-      let candidates = [];
-      for (const s of settled) {
-        if (!s.data?.results?.length) continue;
-        const results = s.data.results;
-        const usable = results.filter(
+    const shuffledTerms = [...terms];
+    shuffleArray(shuffledTerms); // retry in new order each round
+
+    for (const term of shuffledTerms) {
+      const controller = new AbortController();
+      controllers.push(controller);
+
+      try {
+        const data = await fetchSearchTerm(term, genreId, controller.signal);
+
+        if (!data?.results?.length) continue;
+
+        const usable = data.results.filter(
           t => t.previewUrl &&
                !playedTrackIds.has(t.trackId) &&
                (t.primaryGenreName || "").toLowerCase().includes(expectedGenreSub)
         );
-        if (usable.length) {
-          candidates = candidates.concat(usable);
+
+        for (const t of usable) {
+          if (!candidates.find(c => c.trackId === t.trackId)) {
+            candidates.push(t);
+          }
+          if (candidates.length >= needed) break;
         }
+
+        if (candidates.length >= needed) break;
+
+      } catch (err) {
+        console.warn(`⚠️ Term "${term}" fetch failed:`, err);
       }
-
-      // dedupe by trackId here (light)
-      const uniqueById = Array.from(new Map(candidates.map(t => [t.trackId, t])).values());
-
-      if (uniqueById.length >= needed) {
-        // Done — abort other inflight fetches (if any)
-        controllers.forEach(c => c.abort && c.abort());
-        return uniqueById;
-      }
-
-      // otherwise continue to next batch (loop)
     }
-  } finally {
-    // make sure any leftover controllers are cleaned up
-    controllers.forEach(c => {
-      try { c.abort(); } catch (e) {}
-    });
+
+    if (candidates.length >= needed) {
+      // done, abort remaining controllers
+      controllers.forEach(c => c.abort && c.abort());
+      return candidates;
+    }
   }
-  // if we fall out, found nothing enough
-  return [];
+
+  // final dedupe by trackId
+  const uniqueById = Array.from(new Map(candidates.map(t => [t.trackId, t])).values());
+  return uniqueById;
 }
+
 
 /**
  * Optional helper: call this during your 3-second countdown to prewarm searches.
@@ -940,11 +941,12 @@ const prewarmNextRound = async () => {
 
 
 
-
 const handlePlayCore = async (opts = {}) => {
     const prefetchMode = opts.prefetch ?? false;
+    const timer = makeTimer("handlePlayCore");
+    const startTime = Date.now();
 
-    // 🔒 prevent overlapping
+    // 🔒 separate locks for playback vs prefetch
     if (prefetchMode) {
         if (playCorePrefetching.current) {
             console.log("⏳ handlePlayCore prefetch skipped — already running");
@@ -959,165 +961,117 @@ const handlePlayCore = async (opts = {}) => {
         playCoreRunning.current = true;
     }
 
-    const timer = makeTimer("handlePlayCore");
-    const startTime = Date.now();
     console.log("🎵 handlePlayCore start", prefetchMode ? "(prefetch)" : "");
 
     try {
         timer.mark("init start");
 
-        if (!prefetchMode && showRematch && !opts.force) setShowRematch(false);
-
+        // Reset states for playback
         if (!prefetchMode) {
+            if (showRematch) setShowRematch(false);
             setLoading(true);
             setCorrectPressed(false);
             setLastGuessPhase(false);
-            setLastGuessUsed({1:false,2:false});
+            setLastGuessUsed({ 1: false, 2: false });
+
+            if (sound) {
+                sound.unloadAsync().catch(e => console.warn("Warning unloading previous sound:", e));
+                setSound(null);
+            }
         }
 
-        timer.mark("pre-sound unload");
-
-        if (!prefetchMode && sound) {
-            sound.unloadAsync().catch(e => console.warn("Warning unloading previous sound:", e));
-            setSound(null);
-        }
-
-        timer.mark("after sound unload");
-
-        // 🎯 pick genre
+        // Determine genre
         let expectedGenreId = opts.genreOverride?.id ?? selectionOfGenre?.id;
         let expectedGenreName = opts.genreOverride?.name ?? selectionOfGenre?.name;
+
         if (!expectedGenreId) {
-            const randomGenre = ITUNES_GENRES[Math.floor(Math.random()*ITUNES_GENRES.length)];
+            const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
             expectedGenreId = randomGenre.id;
             expectedGenreName = randomGenre.name;
-            setCurrentRoundGenre(randomGenre);
+            if (!prefetchMode) setCurrentRoundGenre(randomGenre);
         }
 
         if (!expectedGenreId) {
-            Alert.alert("Error","No genre selected!");
+            Alert.alert("Error", "No genre selected!");
             if (!prefetchMode) setLoading(false);
             return;
         }
 
         const nrOfGuesses = matchSettings.nrOfGuessesOnBoard || 3;
+        const playedSet = new Set(Array.from(playedTrackIds || []));
 
-        // 🔤 candidate terms
-        const allowedLetters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','r','s','t','u','v','w'];
+        // Generate candidate terms for search
+        const allowedLetters = 'abcdefghijklmnopqrstuvwxyz'.split('');
         const jazzTerms = ["jazz","sax","swing","blue","bebop","smooth","fusion","cool","trumpet","piano"];
         const bluesTerms = ["blues","delta","guitar","soul","rhythm","shuffle","harmonica","slide","bottleneck","bluesrock"];
-        let candidateTerms = expectedGenreId===11 ? [...jazzTerms] : expectedGenreId===3 ? [...bluesTerms] : [...allowedLetters];
+        let candidateTerms = expectedGenreId === 11 ? [...jazzTerms]
+                            : expectedGenreId === 3 ? [...bluesTerms]
+                            : [...allowedLetters];
         shuffleArray(candidateTerms);
 
-        const expectedGenreSub = expectedGenreName && expectedGenreName.includes(">") 
-            ? expectedGenreName.split(">")[1].trim().toLowerCase()
-            : (expectedGenreName||"").toLowerCase();
-
-        const playedSet = new Set(Array.from(playedTrackIds||[]));
-
-        timer.mark("before findTracksConcurrently");
-
-        let found = await findTracksConcurrently({
-            terms: candidateTerms,
-            genreId: expectedGenreId,
-            expectedGenreSub,
-            playedTrackIds: playedSet,
-            needed: nrOfGuesses
-        });
-
-        timer.mark("after findTracksConcurrently");
-
-        let tracksWithPreview = found || [];
-
-        // fallback to previously played tracks
-        if (tracksWithPreview.length < nrOfGuesses) {
-            tracksWithPreview = allPlayedTracks.filter(t => t.previewUrl && (t.primaryGenreName||"").toLowerCase().includes(expectedGenreSub));
-            tracksWithPreview = tracksWithPreview.filter(t => !playedSet.has(t.trackId));
+        // --- 🔄 Retry loop for prefetch or rare genres ---
+        let optionsTracks = [];
+        let attempts = 0;
+        while (optionsTracks.length < nrOfGuesses && attempts < 5) {
+            console.log(prefetchMode ? `🔥 Prefetch attempt ${attempts+1}` : `🔄 Find tracks attempt ${attempts+1}`);
+            optionsTracks = await findTracksConcurrently({
+                terms: opts.terms || candidateTerms,
+                genreId: expectedGenreId,
+                expectedGenreSub: expectedGenreName.toLowerCase(),
+                playedTrackIds: playedSet,
+                needed: nrOfGuesses
+            });
+            attempts++;
         }
 
-        if (tracksWithPreview.length === 0) {
-            if (!prefetchMode) {
-                Alert.alert("No Preview", `Could not find at least ${nrOfGuesses} tracks.`);
-                setLoading(false);
-                router.push("/");
-            }
-            return;
-        }
-
-        // dedupe
-        timer.mark("deduplicate by artist");
-        const seenArtists = new Set();
-        const deduped = [];
-        for (const t of tracksWithPreview) {
-            const artist = t.artistName||"Unknown Artist";
-            if (seenArtists.has(artist)) continue;
-            seenArtists.add(artist);
-            deduped.push(t);
-        }
-
-        // select guesses
-        timer.mark("build optionsTracks");
-        const optionsTracks = [];
-        const pool = deduped.slice();
-        shuffleArray(pool);
-        while (optionsTracks.length < nrOfGuesses && pool.length>0) {
-            const t = pool.pop();
-            if (t?.previewUrl) optionsTracks.push(t);
-        }
-
-        // fallback if still short
-        if (optionsTracks.length < nrOfGuesses) {
-            const playedFallback = allPlayedTracks.filter(t => !optionsTracks.some(o=>o.trackId===t.trackId));
-            shuffleArray(playedFallback);
-            while (optionsTracks.length<nrOfGuesses && playedFallback.length>0) {
-                const t = playedFallback.pop();
-                if (t?.previewUrl) optionsTracks.push(t);
-            }
-        }
-
-        timer.mark("optionsTracks ready");
-
-        if (optionsTracks.length<nrOfGuesses && !prefetchMode) {
-            Alert.alert("Not Enough Tracks","Returning to front page.");
+        if (optionsTracks.length < nrOfGuesses && !prefetchMode) {
+            console.warn("⚠️ Not enough tracks found after retries");
+            Alert.alert("Not Enough Tracks", "Returning to front page.");
             setLoading(false);
             router.push("/");
-            return;
+            return null;
         }
 
+        // Pick correct track
         let correctTrackIdx = Math.floor(Math.random()*optionsTracks.length);
         let correctTrack = optionsTracks[correctTrackIdx];
 
         if (!prefetchMode) {
-            playedSongs.current.push({trackName: correctTrack.trackName, artistName: correctTrack.artistName});
-            timer.mark("update playedTrackIds");
-            setPlayedTrackIds(prev => { const newSet = new Set(prev); optionsTracks.forEach(t=>newSet.add(t.trackId)); return newSet; });
+            // Update played tracks
+            playedSongs.current.push({ trackName: correctTrack.trackName, artistName: correctTrack.artistName });
+            setPlayedTrackIds(prev => {
+                const newSet = new Set(prev);
+                optionsTracks.forEach(t => newSet.add(t.trackId));
+                return newSet;
+            });
             setAllPlayedTracks(prev => {
                 const existingIds = new Set(prev.map(p=>p.trackId));
                 return [...prev, ...optionsTracks.filter(t=>!existingIds.has(t.trackId))];
             });
         }
 
-        timer.mark("created Song object");
-
+        // Build Song object
         const songObj = new Song({
             songId: correctTrack.trackId,
             songGenre: correctTrack.primaryGenreName,
             songFile: correctTrack.previewUrl,
             songTitle: correctTrack.trackName,
             songArtist: correctTrack.artistName,
-            songDuration: matchSettings.songDuration||30,
+            songDuration: matchSettings.songDuration || 30,
             songArtistAlternatives: [],
         });
 
-        const options = optionsTracks.slice(0,nrOfGuesses).map((t,idx)=>({
-            title: t.trackName||"Unknown Title",
-            artist: t.artistName||"Unknown Artist",
+        const options = optionsTracks.slice(0,nrOfGuesses).map((t, idx) => ({
+            title: t.trackName || "Unknown Title",
+            artist: t.artistName || "Unknown Artist",
             previewUrl: t.previewUrl,
-            isCorrect: idx===correctTrackIdx,
+            isCorrect: idx === correctTrackIdx,
         }));
 
-        if (!options.some(o=>o.isCorrect)) {
-            correctTrackIdx=0; options[0].isCorrect=true; correctTrack=optionsTracks[0];
+        if (!options.some(o => o.isCorrect)) {
+            correctTrackIdx = 0;
+            options[0].isCorrect = true;
+            correctTrack = optionsTracks[0];
         }
 
         if (!prefetchMode) {
@@ -1125,7 +1079,7 @@ const handlePlayCore = async (opts = {}) => {
             setSongOptions(options);
         }
 
-        timer.mark("before Audio.Sound.createAsync");
+        // Create sound
         const { sound: newSound } = await Audio.Sound.createAsync(
             { uri: correctTrack.previewUrl },
             { shouldPlay: !prefetchMode }
@@ -1136,37 +1090,37 @@ const handlePlayCore = async (opts = {}) => {
             setIsPlaying(true);
             canPause.current = true;
 
-            // ✅ start countdown timer for song
+            // Timer logic
             setDividerTimer(matchSettings.songDuration);
             if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
             dividerTimerRef.current = setInterval(() => {
-                setDividerTimer(prev=>{
-                    if(prev<=1){
+                setDividerTimer(prev => {
+                    if (prev <= 1) {
                         clearInterval(dividerTimerRef.current);
                         setIsPlaying(false);
                         setLastGuessPhase(true);
-                        setLastGuessUsed({1:false,2:false});
-                        newSound.unloadAsync().catch(e=>console.warn("Unload error:", e));
+                        setLastGuessUsed({ 1:false, 2:false });
+                        newSound.unloadAsync().catch(e => console.warn("Unload error:", e));
                         setSound(null);
                         return 0;
                     }
-                    return prev-1;
+                    return prev - 1;
                 });
-            },1000);
+            }, 1000);
 
-            newSound.setOnPlaybackStatusUpdate(status=>{
-                if(status.didJustFinish){
+            newSound.setOnPlaybackStatusUpdate(status => {
+                if (status.didJustFinish) {
                     setIsPlaying(false);
-                    newSound.unloadAsync().catch(e=>console.warn("Unload error:", e));
+                    newSound.unloadAsync().catch(e => console.warn("Unload error:", e));
                     setSound(null);
-                    if(dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+                    if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
                 }
             });
         }
 
         timer.mark("after Audio.Sound.createAsync (sound ready)");
 
-        if(prefetchMode){
+        if (prefetchMode) {
             console.log(`✅ Prefetched in ${(Date.now()-startTime)/1000}s`);
             return { songObj, options, newSound, correctTrack };
         }
@@ -1174,25 +1128,19 @@ const handlePlayCore = async (opts = {}) => {
         setLoading(false);
         timer.end();
 
-    } catch(err){
+    } catch(err) {
         console.error("Error playing preview:", err);
-        if(!prefetchMode) {
-            Alert.alert("Error","Failed to play preview");
+        if (!prefetchMode) {
+            Alert.alert("Error", "Failed to play preview");
             setIsPlaying(false);
             setLoading(false);
         }
         timer.end();
     } finally {
-        if(prefetchMode) playCorePrefetching.current=false;
-        else playCoreRunning.current=false;
+        if (prefetchMode) playCorePrefetching.current = false;
+        else playCoreRunning.current = false;
     }
 };
-
-
-
-
-
-
 
     useEffect(() => {
         return () => {
