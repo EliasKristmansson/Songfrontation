@@ -7,6 +7,7 @@ import GuessBubble from "../components/guessBubble.jsx";
 import RematchModal from "../components/modals/rematch.jsx";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
 import BetweenRoundModalAlternatives from "./modals/betweenRoundModalAlternatives.jsx";
+import BetweenRoundModalCustom from "./modals/betweenRoundModalCustom.jsx";
 import BetweenRoundModalRandom from "./modals/betweenRoundModalRandom.jsx";
 import PauseMatch from "./modals/pauseOngoingMatch.jsx";
 
@@ -390,7 +391,8 @@ const startInitialCountdown = (onFinish) => {
             //executeNextRound();
         } else if (matchSettings.genreSetting == "Custom") {
             console.log("spawn between round CUSTOM genre modal here");
-            executeNextRound();
+            setShowBetweenRoundCustom(true);
+            //executeNextRound();
         } else if (matchSettings.genreSetting == "Alternatives") {
             console.log("spawn between round ALTERNATIVES genre modal here")
             setShowBetweenRoundAlternatives(true);
@@ -1706,6 +1708,16 @@ const handlePlayCore = async (opts = {}) => {
                 currentGenre={matchSettings.selectionOfGenre}
                 onCloseAndProceed={(newGenre) => {
                     setShowBetweenRoundAlternatives(false);
+                    executeNextRound(newGenre);
+                }}
+            />
+
+            <BetweenRoundModalCustom
+                visible={showBetweenRoundCustom}
+                roundWinner={roundWinner}
+                currentGenre={matchSettings.selectionOfGenre}
+                onCloseAndProceed={(newGenre) => {
+                    setShowBetweenRoundCustom(false);
                     executeNextRound(newGenre);
                 }}
             />
