@@ -860,14 +860,27 @@ async function fetchSearchTerm(term, genreId, signal) {
   }
 }
 
+const previouslyPlayedArtists = new Set(
+  (playedSongs.current || []).map(s => s.artistName?.toLowerCase())
+);
+
+
 /**
  * Run batched concurrent searches for a list of terms until we find >= needed tracks.
  * - terms: array of candidate terms (already shuffled)
  * - genreId, expectedGenreSub, playedTrackIds (Set), needed (nrOfGuesses)
  */
-async function findTracksConcurrently({ terms, genreId, expectedGenreSub, playedTrackIds, needed }) {
+async function findTracksConcurrently({
+  terms,
+  genreId,
+  expectedGenreSub,
+  playedTrackIds,
+  needed,
+  disallowedArtists = new Set(),   // 👈 already-played artists
+  enforceUniqueArtists = true      // 👈 filter duplicates within same batch
+}) {
   const controllers = [];
-  const maxAttempts = 10; // max retry rounds
+  const maxAttempts = 10;
   let attempts = 0;
   let candidates = [];
 
@@ -876,7 +889,7 @@ async function findTracksConcurrently({ terms, genreId, expectedGenreSub, played
     console.log(`🔄 findTracksConcurrently attempt ${attempts}`);
 
     const shuffledTerms = [...terms];
-    shuffleArray(shuffledTerms); // retry in new order each round
+    shuffleArray(shuffledTerms); // change order each attempt
 
     for (const term of shuffledTerms) {
       const controller = new AbortController();
@@ -884,19 +897,31 @@ async function findTracksConcurrently({ terms, genreId, expectedGenreSub, played
 
       try {
         const data = await fetchSearchTerm(term, genreId, controller.signal);
-
         if (!data?.results?.length) continue;
 
-        const usable = data.results.filter(
-          t => t.previewUrl &&
-               !playedTrackIds.has(t.trackId) &&
-               (t.primaryGenreName || "").toLowerCase().includes(expectedGenreSub)
-        );
+        const usable = data.results.filter(t => {
+          const artist = t.artistName?.toLowerCase() || "";
+          return (
+            t.previewUrl &&
+            !playedTrackIds.has(t.trackId) &&
+            (t.primaryGenreName || "").toLowerCase().includes(expectedGenreSub) &&
+            !disallowedArtists.has(artist) // 👈 skip already-played artist
+          );
+        });
 
+        // add usable tracks, enforcing unique artists inside this batch
         for (const t of usable) {
+          const artist = t.artistName?.toLowerCase() || "";
+
+          // enforce unique artists among candidates
+          if (enforceUniqueArtists && candidates.some(c => c.artistName?.toLowerCase() === artist)) {
+            continue;
+          }
+
           if (!candidates.find(c => c.trackId === t.trackId)) {
             candidates.push(t);
           }
+
           if (candidates.length >= needed) break;
         }
 
@@ -908,16 +933,18 @@ async function findTracksConcurrently({ terms, genreId, expectedGenreSub, played
     }
 
     if (candidates.length >= needed) {
-      // done, abort remaining controllers
+      // done — abort remaining
       controllers.forEach(c => c.abort && c.abort());
-      return candidates;
+      break;
     }
   }
 
-  // final dedupe by trackId
+  // cleanup and dedupe
+  controllers.forEach(c => { try { c.abort(); } catch (_) {} });
   const uniqueById = Array.from(new Map(candidates.map(t => [t.trackId, t])).values());
   return uniqueById;
 }
+
 
 
 /**
@@ -1017,12 +1044,15 @@ const handlePlayCore = async (opts = {}) => {
         while (optionsTracks.length < nrOfGuesses && attempts < 5) {
             console.log(prefetchMode ? `🔥 Prefetch attempt ${attempts+1}` : `🔄 Find tracks attempt ${attempts+1}`);
             optionsTracks = await findTracksConcurrently({
-                terms: opts.terms || candidateTerms,
-                genreId: expectedGenreId,
-                expectedGenreSub: expectedGenreName.toLowerCase(),
-                playedTrackIds: playedSet,
-                needed: nrOfGuesses
+            terms: opts.terms || candidateTerms,
+            genreId: expectedGenreId,
+            expectedGenreSub: expectedGenreName.toLowerCase(),
+            playedTrackIds: playedSet,
+            needed: nrOfGuesses,
+            disallowedArtists: previouslyPlayedArtists, 
+            enforceUniqueArtists: true                  
             });
+
             attempts++;
         }
 
