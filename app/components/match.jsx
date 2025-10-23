@@ -6,21 +6,27 @@ import { useAudio } from "../components/audioContext";
 import GuessBubble from "../components/guessBubble.jsx";
 import RematchModal from "../components/modals/rematch.jsx";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
+import BetweenRoundModalAlternatives from "./modals/betweenRoundModalAlternatives.jsx";
+import BetweenRoundModalCustom from "./modals/betweenRoundModalCustom.jsx";
 import BetweenRoundModalRandom from "./modals/betweenRoundModalRandom.jsx";
 import PauseMatch from "./modals/pauseOngoingMatch.jsx";
+
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 // --- Official iTunes genres ---
 export const ITUNES_GENRES = [
     { id: 14, name: "Pop" },
     { id: 21, name: "Rock" },
-    { id: 6, name: "Country" },
-    { id: 17, name: "EDM" },
-    { id: 15, name: "R&B/Soul" },
-    { id: 11, name: "Jazz" },
     { id: 7, name: "Hip-Hop/Rap" },
-    { id: 5, name: "Classical" },
+    { id: 6, name: "Country" },
+    { id: 15, name: "R&B/Soul" },
+    { id: 17, name: "Dance" },
+    { id: 19, name: "Alternative" },
+    { id: 12, name: "Latino" },
     { id: 3, name: "Blues" },
+    { id: 5, name: "Classical" },
+    { id: 11, name: "Jazz" },
+    { id: 2, name: "Soundtrack" }, //Kan ofta ge fel då den bara spelar låtar som varit med i filmer/serier
 ];
 
 // --- Predefined bubble positions ---
@@ -60,25 +66,24 @@ const RIGHT_BUBBLE_POSITIONS = {
     ],
 };
 
+
 const SINGLE_BUBBLE_POSITIONS = {
     2: [
-        { top: 50, left: 250 },
-        { top: 50, left: 420 }
+        { top: WINDOW_HEIGHT * 0.15, left: WINDOW_WIDTH * 0.27 },
+        { top: WINDOW_HEIGHT * 0.15, left: WINDOW_WIDTH * 0.52 },
     ],
     3: [
-        { top: 50, left: 150 },
-        { top: 50, left: 330 },
-        { top: 50, left: 510 }
+        { top: WINDOW_HEIGHT * 0.15, left: WINDOW_WIDTH * 0.17 },
+        { top: WINDOW_HEIGHT * 0.15, left: WINDOW_WIDTH * 0.39 },
+        { top: WINDOW_HEIGHT * 0.15, left: WINDOW_WIDTH * 0.61 },
     ],
     4: [
-        { top: 50, left: 80 },
-        { top: 50, left: 250 },
-        { top: 50, left: 420 },
-        { top: 50, left: 590 }
+        { top: WINDOW_HEIGHT * 0.15, left: WINDOW_WIDTH * 0.1 },
+        { top: WINDOW_HEIGHT * 0.15, left: WINDOW_WIDTH * 0.3 },
+        { top: WINDOW_HEIGHT * 0.15, left: WINDOW_WIDTH * 0.5 },
+        { top: WINDOW_HEIGHT * 0.15, left: WINDOW_WIDTH * 0.7 },
     ],
 };
-
-
 
 // --- Game classes ---
 class Player {
@@ -122,6 +127,22 @@ class MatchSettings {
         this.nrOfGuessesOnBoard = nrOfGuessesOnBoard;
     }
 }
+
+// Simple stopwatch utility
+const makeTimer = (label) => {
+  const start = Date.now();
+  return {
+    mark: (step) => {
+      const diff = ((Date.now() - start) / 1000).toFixed(2);
+      console.log(`⏱️ ${diff}s — ${step}`);
+    },
+    end: () => {
+      const diff = ((Date.now() - start) / 1000).toFixed(2);
+      console.log(`✅ Total ${diff}s ${label ? `(${label})` : ""}`);
+    },
+  };
+};
+
 
 // --- Main component ---
 export default function Match() {
@@ -169,7 +190,7 @@ export default function Match() {
     const matchSettings = new MatchSettings({
         nrOfPlayers: params.nrOfPlayers ? parseInt(params.nrOfPlayers) : 2,
         genreSetting: params.genreSetting,
-        selectionOfGenre: params.genre ? JSON.parse(params.genre) : [],
+        //selectionOfGenre: params.genre ? JSON.parse(params.genre) : [], Moved up to all other consts bcs it needs to be dynamic
         nrOfSongsToWinRound: params.points ? parseInt(params.points) : 3,
         nrOfRoundsToWinMatch: params.rounds ? parseInt(params.rounds) : 1,
         songDuration: params.duration ? parseInt(params.duration) : 30,
@@ -203,6 +224,14 @@ export default function Match() {
     const transitionTimeoutRef = useRef(null);
     const isSongTransitionPendingRef = useRef(false);
 
+    // 🧠 Prefetch state refs (add these near your other useRef hooks)
+    const prewarming = useRef(false);
+    const prewarmedData = useRef(null);
+    const playCoreRunning = useRef(false);      // actual song playback
+    const playCorePrefetching = useRef(false);  // background prefetch
+
+
+
     const shouldShowCounter = matchSettings.nrOfRoundsToWinMatch > 1;
 
 
@@ -212,6 +241,17 @@ export default function Match() {
     const wasPlayingBeforePause = useRef(false);
     const pausedForModal = useRef(false);
     const canPause = useRef(false);
+    const playedSongs = useRef([]); // starts as an empty array
+
+    //Between-round modal and the next genre gathered from it
+    const [isBetweenRoundModalVisible, setBetweenRoundModalVisible] = useState(false);
+    const [nextGenre, setNextGenre] = useState(null);
+
+    const [selectionOfGenre, setSelectionOfGenre] = useState(
+        params.genre
+            ? JSON.parse(params.genre) // if params.genre is already {id, name}, this works
+            : { id: params.genreId ? parseInt(params.genreId) : null, name: params.genreName || "Unknown" } // fallback object with shape
+    );
 
     const [dividerTimer, setDividerTimer] = useState(matchSettings.songDuration);
     const dividerTimerRef = useRef(null);
@@ -244,7 +284,7 @@ export default function Match() {
     // --- Helper functions ---
 
     const resetRound = () => {
-        setCurrentRoundGenre(null);
+        //setCurrentRoundGenre(null);
         setPlayer1Points(0);
         setPlayer2Points(0);
         setCorrectPressed(false);
@@ -268,29 +308,44 @@ export default function Match() {
         if (player2CooldownTimer.current) clearInterval(player2CooldownTimer.current);
     };
 
-    const startInitialCountdown = (onFinish) => {
-        // Clear any leftover interval
-        if (initialCountdownRef.current) {
-            clearInterval(initialCountdownRef.current);
-            initialCountdownRef.current = null;
-        }
+const startInitialCountdown = (onFinish) => {
+    if (initialCountdownRef.current) {
+        clearInterval(initialCountdownRef.current);
+        initialCountdownRef.current = null;
+    }
 
-        setShowInitialCountdown(true);
-        let count = 3;
+    setShowInitialCountdown(true);
+    let count = 3;
+    setInitialCountdown(count);
+
+    // ⚡ Start prefetch for next song during countdown
+    if (!prewarmedData.current && !playCorePrefetching.current) {
+        playCorePrefetching.current = true;
+        handlePlayCore({ prefetch: true }).then(result => {
+            prewarmedData.current = result;
+            playCorePrefetching.current = false;
+        }).catch(e => {
+            console.warn("Prefetch failed:", e);
+            playCorePrefetching.current = false;
+        });
+    }
+
+    initialCountdownRef.current = setInterval(() => {
+        count -= 1;
         setInitialCountdown(count);
 
-        initialCountdownRef.current = setInterval(() => {
-            count -= 1;
-            setInitialCountdown(count);
+        if (count <= 0) {
+            clearInterval(initialCountdownRef.current);
+            initialCountdownRef.current = null;
+            setShowInitialCountdown(false);
+            onFinish();
+        }
+    }, 900);
+};
 
-            if (count <= 0) {
-                clearInterval(initialCountdownRef.current);
-                initialCountdownRef.current = null;
-                setShowInitialCountdown(false);
-                onFinish();
-            }
-        }, 900);
-    };
+
+
+
 
     // Volymkontroll
     useEffect(() => {
@@ -329,23 +384,25 @@ export default function Match() {
         }
     };
 
-    const setupNextRound = () =>{
-        if(matchSettings.genreSetting == "Random"){
+    const setupNextRound = () => {
+        if (matchSettings.genreSetting == "Random") {
             console.log("spawn between round RANDOM genre modal here");
             setShowBetweenRoundRandom(true);
             //executeNextRound();
-        } else if(matchSettings.genreSetting == "Custom"){
+        } else if (matchSettings.genreSetting == "Custom") {
             console.log("spawn between round CUSTOM genre modal here");
-            executeNextRound();
-        } else if(matchSettings.genreSetting == "Alternatives"){
+            setShowBetweenRoundCustom(true);
+            //executeNextRound();
+        } else if (matchSettings.genreSetting == "Alternatives") {
             console.log("spawn between round ALTERNATIVES genre modal here")
-            executeNextRound();
+            setShowBetweenRoundAlternatives(true);
+            //executeNextRound();
         } else{
             console.log("ERROR: Unexpected genre setting provided")
             executeNextRound();
         }
-            
-        
+        setBetweenRoundModalVisible(true);
+
     }
 
     const stopAllActivity = async () => {
@@ -374,46 +431,84 @@ export default function Match() {
 
     // --- Helper to start the song transition ---
     const startSongTransition = (whichPlayerWonTheRound) => {
-        const glowDuration = 1600;
-        canPause.current = false; // ⛔ disable pausing during transition
+    const glowDuration = 1600;
+    canPause.current = false; // ⛔ disable pausing during transition
 
-        setTimeout(() => {
-            songOptions.forEach((_, idx) => {
-                triggerBubbleExit(idx);
-            });
-            setLastGuessPhase(false);
-        }, 1000);
-        
-        isSongTransitionPendingRef.current = true; // ✅ mark pending
+    setTimeout(() => {
+        songOptions.forEach((_, idx) => {
+            triggerBubbleExit(idx);
+        });
+        setLastGuessPhase(false);
+    }, 1000);
+    
+    isSongTransitionPendingRef.current = true; // ✅ mark pending
 
-        // Clear any previous timeout
-        if (transitionTimeoutRef.current) {
-            clearTimeout(transitionTimeoutRef.current);
-            transitionTimeoutRef.current = null;
-        }
+    // Clear any previous timeout
+    if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+        transitionTimeoutRef.current = null;
+    }
 
-        transitionTimeoutRef.current = setTimeout(() => {
-            transitionTimeoutRef.current = null;
-            isSongTransitionPendingRef.current = false; // ✅ not pending anymore
-            
-            if (whichPlayerWonTheRound == 1){
-                handleEndOfRound(1);
-            } else if(whichPlayerWonTheRound == 2){
-                handleEndOfRound(2);
-            } else{
-                startInitialCountdown(() => {
+    transitionTimeoutRef.current = setTimeout(() => {
+        transitionTimeoutRef.current = null;
+        isSongTransitionPendingRef.current = false; // ✅ not pending anymore
+
+        if (whichPlayerWonTheRound == 1) {
+            handleEndOfRound(1);
+        } else if (whichPlayerWonTheRound == 2) {
+            handleEndOfRound(2);
+        } else {
+            // 🧠 During this countdown, prewarming will start automatically
+            startInitialCountdown(async () => {
                 setSongOptions([]);
-                handlePlayCore();
-                setPressedOnce({
-                    1: {},
-                    2: {},
-                });
+                setPressedOnce({ 1: {}, 2: {} });
+
+                    if (prewarmedData.current) {
+                        const { songObj, options, correctTrack, newSound } = prewarmedData.current;
+                        prewarmedData.current = null;
+
+                        console.log("⚡ Instant start from prewarm cache");
+
+                        setCurrentSongObj(songObj);
+                        setSongOptions(options);
+
+                        // If prewarmed sound exists, play it
+                        if (newSound) {
+                            setSound(newSound);
+                            setIsPlaying(true);
+                            canPause.current = true;
+
+                            // Timer logic
+                            setDividerTimer(matchSettings.songDuration);
+                            if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
+                            dividerTimerRef.current = setInterval(() => {
+                                setDividerTimer(prev => {
+                                    if (prev <= 1) {
+                                        clearInterval(dividerTimerRef.current);
+                                        setIsPlaying(false);
+                                        setLastGuessPhase(true);
+                                        setLastGuessUsed({1:false,2:false});
+                                        newSound.unloadAsync().catch(e=>console.warn("Unload error:", e));
+                                        setSound(null);
+                                        return 0;
+                                    }
+                                    return prev-1;
+                                });
+                            }, 1000);
+                        }
+
+                        prewarmNextRound(); // Background prefetch next song
+                    } else {
+                        // fallback if prewarm not ready
+                        await handlePlayCore();
+                    }
+
+
             });
-            }
-            
-            
-        }, glowDuration);
-    };
+
+        }
+    }, glowDuration);
+};
 
     const mix = (a, b, t) => [
         a[0] + (b[0] - a[0]) * t,
@@ -452,7 +547,8 @@ export default function Match() {
                 normalColor[2] + (greenColor[2] - normalColor[2]) * value,
             ];
 
-            primaryBackgroundColorRef.current = mixed;});
+            primaryBackgroundColorRef.current = mixed;
+        });
 
         return () => {
             glowAnim.removeListener(listener);
@@ -564,41 +660,41 @@ export default function Match() {
 
     // --- Pause everything (audio + intervals) ---
     const pauseAll = async () => {
-        if (canPause.current === true){
+        if (canPause.current === true) {
             try {
-            pausedForModal.current = true;
-            wasPlayingBeforePause.current = isPlaying; // remember if we were playing
-            // pause audio if it exists and is playing
-            if (sound && isPlaying) {
-                try { await sound.pauseAsync(); } catch (e) { console.warn("pauseAll: pauseAsync failed", e); }
-            }
-            // clear divider interval
-            if (dividerTimerRef.current) {
-                clearInterval(dividerTimerRef.current);
-                dividerTimerRef.current = null;
-            }
-            // clear cooldown intervals
-            if (player1CooldownTimer.current) {
-                clearInterval(player1CooldownTimer.current);
-                player1CooldownTimer.current = null;
-            }
-            if (player2CooldownTimer.current) {
-                clearInterval(player2CooldownTimer.current);
-                player2CooldownTimer.current = null;
-            }
-            if (initialCountdownRef.current) {
-                clearInterval(initialCountdownRef.current);
-                initialCountdownRef.current = null;
-            }
+                pausedForModal.current = true;
+                wasPlayingBeforePause.current = isPlaying; // remember if we were playing
+                // pause audio if it exists and is playing
+                if (sound && isPlaying) {
+                    try { await sound.pauseAsync(); } catch (e) { console.warn("pauseAll: pauseAsync failed", e); }
+                }
+                // clear divider interval
+                if (dividerTimerRef.current) {
+                    clearInterval(dividerTimerRef.current);
+                    dividerTimerRef.current = null;
+                }
+                // clear cooldown intervals
+                if (player1CooldownTimer.current) {
+                    clearInterval(player1CooldownTimer.current);
+                    player1CooldownTimer.current = null;
+                }
+                if (player2CooldownTimer.current) {
+                    clearInterval(player2CooldownTimer.current);
+                    player2CooldownTimer.current = null;
+                }
+                if (initialCountdownRef.current) {
+                    clearInterval(initialCountdownRef.current);
+                    initialCountdownRef.current = null;
+                }
 
-            if (transitionTimeoutRef.current) {
-                clearTimeout(transitionTimeoutRef.current);
-                transitionTimeoutRef.current = null;
-            }
-            setShowPause(true);
+                if (transitionTimeoutRef.current) {
+                    clearTimeout(transitionTimeoutRef.current);
+                    transitionTimeoutRef.current = null;
+                }
+                setShowPause(true);
 
-            // stop UI play flag
-            setIsPlaying(false);
+                // stop UI play flag
+                setIsPlaying(false);
             } catch (e) {
                 console.error("pauseAll error", e);
             }
@@ -684,8 +780,22 @@ export default function Match() {
         //setDividerPos(1.1);
     };
 
-    const executeNextRound = () => {
+    const executeNextRound = (newGenre) => {
 
+
+        if (matchSettings.genreSetting == "Random") {
+            setSelectionOfGenre(newGenre);
+            console.log("New genre: ", selectionOfGenre.id, "name: ", selectionOfGenre.name);
+        } else if (matchSettings.genreSetting == "Custom") {
+
+        } else if (matchSettings.genreSetting == "Alternatives") {
+
+        } else {
+            console.log("ERROR: Unexpected genre setting provided")
+
+        }
+
+        //setMatchSettings(prev => ({ ...prev, selectionOfGenre: newGenre }));
         // Immediately start the countdown for the next round
         setShowInitialCountdown(true);
         let count = 3;
@@ -699,216 +809,290 @@ export default function Match() {
                 clearInterval(countdown);
                 setShowInitialCountdown(false);
                 resetRound();
-                setTimeout(() => handlePlayCore(), 100);
+                setTimeout(() => handlePlayCore({ genreOverride: newGenre }), 100);
             }
         }, 900);
     };
 
-    // --- Core play logic ---
-    const handlePlayCore = async (opts = {}) => {
-        try {
-            if (showRematch && !opts.force) {
-                setShowRematch(false);
-            }
+    // Put these near the top of your component
+const searchCacheRef = useRef(new Map()); // key = `${genreId}|${term}`
+const cacheTTL = 60 * 1000; // 60s
+const concurrentLimit = 3; // how many fetches to run at once (tuneable)
+const maxAttempts = 10;
 
+// Utility helpers
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+async function fetchSearchTerm(term, genreId, signal) {
+  const cacheKey = `${genreId}|${term}`;
+  const cached = searchCacheRef.current.get(cacheKey);
+  const now = Date.now();
+  if (cached && (now - cached.ts) < cacheTTL) {
+    return cached.data;
+  }
+
+  const params = new URLSearchParams({
+    term,
+    media: "music",
+    entity: "song",
+    genreId: String(genreId),
+    limit: "200"
+  });
+
+  try {
+    const res = await fetch(`https://itunes.apple.com/search?${params.toString()}`, { signal });
+    const json = await res.json();
+    searchCacheRef.current.set(cacheKey, { ts: Date.now(), data: json });
+    return json;
+  } catch (e) {
+    // fetch aborted or network error
+    if (e.name === "AbortError") return null;
+    console.warn("fetchSearchTerm error", term, e);
+    return null;
+  }
+}
+
+/**
+ * Run batched concurrent searches for a list of terms until we find >= needed tracks.
+ * - terms: array of candidate terms (already shuffled)
+ * - genreId, expectedGenreSub, playedTrackIds (Set), needed (nrOfGuesses)
+ */
+async function findTracksConcurrently({ terms, genreId, expectedGenreSub, playedTrackIds, needed }) {
+  const controllers = [];
+  const maxAttempts = 10; // max retry rounds
+  let attempts = 0;
+  let candidates = [];
+
+  while (candidates.length < needed && attempts < maxAttempts) {
+    attempts++;
+    console.log(`🔄 findTracksConcurrently attempt ${attempts}`);
+
+    const shuffledTerms = [...terms];
+    shuffleArray(shuffledTerms); // retry in new order each round
+
+    for (const term of shuffledTerms) {
+      const controller = new AbortController();
+      controllers.push(controller);
+
+      try {
+        const data = await fetchSearchTerm(term, genreId, controller.signal);
+
+        if (!data?.results?.length) continue;
+
+        const usable = data.results.filter(
+          t => t.previewUrl &&
+               !playedTrackIds.has(t.trackId) &&
+               (t.primaryGenreName || "").toLowerCase().includes(expectedGenreSub)
+        );
+
+        for (const t of usable) {
+          if (!candidates.find(c => c.trackId === t.trackId)) {
+            candidates.push(t);
+          }
+          if (candidates.length >= needed) break;
+        }
+
+        if (candidates.length >= needed) break;
+
+      } catch (err) {
+        console.warn(`⚠️ Term "${term}" fetch failed:`, err);
+      }
+    }
+
+    if (candidates.length >= needed) {
+      // done, abort remaining controllers
+      controllers.forEach(c => c.abort && c.abort());
+      return candidates;
+    }
+  }
+
+  // final dedupe by trackId
+  const uniqueById = Array.from(new Map(candidates.map(t => [t.trackId, t])).values());
+  return uniqueById;
+}
+
+
+/**
+ * Optional helper: call this during your 3-second countdown to prewarm searches.
+ * It stores result in cache so handlePlayCore can resolve quickly.
+ * Example usage: On countdown start -> prewarmNextRound(selectionOfGenre)
+ */
+const prewarmNextRound = async () => {
+  if (prewarming.current || playCoreRunning.current) return;
+
+  prewarming.current = true;
+  console.log("🔥 Prewarming next round...");
+
+  try {
+    const nextRoundData = await handlePlayCore({ prefetch: true });
+    if (nextRoundData) prewarmedData.current = nextRoundData;
+  } catch (e) {
+    console.warn("Prewarm failed:", e);
+  } finally {
+    prewarming.current = false;
+  }
+};
+
+
+
+const handlePlayCore = async (opts = {}) => {
+    const prefetchMode = opts.prefetch ?? false;
+    const timer = makeTimer("handlePlayCore");
+    const startTime = Date.now();
+
+    // 🔒 separate locks for playback vs prefetch
+    if (prefetchMode) {
+        if (playCorePrefetching.current) {
+            console.log("⏳ handlePlayCore prefetch skipped — already running");
+            return null;
+        }
+        playCorePrefetching.current = true;
+    } else {
+        if (playCoreRunning.current) {
+            console.log("⏳ handlePlayCore skipped — already running");
+            return null;
+        }
+        playCoreRunning.current = true;
+    }
+
+    console.log("🎵 handlePlayCore start", prefetchMode ? "(prefetch)" : "");
+
+    try {
+        timer.mark("init start");
+
+        // Reset states for playback
+        if (!prefetchMode) {
+            if (showRematch) setShowRematch(false);
             setLoading(true);
             setCorrectPressed(false);
             setLastGuessPhase(false);
             setLastGuessUsed({ 1: false, 2: false });
 
             if (sound) {
-                try {
-                    await sound.unloadAsync();
-                } catch (e) {
-                    console.warn("Warning unloading previous sound:", e);
-                }
+                sound.unloadAsync().catch(e => console.warn("Warning unloading previous sound:", e));
                 setSound(null);
             }
+        }
 
-            let expectedGenreId = genreId;
-            let expectedGenreName = genreName;
+        // Determine genre
+        let expectedGenreId = opts.genreOverride?.id ?? selectionOfGenre?.id;
+        let expectedGenreName = opts.genreOverride?.name ?? selectionOfGenre?.name;
 
-            if (!expectedGenreId) {
-                const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
-                expectedGenreId = randomGenre.id;
-                expectedGenreName = randomGenre.name;
-                setCurrentRoundGenre(randomGenre);
-            }
+        if (!expectedGenreId) {
+            const randomGenre = ITUNES_GENRES[Math.floor(Math.random() * ITUNES_GENRES.length)];
+            expectedGenreId = randomGenre.id;
+            expectedGenreName = randomGenre.name;
+            if (!prefetchMode) setCurrentRoundGenre(randomGenre);
+        }
 
-            console.log("Searching for genre:", expectedGenreName, "with genreId:", expectedGenreId);
+        if (!expectedGenreId) {
+            Alert.alert("Error", "No genre selected!");
+            if (!prefetchMode) setLoading(false);
+            return;
+        }
 
-            if (!expectedGenreId) {
-                Alert.alert("Error", "No genre selected!");
-                setLoading(false);
-                return;
-            }
+        const nrOfGuesses = matchSettings.nrOfGuessesOnBoard || 3;
+        const playedSet = new Set(Array.from(playedTrackIds || []));
 
-            const nrOfGuesses = matchSettings.nrOfGuessesOnBoard || 3;
+        // Generate candidate terms for search
+        const allowedLetters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+        const jazzTerms = ["jazz","sax","swing","blue","bebop","smooth","fusion","cool","trumpet","piano"];
+        const bluesTerms = ["blues","delta","guitar","soul","rhythm","shuffle","harmonica","slide","bottleneck","bluesrock"];
+        let candidateTerms = expectedGenreId === 11 ? [...jazzTerms]
+                            : expectedGenreId === 3 ? [...bluesTerms]
+                            : [...allowedLetters];
+        shuffleArray(candidateTerms);
 
-            const allowedLetters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v', 'w'];
-            const jazzTerms = [
-                "jazz", "sax", "swing", "blue", "bebop", "smooth", "fusion", "cool", "trumpet", "piano"
-            ];
-            const bluesTerms = [
-                "blues", "delta", "guitar", "soul", "rhythm", "shuffle", "harmonica", "slide", "bottleneck", "bluesrock"
-            ];
-
-            let failedTerms = new Set();
-            let responseData = null;
-            let tracksWithPreview = [];
-
-            for (let attempt = 1; attempt <= 10; attempt++) {
-                const usableLetters = allowedLetters.filter(l => !failedTerms.has(l));
-                const usableJazz = jazzTerms.filter(t => !failedTerms.has(t));
-                const usableBlues = bluesTerms.filter(t => !failedTerms.has(t));
-
-                if ((expectedGenreId === 11 && usableJazz.length === 0) ||
-                    (expectedGenreId === 3 && usableBlues.length === 0) ||
-                    (expectedGenreId !== 11 && usableLetters.length === 0)) {
-                    break;
-                }
-
-                const searchTerm =
-                    expectedGenreId === 11
-                        ? usableJazz[Math.floor(Math.random() * usableJazz.length)]
-                        : expectedGenreId === 3
-                            ? usableBlues[Math.floor(Math.random() * usableBlues.length)]
-                            : usableLetters[Math.floor(Math.random() * usableLetters.length)];
-
-                console.log(`Attempt ${attempt}: Trying term "${searchTerm}"`);
-
-                const res = await fetch(
-                    `https://itunes.apple.com/search?term=${searchTerm}&media=music&entity=song&genreId=${expectedGenreId}&limit=200`
-                );
-
-                try {
-                    responseData = await res.json();
-                } catch (e) {
-                    console.error("Failed to parse JSON:", e);
-                    responseData = null;
-                }
-
-                const expectedGenreSub = expectedGenreName && expectedGenreName.includes(">")
-                    ? expectedGenreName.split(">")[1].trim().toLowerCase()
-                    : (expectedGenreName || "").toLowerCase();
-
-                tracksWithPreview = (responseData?.results || []).filter(
-                    t =>
-                        t.previewUrl &&
-                        !playedTrackIds.has(t.trackId) &&
-                        (t.primaryGenreName || "").toLowerCase().includes(expectedGenreSub)
-                );
-
-                if (tracksWithPreview.length >= nrOfGuesses) {
-                    console.log(`✅ Success with term "${searchTerm}" — found ${tracksWithPreview.length} usable tracks`);
-                    break;
-                }
-
-                console.warn(`❌ "${searchTerm}" returned only ${tracksWithPreview.length} usable tracks (<${nrOfGuesses}). Skipping next time.`);
-                failedTerms.add(searchTerm);
-            }
-
-            if (tracksWithPreview.length < nrOfGuesses) {
-                console.warn("No new tracks found after all attempts, using previously played tracks.");
-                tracksWithPreview = allPlayedTracks.filter(
-                    t =>
-                        t.previewUrl &&
-                        (t.primaryGenreName || "").toLowerCase().includes(
-                            expectedGenreName && expectedGenreName.includes(">")
-                                ? expectedGenreName.split(">")[1].trim().toLowerCase()
-                                : (expectedGenreName || "").toLowerCase()
-                        )
-                );
-
-                if (tracksWithPreview.length === 0) {
-                    Alert.alert("No Preview", `Could not find at least ${nrOfGuesses} tracks even in previously played songs.`);
-                    setLoading(false);
-                    return;
-                }
-            }
-
-            // --- Deduplicate tracks by artist (only one song per artist) ---
-            const seenArtists = new Set();
-            tracksWithPreview = tracksWithPreview.filter(track => {
-                const artist = track.artistName || "Unknown Artist";
-                if (seenArtists.has(artist)) return false;
-                seenArtists.add(artist);
-                return true;
+        // --- 🔄 Retry loop for prefetch or rare genres ---
+        let optionsTracks = [];
+        let attempts = 0;
+        while (optionsTracks.length < nrOfGuesses && attempts < 5) {
+            console.log(prefetchMode ? `🔥 Prefetch attempt ${attempts+1}` : `🔄 Find tracks attempt ${attempts+1}`);
+            optionsTracks = await findTracksConcurrently({
+                terms: opts.terms || candidateTerms,
+                genreId: expectedGenreId,
+                expectedGenreSub: expectedGenreName.toLowerCase(),
+                playedTrackIds: playedSet,
+                needed: nrOfGuesses
             });
+            attempts++;
+        }
 
+        if (optionsTracks.length < nrOfGuesses && !prefetchMode) {
+            console.warn("⚠️ Not enough tracks found after retries");
+            Alert.alert("Not Enough Tracks", "Returning to front page.");
+            setLoading(false);
+            router.push("/");
+            return null;
+        }
 
-            const optionsTracks = [];
+        // Pick correct track
+        let correctTrackIdx = Math.floor(Math.random()*optionsTracks.length);
+        let correctTrack = optionsTracks[correctTrackIdx];
 
-            while (optionsTracks.length < nrOfGuesses && tracksWithPreview.length > 0) {
-                const idx = Math.floor(Math.random() * tracksWithPreview.length);
-                const track = tracksWithPreview.splice(idx, 1)[0];
-                if (track && track.previewUrl) optionsTracks.push(track);
-            }
-
-            const playedFallback = allPlayedTracks.filter(t => !optionsTracks.some(o => o.trackId === t.trackId));
-            while (optionsTracks.length < nrOfGuesses && playedFallback.length > 0) {
-                const idx = Math.floor(Math.random() * playedFallback.length);
-                const track = playedFallback.splice(idx, 1)[0];
-                if (track && track.previewUrl) optionsTracks.push(track);
-            }
-
-            if (optionsTracks.length < nrOfGuesses) {
-                Alert.alert("Not Enough Tracks", "Returning to front page.");
-                setLoading(false);
-                router.push("/");
-                return;
-            }
-
-            let correctTrackIdx = Math.floor(Math.random() * optionsTracks.length);
-            let correctTrack = optionsTracks[correctTrackIdx];
-
+        if (!prefetchMode) {
+            // Update played tracks
+            playedSongs.current.push({ trackName: correctTrack.trackName, artistName: correctTrack.artistName });
             setPlayedTrackIds(prev => {
                 const newSet = new Set(prev);
                 optionsTracks.forEach(t => newSet.add(t.trackId));
                 return newSet;
             });
-
             setAllPlayedTracks(prev => {
-                const existingIds = new Set(prev.map(p => p.trackId));
-                const toAppend = optionsTracks.filter(t => !existingIds.has(t.trackId));
-                return [...prev, ...toAppend];
+                const existingIds = new Set(prev.map(p=>p.trackId));
+                return [...prev, ...optionsTracks.filter(t=>!existingIds.has(t.trackId))];
             });
+        }
 
-            const songObj = new Song({
-                songId: correctTrack.trackId,
-                songGenre: correctTrack.primaryGenreName,
-                songFile: correctTrack.previewUrl,
-                songTitle: correctTrack.trackName,
-                songArtist: correctTrack.artistName,
-                songDuration: matchSettings.songDuration || 30,
-                songArtistAlternatives: [],
-            });
+        // Build Song object
+        const songObj = new Song({
+            songId: correctTrack.trackId,
+            songGenre: correctTrack.primaryGenreName,
+            songFile: correctTrack.previewUrl,
+            songTitle: correctTrack.trackName,
+            songArtist: correctTrack.artistName,
+            songDuration: matchSettings.songDuration || 30,
+            songArtistAlternatives: [],
+        });
+
+        const options = optionsTracks.slice(0,nrOfGuesses).map((t, idx) => ({
+            title: t.trackName || "Unknown Title",
+            artist: t.artistName || "Unknown Artist",
+            previewUrl: t.previewUrl,
+            isCorrect: idx === correctTrackIdx,
+        }));
+
+        if (!options.some(o => o.isCorrect)) {
+            correctTrackIdx = 0;
+            options[0].isCorrect = true;
+            correctTrack = optionsTracks[0];
+        }
+
+        if (!prefetchMode) {
             setCurrentSongObj(songObj);
-
-            const options = optionsTracks.slice(0, nrOfGuesses).map((t, idx) => ({
-                title: t.trackName || "Unknown Title",
-                artist: t.artistName || "Unknown Artist",
-                previewUrl: t.previewUrl,
-                isCorrect: idx === correctTrackIdx,
-            }));
-
-            if (!options.some(o => o.isCorrect)) {
-                console.warn("Correct track fell outside visible options — forcing one to be correct.");
-                correctTrackIdx = 0;
-                options[0].isCorrect = true;
-                correctTrack = optionsTracks[0];
-            }
-
             setSongOptions(options);
+        }
 
-            const { sound: newSound } = await Audio.Sound.createAsync(
-                { uri: correctTrack.previewUrl },
-                { shouldPlay: true }
-            );
-            canPause.current = true;
+        // Create sound
+        const { sound: newSound } = await Audio.Sound.createAsync(
+            { uri: correctTrack.previewUrl },
+            { shouldPlay: !prefetchMode }
+        );
+
+        if (!prefetchMode) {
             setSound(newSound);
             setIsPlaying(true);
+            canPause.current = true;
 
+            // Timer logic
             setDividerTimer(matchSettings.songDuration);
             if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
             dividerTimerRef.current = setInterval(() => {
@@ -917,11 +1101,9 @@ export default function Match() {
                         clearInterval(dividerTimerRef.current);
                         setIsPlaying(false);
                         setLastGuessPhase(true);
-                        setLastGuessUsed({ 1: false, 2: false });
-                        if (newSound) {
-                            newSound.unloadAsync().catch(e => console.warn("Unload error:", e));
-                            setSound(null);
-                        }
+                        setLastGuessUsed({ 1:false, 2:false });
+                        newSound.unloadAsync().catch(e => console.warn("Unload error:", e));
+                        setSound(null);
                         return 0;
                     }
                     return prev - 1;
@@ -936,17 +1118,31 @@ export default function Match() {
                     if (dividerTimerRef.current) clearInterval(dividerTimerRef.current);
                 }
             });
+        }
 
-            setLoading(false);
-        } catch (err) {
-            console.error("Error playing preview:", err);
+        timer.mark("after Audio.Sound.createAsync (sound ready)");
+
+        if (prefetchMode) {
+            console.log(`✅ Prefetched in ${(Date.now()-startTime)/1000}s`);
+            return { songObj, options, newSound, correctTrack };
+        }
+
+        setLoading(false);
+        timer.end();
+
+    } catch(err) {
+        console.error("Error playing preview:", err);
+        if (!prefetchMode) {
             Alert.alert("Error", "Failed to play preview");
             setIsPlaying(false);
             setLoading(false);
         }
-    };
-
-
+        timer.end();
+    } finally {
+        if (prefetchMode) playCorePrefetching.current = false;
+        else playCoreRunning.current = false;
+    }
+};
 
     useEffect(() => {
         return () => {
@@ -1024,24 +1220,24 @@ export default function Match() {
         setPressedShrink((prev) => ({
             ...prev,
             [playerNumber]: {
-            ...prev[playerNumber],
-            [index]: true,
+                ...prev[playerNumber],
+                [index]: true,
             },
         }));
     };
 
     const shrinkAllExceptCorrect = (playerNum) => {
-    // playerNum = the player who pressed the correct bubble
+        // playerNum = the player who pressed the correct bubble
 
-    [1, 2].forEach((side) => {
-        songOptions.forEach((option, idx) => {
-            // On the side of the player who pressed correctly, skip correct bubble
-            if (side === playerNum && option.isCorrect) return;
+        [1, 2].forEach((side) => {
+            songOptions.forEach((option, idx) => {
+                // On the side of the player who pressed correctly, skip correct bubble
+                if (side === playerNum && option.isCorrect) return;
 
-            // Otherwise, shrink
-            triggerPressedShrink(side, idx);
+                // Otherwise, shrink
+                triggerPressedShrink(side, idx);
+            });
         });
-    });
     };
 
 
@@ -1096,7 +1292,7 @@ export default function Match() {
 
         //Refuse guesses after right guess has been made this song, needed now when buttons dont disappear immediately
         if (correctPressed) return;
-        
+
         // Prevent multiple presses on same bubble 
         if (pressedOnce[playerNum]?.[idx]) return;
 
@@ -1120,17 +1316,18 @@ export default function Match() {
 
             if (isCorrect) {
                 // ✅ Correct: point to guesser
-                if (guesser === 1){
+                if (guesser === 1) {
                     const newPoints = player1Points + 1;
                     setPlayer1Points(newPoints);
                     triggerGreenGlowBackground();
                     shrinkAllExceptCorrect(1)
                     triggerGreenGlow(guesser, idx);
 
-                    if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                    if (newPoints >= matchSettings.nrOfSongsToWinRound) {
+                        setRoundWinner(1);
                         startSongTransition(1);
-                    } else{startSongTransition(null);}
-                } 
+                    } else { startSongTransition(null); }
+                }
                 else {
                     const newPoints = player2Points + 1;
                     setPlayer2Points(newPoints);
@@ -1138,38 +1335,41 @@ export default function Match() {
                     shrinkAllExceptCorrect(2)
                     triggerGreenGlow(guesser, idx);
 
-                    if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                    if (newPoints >= matchSettings.nrOfSongsToWinRound) {
+                        setRoundWinner(2);
                         startSongTransition(2);
-                    } else{startSongTransition(null);}
+                    } else { startSongTransition(null); }
                 }
-              
-                
+
+
             } else {
                 // ❌ Wrong: point to opponent
-                if (opponent === 1){
+                if (opponent === 1) {
                     const newPoints = player1Points + 1;
                     setPlayer1Points(newPoints);
                     triggerGreenGlowBackground();
                     shrinkAllExceptCorrect(1)
                     triggerRedGlow(guesser, idx);
 
-                    if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                    if (newPoints >= matchSettings.nrOfSongsToWinRound) {
+                        setRoundWinner(1);
                         startSongTransition(1);
-                    } else{startSongTransition(null);}
+                    } else { startSongTransition(null); }
 
-                } 
-                else{
+                }
+                else {
                     const newPoints = player2Points + 1;
                     setPlayer2Points(newPoints);
                     triggerGreenGlowBackgroundRight();
                     shrinkAllExceptCorrect(2)
                     triggerRedGlow(guesser, idx);
 
-                    if(newPoints >= matchSettings.nrOfSongsToWinRound){
+                    if (newPoints >= matchSettings.nrOfSongsToWinRound) {
+                        setRoundWinner(2);
                         startSongTransition(2);
-                    } else{startSongTransition(null);}
-                } 
-                
+                    } else { startSongTransition(null); }
+                }
+
             }
 
             // Check if anyone reached win condition, oved into if-statements above
@@ -1212,6 +1412,7 @@ export default function Match() {
                 const newPoints = player1Points + 1;
                 setPlayer1Points(newPoints);
                 if (newPoints >= matchSettings.nrOfSongsToWinRound) {
+                    setRoundWinner(1);
                     startSongTransition(1);
                     //handleEndOfRound(1); moved into songtransition
                     triggerGreenGlowBackground();
@@ -1220,18 +1421,19 @@ export default function Match() {
                 else {
                     shrinkAllExceptCorrect(1)
                     startSongTransition(null);
-                    
+
                     triggerGreenGlowBackground();
                 }
             } else {
                 const newPoints = player2Points + 1;
                 setPlayer2Points(newPoints);
-                if (newPoints >= matchSettings.nrOfSongsToWinRound){
+                if (newPoints >= matchSettings.nrOfSongsToWinRound) {
                     //handleEndOfRound(2);
+                    setRoundWinner(2);
                     startSongTransition(2);
                     shrinkAllExceptCorrect(2)
                     triggerGreenGlowBackgroundRight();
-                } 
+                }
                 else startSongTransition(null);
                 shrinkAllExceptCorrect(2)
 
@@ -1280,16 +1482,16 @@ export default function Match() {
                 </View>
             )}
 
-                {canPause.current && (
-                    <View style={styles.topRightButtons}>
-                            <TouchableOpacity
-                            onPress={() => { pauseAll(); }}
-                            style={styles.settingsButton}
-                            >
-                                <Text style={styles.settingsText}>⏸</Text>
-                            </TouchableOpacity>
-                    </View>
-                )}
+            {canPause.current && (
+                <View style={styles.topRightButtons}>
+                    <TouchableOpacity
+                        onPress={() => { pauseAll(); }}
+                        style={styles.settingsButton}
+                    >
+                        <Text style={styles.settingsText}>⏸</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             {/* Singleplayer Cooldown Overlay */}
             {player1Cooldown && isSinglePlayer && (
@@ -1323,14 +1525,17 @@ export default function Match() {
                 {/* Left side (Player 1) */}
                 <View style={styles.sideWrapperLeft}>
                     <View style={styles.sideRow}>
-                        <PointsRow points={player1Points} />
-                        {shouldShowCounter && (
-                            <RoundsRow
-                                won={player1RoundsWon}
-                                total={matchSettings.nrOfRoundsToWinMatch}
-                                filledStyle={styles.roundCircleFilledP1}
-                            />
-                        )}
+                        <View style={styles.pointsAndRoundRowPlayer1}>
+                            <PointsRow points={player1Points} style={styles.player1PointsCss} />
+                            {shouldShowCounter && (
+                                <RoundsRow
+                                    won={player1RoundsWon}
+                                    total={matchSettings.nrOfRoundsToWinMatch}
+                                    filledStyle={styles.roundCircleFilledP1}
+                                />
+                            )}
+                        </View>
+
                         <View style={styles.largeIconCircle}>
                             <Text style={styles.largeIconText}>{player1.playerIcon}</Text>
                         </View>
@@ -1358,14 +1563,16 @@ export default function Match() {
                                 <Text style={styles.largeIconText}>{player2.playerIcon}</Text>
                             </View>
 
-                            {shouldShowCounter && (
-                                <RoundsRow
-                                    won={player2RoundsWon}
-                                    total={matchSettings.nrOfRoundsToWinMatch}
-                                    filledStyle={styles.roundCircleFilledP2}
-                                />
-                            )}
-                            <PointsRow points={player2Points} />
+                            <View style={styles.pointsAndRoundRowPlayer2}>
+                                <PointsRow points={player2Points} />
+                                {shouldShowCounter && (
+                                    <RoundsRow
+                                        won={player2RoundsWon}
+                                        total={matchSettings.nrOfRoundsToWinMatch}
+                                        filledStyle={styles.roundCircleFilledP2}
+                                    />
+                                )}
+                            </View>
                         </View>
                     )}
                 </View>
@@ -1477,6 +1684,7 @@ export default function Match() {
                 onRematch={handleRematch}
                 onBackToMenu={handleBackToMenu}
                 matchWinnerId={matchWinner}
+                playedSongs={playedSongs.current}
             />
             <PauseMatch
                 visible={showPause}
@@ -1486,8 +1694,34 @@ export default function Match() {
 
             <BetweenRoundModalRandom
                 visible={showBetweenRoundRandom}
-                proceedToNextRound={() => {setShowBetweenRoundRandom(false); executeNextRound();}}
+                roundWinner={roundWinner}
+                currentGenre={matchSettings.selectionOfGenre}
+                onCloseAndProceed={(newGenre) => {
+                    setShowBetweenRoundRandom(false);
+                    executeNextRound(newGenre);
+                }}
             />
+            
+            <BetweenRoundModalAlternatives
+                visible={showBetweenRoundAlternatives}
+                roundWinner={roundWinner}
+                currentGenre={matchSettings.selectionOfGenre}
+                onCloseAndProceed={(newGenre) => {
+                    setShowBetweenRoundAlternatives(false);
+                    executeNextRound(newGenre);
+                }}
+            />
+
+            <BetweenRoundModalCustom
+                visible={showBetweenRoundCustom}
+                roundWinner={roundWinner}
+                currentGenre={matchSettings.selectionOfGenre}
+                onCloseAndProceed={(newGenre) => {
+                    setShowBetweenRoundCustom(false);
+                    executeNextRound(newGenre);
+                }}
+            />
+
         </View>
     );
 }
@@ -1554,6 +1788,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
+
     },
     sideWrapperLeft: {
         flex: 1, // ensures equal space left and right
@@ -1568,6 +1803,15 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         marginHorizontal: 8,
+
+    },
+    pointsAndRoundRowPlayer1: {
+        alignItems: "flex-end",
+        gap: 3,
+    },
+    pointsAndRoundRowPlayer2: {
+        alignItems: "flex-start",
+        gap: 3,
     },
     playArea: {
         flexDirection: "row",
@@ -1575,11 +1819,11 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
         position: "relative",
     },
-
     sideColumn: {
         flex: 1,
         height: 320,
         alignItems: "center",
+
     },
 
     largeIconCircle: {

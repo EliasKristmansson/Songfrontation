@@ -62,7 +62,7 @@ export default function GuessBubble({
  useEffect(() => {
     if (pressedShrink) {
       Animated.spring(scaleAnim, {
-        toValue: 0.75, 
+        toValue: 0, //switch to 0.75 for old shrink
         friction: 6,
         tension: 10,
         useNativeDriver: true,
