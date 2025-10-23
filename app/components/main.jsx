@@ -81,11 +81,17 @@ export default function Main({ background, stars = [] }) {
 
     // Default settings for Quick Match
     const defaultQuickMatch = {
-        rounds: 1,
+        //genre: "random",
+        //genreSetting: "Random",
+        genreId: null,          // This will be set dynamically in match.jsx
+        genreName: null,
+        genreSetting: "Random",        // This will be set dynamically in match.jsx
+        rounds: 1,            // String values for router params
         duration: 29,
         guesses: 3,
         points: 3,
     };
+
 
     useEffect(() => {
         animateDivider(1.1);
@@ -127,7 +133,7 @@ export default function Main({ background, stars = [] }) {
                 return;
             } else {
                 router.push({
-                    pathname: "../components/genreRandom",
+                    pathname: "../components/match",
                     params: { ...defaultQuickMatch, nrOfPlayers: 2, from: "main" },
                 });
                 return;
@@ -203,7 +209,7 @@ export default function Main({ background, stars = [] }) {
                                 onPress={() =>  {
                                     playButtonSound();
                                     router.push({
-                                        pathname: "../components/genreRandom",
+                                        pathname: "../components/match",
                                         params: { ...defaultQuickMatch, nrOfPlayers: 1, from: "main" },
                                     });
 

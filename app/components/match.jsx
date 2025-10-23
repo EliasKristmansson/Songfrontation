@@ -2,7 +2,7 @@ import { Audio } from "expo-av";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Alert, Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-//import { useAudio } from "../components/audioContext";
+import { useAudio } from "../components/audioContext";
 import GuessBubble from "../components/guessBubble.jsx";
 import RematchModal from "../components/modals/rematch.jsx";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
@@ -257,7 +257,7 @@ export default function Match() {
     const dividerTimerRef = useRef(null);
 
     const [initialCountdown, setInitialCountdown] = useState(3);
-    const [showInitialCountdown, setShowInitialCountdown] = useState(true);
+    const [showInitialCountdown, setShowInitialCountdown] = useState(false);
     const initialCountdownRef = useRef(null);
 
     const bubbleScalesRef = useRef([]);
@@ -975,6 +975,8 @@ const handlePlayCore = async (opts = {}) => {
     const timer = makeTimer("handlePlayCore");
     const startTime = Date.now();
 
+    
+
     // 🔒 separate locks for playback vs prefetch
     if (prefetchMode) {
         if (playCorePrefetching.current) {
@@ -1200,28 +1202,10 @@ const handlePlayCore = async (opts = {}) => {
 
     // Initial countdown
     useEffect(() => {
-        setShowInitialCountdown(true);
-        let count = 3;
-        setInitialCountdown(count);
-
-        initialCountdownRef.current = setInterval(() => {
-            count -= 1;
-            setInitialCountdown(count);
-
-            if (count <= 0) {
-                clearInterval(initialCountdownRef.current);
-                initialCountdownRef.current = null;
-                setShowInitialCountdown(false);
-                handlePlayCore();
-            }
-        }, 900);
-
-        return () => {
-            if (initialCountdownRef.current) {
-                clearInterval(initialCountdownRef.current);
-            }
-        };
+        setupNextRound();
+        console.log("STARTING INITIAL COUNTDOWN ON MOUNT");
     }, []);
+
 
     // --- Guess handling ---
     const triggerRedGlow = (playerNum, idx) => {

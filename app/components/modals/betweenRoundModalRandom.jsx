@@ -24,11 +24,20 @@ export default function BetweenRoundModalRandom({
     return getRandomGenre(filtered);
   }, [visible]);
 
+    const headerText =
+    roundWinner === null
+      ? "First genre is..."
+      : `Player ${roundWinner} won the round. Next genre is...`;
+
+  const buttonText =
+    roundWinner === null
+      ? "Start First Round"
+      : "Start Next Round";
+
+
   const content = (
     <View style={styles.overlay}>
-      <Text style={styles.buttonText}>
-        Player {roundWinner} won the round. Next genre is... 
-      </Text>
+      <Text style={styles.buttonText}>{headerText} </Text>
       <Text style={styles.genreText}>{newGenre?.name}</Text>
 
       <View style={styles.buttonsWrap}>
@@ -44,7 +53,7 @@ export default function BetweenRoundModalRandom({
  
             activeOpacity={0.9}
           >
-            <Text style={styles.buttonText}>Start Next Round</Text>
+            <Text style={styles.buttonText}>{buttonText}</Text>
           </TouchableOpacity>
         </LinearGradient>
       </View>
