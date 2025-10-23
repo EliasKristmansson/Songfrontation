@@ -763,10 +763,8 @@ const startInitialCountdown = (onFinish) => {
         setLastGuessPhase(false);
         resetRound();
 
-
-        startInitialCountdown(() => {
-            handlePlayCore(); // or your rematch-start logic
-        });
+        //Take and start the game from NextRound
+        setupNextRound();
     };
     const handleBackToMenu = () => {
         setShowRematch(false);
@@ -1755,7 +1753,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'rgba(248,113,113,0.25)', // semi-transparent red
-        zIndex: 100,
+        zIndex: 10,
     },
     cooldownOverlayFull: {
         position: 'absolute',
@@ -1768,7 +1766,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'rgba(248,113,113,0.25)', // semi-transparent red
-        zIndex: 100,
+        zIndex: 10,
     },
 
     cooldownOverlayLeft: {
