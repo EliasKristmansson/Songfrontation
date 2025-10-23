@@ -1049,8 +1049,8 @@ const handlePlayCore = async (opts = {}) => {
             expectedGenreSub: expectedGenreName.toLowerCase(),
             playedTrackIds: playedSet,
             needed: nrOfGuesses,
-            disallowedArtists: previouslyPlayedArtists, // 👈 NEW
-            enforceUniqueArtists: true                  // 👈 NEW
+            disallowedArtists: previouslyPlayedArtists, 
+            enforceUniqueArtists: true                  
             });
 
             attempts++;
