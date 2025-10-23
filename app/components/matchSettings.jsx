@@ -21,9 +21,9 @@ export default function MatchSettings() {
     const [scrollViewHeight, setScrollViewHeight] = useState(1);
 
     const getSelectedMatchMode = () => {
-        if (genre === "Random") return "../components/genreRandom";
-        if (genre === "Pick from 3") return "../components/genreAlternatives";
-        if (genre === "Pick from all") return "../components/genreCustom";
+        if (genre === "Random") return "Random";
+        if (genre === "Pick from 3") return "Alternatives";
+        if (genre === "Pick from all") return "Custom";
         return null;
     };
 
@@ -34,7 +34,7 @@ export default function MatchSettings() {
         if (!nextPath) return;
 
         const params = {
-            genre,
+            genreSetting: String(getSelectedMatchMode()),
             rounds: String(rounds),
             duration: String(duration),
             guesses: String(guesses),
@@ -43,7 +43,7 @@ export default function MatchSettings() {
             from,
         };
 
-        router.push({ pathname: nextPath, params });
+        router.push({ pathname: "../components/match", params });
     };
 
     // Scroller logic
