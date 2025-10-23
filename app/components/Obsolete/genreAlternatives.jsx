@@ -2,8 +2,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ITUNES_GENRES } from "./match";
-import PreGameMenuHeader from "./preGameMenuHeader";
+import { ITUNES_GENRES } from "../match";
+import PreGameMenuHeader from "../preGameMenuHeader";
 
 function getRandomGenres(list, n) {
     const shuffled = [...list].sort(() => 0.5 - Math.random());

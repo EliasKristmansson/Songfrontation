@@ -1,8 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo } from "react";
-import { Platform, StyleSheet, Text, View, Pressable } from "react-native";
-import { ITUNES_GENRES } from "./match";
-import PreGameMenuHeader from "./preGameMenuHeader";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { ITUNES_GENRES } from "../match";
+import PreGameMenuHeader from "../preGameMenuHeader";
 
 function getRandomGenre(list) {
     return list[Math.floor(Math.random() * list.length)];

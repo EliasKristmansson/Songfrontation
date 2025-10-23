@@ -2,8 +2,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ITUNES_GENRES } from "./match";
-import PreGameMenuHeader from "./preGameMenuHeader";
+import { ITUNES_GENRES } from "../match";
+import PreGameMenuHeader from "../preGameMenuHeader";
 
 const asStr = (v) => (Array.isArray(v) ? v[0] : v ?? "");
 

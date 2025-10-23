@@ -1,15 +1,15 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Easing,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Animated,
+  Dimensions,
+  Easing,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { ITUNES_GENRES } from "../match";
 
@@ -28,6 +28,10 @@ export default function BetweenRoundModalCustom({
     const scrollY = useRef(new Animated.Value(0)).current;
     
   
+    const headerText =
+    roundWinner === null
+      ? "Select first genre..."
+      : `Player ${roundWinner} won the round. Select next genre...`;
 
     const bounce = (ref, animatedVal) => {
         Animated.sequence([
@@ -63,7 +67,7 @@ export default function BetweenRoundModalCustom({
   const content = (
     <View style={styles.container}>
       <Text style={styles.buttonText}>
-        Player {roundWinner} won the round. Next genre is {newGenre?.name}...
+        {headerText}
       </Text>
 
 

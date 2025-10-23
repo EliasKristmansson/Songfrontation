@@ -1,12 +1,12 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useMemo, useState } from "react";
 import {
-    Dimensions,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ITUNES_GENRES } from "../match";
 
@@ -28,10 +28,16 @@ export default function BetweenRoundModalAlternatives({
   const [selectedGenre, setSelectedGenre] = useState(null);
   const newGenre = currentGenre.current;
 
+      const headerText =
+    roundWinner === null
+      ? "Select first genre..."
+      : `Player ${roundWinner} won the round. Select next genre...`;
+
+
   const content = (
     <View style={styles.container}>
       <Text style={styles.buttonText}>
-        Player {roundWinner} won the round. Next genre is {newGenre?.name}...
+        {headerText}
       </Text>
 
 
