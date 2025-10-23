@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { playButtonSound } from "../utils/playButtonSound";
 import ShaderBackground from "./backgroundShader";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
 import Help from "./modals/help";
@@ -160,7 +161,7 @@ export default function Main({ background, stars = [] }) {
                         <TouchableOpacity
                             style={styles.settingsButton}
                             onPress={() => {
-                                useSound().playButtonSound();
+                                playButtonSound();
                                 setHelpVisible(true);
                             }}
                         >
@@ -170,7 +171,7 @@ export default function Main({ background, stars = [] }) {
                         <TouchableOpacity
                             style={styles.settingsButton}
                             onPress={() => {
-                                useSound().playButtonSound();
+                                playButtonSound();
                                 router.push("../components/settings");
                             }}
                         >
@@ -200,7 +201,7 @@ export default function Main({ background, stars = [] }) {
                             <PlayerButton
                                 label="1 Player"
                                 onPress={() =>  {
-                                    useSound().playButtonSound();
+                                    playButtonSound();
                                     router.push({
                                         pathname: "../components/genreRandom",
                                         params: { ...defaultQuickMatch, nrOfPlayers: 1, from: "main" },
@@ -216,7 +217,7 @@ export default function Main({ background, stars = [] }) {
                                 onPress={() =>
                                     {
                                         swipeAnimationAndRouteToNextView(false);
-                                        useSound().playButtonSound();
+                                        playButtonSound();
                                     }
                                 }
 
@@ -244,7 +245,7 @@ export default function Main({ background, stars = [] }) {
                             <PlayerButton
                                 label="1 Player"
                                 onPress={() => {
-                                    useSound().playButtonSound();
+                                    playButtonSound();
                                     router.push({
                                         pathname: "../components/iconSinglePlayer",
                                         params: { nrOfPlayers: 1 },
@@ -255,7 +256,7 @@ export default function Main({ background, stars = [] }) {
                             <PlayerButton
                                 label="2 Players"
                                 onPress={() => {
-                                    useSound().playButtonSound();
+                                    playButtonSound();
                                     swipeAnimationAndRouteToNextView(1);
                                 }}
                             />
@@ -267,7 +268,7 @@ export default function Main({ background, stars = [] }) {
 
 
             <Help visible={helpVisible} onClose={() => {
-                useSound().playButtonSound();
+                playButtonSound();
                 setHelpVisible(false);
             }} />
         </View>

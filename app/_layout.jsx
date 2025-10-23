@@ -5,7 +5,6 @@ import { AudioProvider } from "./components/audioContext";
 import ShaderBackground from "./components/backgroundShader";
 import { BackgroundShaderContext } from "./components/backgroundShaderContext";
 import FontProvider from "./components/fontProvider";
-import { SoundProvider } from "./contexts/SoundContext";
 
 export default function RootLayout() {
     // State for shader properties
@@ -17,43 +16,41 @@ export default function RootLayout() {
 
 
     return (
-        <SoundProvider>
-            <AudioProvider>
-                <FontProvider>
-                    <BackgroundShaderContext.Provider value={{
-                        animationSpeed, setAnimationSpeed,
-                        primaryBackgroundColorRef,
-                        secondaryBackgroundColorRef,
-                        dividerPosRef,
-                    }}>
+        <AudioProvider>
+            <FontProvider>
+                <BackgroundShaderContext.Provider value={{
+                    animationSpeed, setAnimationSpeed,
+                    primaryBackgroundColorRef,
+                    secondaryBackgroundColorRef,
+                    dividerPosRef,
+                }}>
 
-                        <ShaderBackground
-                            color1={primaryBackgroundColorRef}
-                            color2={[0.439, 0.506, 1.000]}
+                    <ShaderBackground
+                        color1={primaryBackgroundColorRef}
+                        color2={[0.439, 0.506, 1.000]}
 
-                            color3={secondaryBackgroundColorRef}
-                            color4={[0.718, 0.459, 0.525]}
+                        color3={secondaryBackgroundColorRef}
+                        color4={[0.718, 0.459, 0.525]}
 
-                            speed={animationSpeed} // updated dynamically
-                            scale={1}
-                            dividerPos={dividerPosRef} // updated dynamically
-                            style={styles.shader}
-                        >
+                        speed={animationSpeed} // updated dynamically
+                        scale={1}
+                        dividerPos={dividerPosRef} // updated dynamically
+                        style={styles.shader}
+                    >
 
 
-                            <Stack
-                                screenOptions={{
-                                    headerShown: false,
-                                    animation: "none",
-                                    contentStyle: { backgroundColor: "transparent" }
-                                }}
-                            // pass setter to pages
-                            />
-                        </ShaderBackground>
-                    </BackgroundShaderContext.Provider>
-                </FontProvider>
-            </AudioProvider>
-        </SoundProvider>
+                        <Stack
+                            screenOptions={{
+                                headerShown: false,
+                                animation: "none",
+                                contentStyle: { backgroundColor: "transparent" }
+                            }}
+                        // pass setter to pages
+                        />
+                    </ShaderBackground>
+                </BackgroundShaderContext.Provider>
+            </FontProvider>
+        </AudioProvider>
     );
 }
 
