@@ -1,13 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useMemo, useState } from "react";
-import {
-  Dimensions,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
 import { ITUNES_GENRES } from "../match";
 
 const windowWidth = Dimensions.get("window").width;
@@ -19,7 +12,6 @@ function getRandomGenres(list, n) {
 
 export default function BetweenRoundModalAlternatives({
   visible,
-  proceedToNextRound,
   roundWinner,
   currentGenre,
   onCloseAndProceed,
@@ -28,34 +20,30 @@ export default function BetweenRoundModalAlternatives({
   const [selectedGenre, setSelectedGenre] = useState(null);
   const newGenre = currentGenre.current;
 
-      const headerText =
+  const headerText =
     roundWinner === null
       ? "Select first genre..."
       : `Player ${roundWinner} won the round. Select next genre...`;
-
 
   const content = (
     <View style={styles.container}>
       <Text style={styles.buttonText}>
         {headerText}
       </Text>
-
-
       <View style={styles.centerArea}>
         <View style={styles.genreButtonRow}>
           {randomGenres.map((genreObj) => {
-            //const isSelected = selectedGenre === genreObj;
             return (
               <TouchableOpacity
                 key={genreObj.id}
                 style={styles.genreButtonWrapper}
                 onPress={() => {
-                    setSelectedGenre(genreObj);
-                     onCloseAndProceed(genreObj);
+                  setSelectedGenre(genreObj);
+                  onCloseAndProceed(genreObj);
                 }}
                 activeOpacity={0.85}
               >
-                
+
                 <LinearGradient
                   colors={["#896DA3", "#5663C4", "#412F7E"]}
                   start={{ x: 0, y: 0 }}
@@ -74,8 +62,6 @@ export default function BetweenRoundModalAlternatives({
           })}
         </View>
       </View>
-
-      
     </View>
   );
 

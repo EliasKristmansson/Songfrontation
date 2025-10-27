@@ -1,4 +1,3 @@
-// components/GuessBubble.jsx
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, TouchableOpacity } from "react-native";
@@ -9,7 +8,7 @@ export default function GuessBubble({
     disabled,
     animatedIndex,
     positionStyle,
-    glowColor = null, // "green" | "red" | null
+    glowColor = null,
     externalScale,
     exitTrigger = false,
     pressedShrink = false,
@@ -17,7 +16,6 @@ export default function GuessBubble({
     const scaleRef = useRef(new Animated.Value(0)).current;
     const glowRef = useRef(new Animated.Value(0)).current;
     const opacityRef = useRef(new Animated.Value(1)).current;
-
     const scaleAnim = externalScale || scaleRef;
 
     useEffect(() => {
@@ -26,7 +24,7 @@ export default function GuessBubble({
             Animated.timing(glowRef, {
                 toValue: 0,
                 duration: 400,
-                useNativeDriver: false, // borderColor = JS only
+                useNativeDriver: false,
             }).start();
         }
     }, [glowColor]);
@@ -42,42 +40,40 @@ export default function GuessBubble({
     }, []);
 
     useEffect(() => {
-  if (exitTrigger) {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 0,
-        friction: 6,
-        tension: 10,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityRef, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }
-}, [exitTrigger]);
+        if (exitTrigger) {
+            Animated.parallel([
+                Animated.spring(scaleAnim, {
+                    toValue: 0,
+                    friction: 6,
+                    tension: 10,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(opacityRef, {
+                    toValue: 0,
+                    duration: 200,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        }
+    }, [exitTrigger]);
 
- useEffect(() => {
-    if (pressedShrink) {
-      Animated.spring(scaleAnim, {
-        toValue: 0, //switch to 0.75 for old shrink
-        friction: 6,
-        tension: 10,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [pressedShrink]);
+    useEffect(() => {
+        if (pressedShrink) {
+            Animated.spring(scaleAnim, {
+                toValue: 0,
+                friction: 6,
+                tension: 10,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [pressedShrink]);
 
     //Var tvungen kommentera bort pga shrink till 0.75 när knapp trycks ner. Om vi kan göra toValue dynamisk så kan vi använda det här igen
     const handlePressIn = () => {
-    //     Animated.spring(scaleAnim, { toValue: 0.92, useNativeDriver: true }).start();
-     };
+    };
 
-     const handlePressOut = () => {
-    //     Animated.spring(scaleAnim, { toValue: 1, friction: 4, useNativeDriver: true }).start();
-     };
+    const handlePressOut = () => {
+    };
 
     const animatedShadowStyle = {
         shadowColor: glowColor === "green" ? "#4ADE80" : "#F87171",
@@ -86,17 +82,16 @@ export default function GuessBubble({
         shadowRadius: 12,
         elevation: glowRef.interpolate({
             inputRange: [0, 1],
-            outputRange: [0, 8], // Android shadow
+            outputRange: [0, 8],
         }),
     };
-
 
     return (
         <Animated.View
             style={[
                 styles.bubbleWrapper,
                 positionStyle,
-                animatedShadowStyle, // JS-driven glow here
+                animatedShadowStyle,
             ]}
         >
             <Animated.View style={{ transform: [{ scale: scaleAnim }], opacity: opacityRef }}>
@@ -114,7 +109,6 @@ export default function GuessBubble({
                         end={{ x: 1, y: 1 }}
                         style={styles.bubbleOptionInner}
                     >
-                       {/*  <Text style={styles.optionText}>{option.title}</Text>*/}
                         <Text style={styles.optionText}>{option.artist}</Text>
                     </LinearGradient>
                 </TouchableOpacity>

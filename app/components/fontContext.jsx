@@ -1,4 +1,3 @@
-// src/context/FontContext.js
 import { createContext, useContext } from "react";
 
 const FontContext = createContext({ fontsLoaded: false });

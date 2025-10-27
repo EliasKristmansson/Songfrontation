@@ -19,7 +19,7 @@ export default function PauseMatch({ visible, resumeMatch, onBackToMenu }) {
                     </TouchableOpacity>
                 </LinearGradient>
 
-                {/* Exit to Menu (Inverted Style) */}
+                {/* Exit to Menu */}
                 <View style={[styles.buttonGradient, styles.invertedButton]}>
                     <TouchableOpacity
                         style={styles.buttonTapArea}
@@ -40,7 +40,6 @@ export default function PauseMatch({ visible, resumeMatch, onBackToMenu }) {
             animationType="fade"
             statusBarTranslucent
             supportedOrientations={["portrait", "landscape"]}
-        //onRequestClose={onBackToMenu}
         >
             <View style={{ flex: 1 }}>{content}</View>
         </Modal>
@@ -55,7 +54,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 24,
     },
-
     buttonsWrap: {
         width: "100%",
         alignItems: "center",
@@ -64,7 +62,6 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 10,
     },
-
     buttonGradient: {
         width: Math.min(windowWidth * 0.78, 420),
         borderRadius: 50,
@@ -73,24 +70,19 @@ const styles = StyleSheet.create({
         marginVertical: 8,
         overflow: "hidden",
     },
-
     buttonTapArea: {
         paddingVertical: 18,
         alignItems: "center",
     },
-
     buttonText: {
         color: "#FFFFFF",
         fontSize: 18,
         fontFamily: "OutfitBold"
     },
-
-    // Inverted button (Exit to Menu)
     invertedButton: {
         backgroundColor: "#FFFFFF",
         borderColor: "#804D58",
     },
-
     invertedButtonText: {
         color: "#804D58",
         fontSize: 18,

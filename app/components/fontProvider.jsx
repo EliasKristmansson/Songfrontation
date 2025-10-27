@@ -1,4 +1,3 @@
-// src/context/FontProvider.jsx
 import { useFonts } from "expo-font";
 import { ActivityIndicator, View } from "react-native";
 import FontContext from "./fontContext";

@@ -1,5 +1,4 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
 import { Dimensions, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions, Pressable, } from "react-native";
 
 const windowHeight = Dimensions.get("window").height;
@@ -11,7 +10,6 @@ export default function Help({ visible, onClose }) {
     <View style={styles.overlay}>
       {/* Klick utanför rutan för att stänga */}
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-
       {/* Rutan i sig */}
       <View style={[styles.modalContent, { width: width * 0.75, maxHeight: height * 0.65 }]}>
         <LinearGradient
@@ -20,7 +18,7 @@ export default function Help({ visible, onClose }) {
           end={{ x: 0.8, y: 1 }}
           style={styles.gradient}
         >
-          {/* Header row */}
+          {/* Header rad */}
           <View style={styles.headerRow}>
             <Text style={[styles.title, { fontFamily: "OutfitBold" }]}>
               Help & Instructions

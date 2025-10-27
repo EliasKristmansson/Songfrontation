@@ -22,106 +22,97 @@ export default function ShaderBackground({
   const lastFrameTime = useRef(null);
   const shaderTime = useRef(0);
   // Update ref when props change
-useEffect(() => {
-  latestProps.current = {
-    speed,
-    scale,
-    color1,
-    color2,
-    color3,
-    color4,
-    dividerPos,
-  };
-}, [speed, scale, color1, color2, color3, color4, dividerPos]);
+  useEffect(() => {
+    latestProps.current = {
+      speed,
+      scale,
+      color1,
+      color2,
+      color3,
+      color4,
+      dividerPos,
+    };
+  }, [speed, scale, color1, color2, color3, color4, dividerPos]);
 
-const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.current : c);
+  const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.current : c);
 
   const createTexture = (gl, asset) => {
-        const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
-        return texture;
-    };
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
+    return texture;
+  };
 
   const startRenderLoop = (gl, uniforms) => {
-  if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
-  const {
-    // timeUniform, // not required for pulse, optional
-    resUniform,
-    motionUniform,
-    // speedUniform, // only needed if you want to upload it directly
-    scaleUniform,
-    color1Uniform,
-    color2Uniform,
-    color3Uniform,
-    color4Uniform,
-    dividerUniform,
-    scrollOffsetUniform,
-    pulseTimeUniform, // <-- make sure we destructure the new uniform
-  } = uniforms;
+    const {
+      resUniform,
+      motionUniform,
+      scaleUniform,
+      color1Uniform,
+      color2Uniform,
+      color3Uniform,
+      color4Uniform,
+      dividerUniform,
+      scrollOffsetUniform,
+      pulseTimeUniform,
+    } = uniforms;
 
-  let lastTime = performance.now();
-  // shaderTime kept for other uses if you had them; you can remove if unused
-  shaderTime.current = 0;
-  let scrollOffset = 0;
-  let pulseTime = 0;
+    let lastTime = performance.now();
+    shaderTime.current = 0;
+    let scrollOffset = 0;
+    let pulseTime = 0;
 
-  const render = () => {
-    const now = performance.now();
-    const delta = (now - lastTime) / 1000;
-    lastTime = now;
+    const render = () => {
+      const now = performance.now();
+      const delta = (now - lastTime) / 1000;
+      lastTime = now;
 
-    const { speed, scale } = latestProps.current;
+      const { speed, scale } = latestProps.current;
 
-    // accumulate both animations with delta
-    shaderTime.current += delta * speed;
-    scrollOffset = (scrollOffset + delta * speed * 0.05) % 1.0;
-    pulseTime = (pulseTime + delta * speed * 1.0) % (2.0 * Math.PI);
+      // accumulate both animations with delta
+      shaderTime.current += delta * speed;
+      scrollOffset = (scrollOffset + delta * speed * 0.05) % 1.0;
+      pulseTime = (pulseTime + delta * speed * 1.0) % (2.0 * Math.PI);
 
+      // Set viewport and uniforms
+      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+      gl.uniform2f(resUniform, gl.drawingBufferWidth, gl.drawingBufferHeight);
+      gl.uniform1f(motionUniform, disableMotion ? 0.0 : 1.0);
+      gl.uniform1f(scrollOffsetUniform, scrollOffset);
+      gl.uniform1f(pulseTimeUniform, pulseTime);
 
-    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+      const { dividerPos } = latestProps.current;
+      const dividerVal = resolveColor(dividerPos);
+      const color1Val = resolveColor(color1);
+      const color2Val = resolveColor(color2);
+      const color3Val = resolveColor(color3);
+      const color4Val = resolveColor(color4);
 
-    // If you still want to keep timeUniform for something else, set it here.
-    // gl.uniform1f(timeUniform, shaderTime.current);
+      gl.uniform1f(scaleUniform, scale);
+      gl.uniform1f(dividerUniform, dividerVal);
+      gl.uniform3f(color1Uniform, color1Val[0], color1Val[1], color1Val[2]);
+      gl.uniform3f(color2Uniform, color2Val[0], color2Val[1], color2Val[2]);
+      gl.uniform3f(color3Uniform, color3Val[0], color3Val[1], color3Val[2]);
+      gl.uniform3f(color4Uniform, color4Val[0], color4Val[1], color4Val[2]);
 
-    gl.uniform2f(resUniform, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    gl.uniform1f(motionUniform, disableMotion ? 0.0 : 1.0);
-    gl.uniform1f(scrollOffsetUniform, scrollOffset);
+      gl.clearColor(0, 0, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
 
-    // <-- Set pulse uniform that the shader uses
-    gl.uniform1f(pulseTimeUniform, pulseTime);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      gl.flush();
+      gl.endFrameEXP();
 
-    const { dividerPos } = latestProps.current;
-    const dividerVal = resolveColor(dividerPos);
-    const color1Val = resolveColor(color1);
-    const color2Val = resolveColor(color2);
-    const color3Val = resolveColor(color3);
-    const color4Val = resolveColor(color4);
-
-    gl.uniform1f(scaleUniform, scale);
-    gl.uniform1f(dividerUniform, dividerVal);
-    gl.uniform3f(color1Uniform, color1Val[0], color1Val[1], color1Val[2]);
-    gl.uniform3f(color2Uniform, color2Val[0], color2Val[1], color2Val[2]);
-    gl.uniform3f(color3Uniform, color3Val[0], color3Val[1], color3Val[2]);
-    gl.uniform3f(color4Uniform, color4Val[0], color4Val[1], color4Val[2]);
-
-    gl.clearColor(0, 0, 0, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    gl.flush();
-    gl.endFrameEXP();
+      animationRef.current = requestAnimationFrame(render);
+    };
 
     animationRef.current = requestAnimationFrame(render);
   };
-
-  animationRef.current = requestAnimationFrame(render);
-};
 
   const onContextCreate = async (gl) => {
     const grainAsset = Asset.fromModule(require("../../assets/images/grain.png"));
@@ -158,8 +149,6 @@ uniform float u_scrollOffset;
 
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-
-  // ✅ Pulse now uses accumulated delta time
   float pulse = sin(u_pulseTime * -2.0 + uv.y * 2.0) * 0.3 + 0.2;
 
   vec2 perlinUV = fract(uv * u_scale + vec2(0.0, u_scrollOffset));
@@ -201,9 +190,9 @@ void main() {
 
     const vertices = new Float32Array([
       -1.0, -1.0,
-       1.0, -1.0,
-      -1.0,  1.0,
-       1.0,  1.0,
+      1.0, -1.0,
+      -1.0, 1.0,
+      1.0, 1.0,
     ]);
 
     const vertexBuffer = gl.createBuffer();
@@ -247,23 +236,23 @@ void main() {
   };
 
   useEffect(() => {
-  const handleAppStateChange = (nextState) => {
-    if (nextState === "active" && glRef.current) {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      // restart from fresh RAF cycle
-      startRenderLoop(glRef.current.gl, glRef.current);
-    } else if (nextState.match(/inactive|background/)) {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-  };
+    const handleAppStateChange = (nextState) => {
+      if (nextState === "active" && glRef.current) {
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        // restart from fresh RAF cycle
+        startRenderLoop(glRef.current.gl, glRef.current);
+      } else if (nextState.match(/inactive|background/)) {
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    };
 
-  const sub = AppState.addEventListener("change", handleAppStateChange);
-  return () => {
-    sub.remove();
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
-  };
-}, []);
+    const sub = AppState.addEventListener("change", handleAppStateChange);
+    return () => {
+      sub.remove();
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, []);
 
   return (
     <View style={[styles.container, style]}>

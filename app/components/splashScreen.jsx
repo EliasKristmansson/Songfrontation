@@ -33,14 +33,12 @@ export default function SplashScreen() {
                     { source: starSources[1], top: "78%", left: "85%", size: 40 },
                 ];
 
-                // Preload fonts (the ones you use: OutfitBold, OutfitLight, OutfitRegular)
+                // Preload fonts
                 await Font.loadAsync({
                     OutfitBold: require("../../assets/fonts/Outfit/Outfit-Bold.ttf"),
                     OutfitLight: require("../../assets/fonts/Outfit/Outfit-Light.ttf"),
                     OutfitRegular: require("../../assets/fonts/Outfit/Outfit-Regular.ttf"),
                 });
-
-                // Save preloaded assets
                 setAssets({ bg: bg.localUri || bg.uri, stars });
                 setReady(true);
             } catch (err) {
@@ -73,7 +71,6 @@ export default function SplashScreen() {
             </View>
         );
     }
-
     // Only show Main when everything is loaded
     return <Main background={assets.bg} stars={assets.stars} />;
 }
@@ -83,7 +80,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "white", // ✅ no flicker to black
+        backgroundColor: "white",
     },
     iconBox: {
         width: 120,

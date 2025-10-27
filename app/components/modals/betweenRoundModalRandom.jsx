@@ -17,14 +17,14 @@ export default function BetweenRoundModalRandom({
   onCloseAndProceed,
   executeNextRound
 }) {
-  // ✅ Pick a new genre when the modal becomes visible
+
   const newGenre = useMemo(() => {
     if (!visible) return null;
     const filtered = ITUNES_GENRES.filter(g => g.id !== currentGenre?.id);
     return getRandomGenre(filtered);
   }, [visible]);
 
-    const headerText =
+  const headerText =
     roundWinner === null
       ? "First genre is..."
       : `Player ${roundWinner} won the round. Next genre is...`;
@@ -50,7 +50,7 @@ export default function BetweenRoundModalRandom({
           <TouchableOpacity
             style={styles.buttonTapArea}
             onPress={() => onCloseAndProceed(newGenre)}
- 
+
             activeOpacity={0.9}
           >
             <Text style={styles.buttonText}>{buttonText}</Text>
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "OutfitBold",
   },
-    genreText: {
+  genreText: {
     fontSize: 40,
     paddingTop: 60,
     paddingBottom: 60,

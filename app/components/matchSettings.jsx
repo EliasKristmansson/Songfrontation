@@ -223,8 +223,6 @@ export default function MatchSettings() {
                                 ))}
                             </View>
                         </View>
-
-
                     </View>
                 </ScrollView>
 

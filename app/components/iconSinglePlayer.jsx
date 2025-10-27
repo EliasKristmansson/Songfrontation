@@ -3,16 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-    Animated,
-    Easing,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from "react-native";
+import { Animated, Easing, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
 const ICONS = [
@@ -200,8 +191,6 @@ export default function IconSinglePlayer({ nrOfPlayers }) {
                                 icon: getPlayerIcon(),
                             },
                         })
-
-                        
                     }
                     canProceed={selected !== null}
                 />

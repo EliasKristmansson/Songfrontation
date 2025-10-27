@@ -2,9 +2,8 @@ import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import { useContext, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
-import { useAudio } from "../components/audioContext"; // adjust path if needed
+import { useAudio } from "../components/audioContext";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
-
 
 export default function Settings() {
     const router = useRouter();
@@ -18,7 +17,7 @@ export default function Settings() {
     } = useAudio();
     const { animationSpeed, setAnimationSpeed } = useContext(BackgroundShaderContext);
 
-    // Sync toggle with animationSpeed
+    // Synca med animationsnes hastighet
     const [animationsEnabled, setAnimationsEnabled] = useState(animationSpeed > 0);
 
     useEffect(() => {
@@ -30,7 +29,7 @@ export default function Settings() {
         setAnimationSpeed(enabled ? 0.2 : 0);
     };
 
-    // Convert values (0–100) to (0–1) when updating
+    // Konvertera värdena så att volymen ändras
     return (
         <View>
             <TouchableOpacity onPress={() => router.push("/")} style={styles.backButton}>
@@ -91,7 +90,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 16,
         paddingBottom: 40,
-        paddingTop: 40, // leave space for back arrow
+        paddingTop: 40,
     },
     backButton: {
         position: "absolute",

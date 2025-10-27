@@ -11,10 +11,8 @@ export default function RematchModal({ visible, onRematch, onBackToMenu, matchWi
             <Text style={styles.winnerText}>
                 Player {matchWinnerId} has won the match!
             </Text>
-
-            {/* Horizontal Layout */}
             <View style={styles.horizontalWrap}>
-                {/* Left Side: Title + Scroll */}
+                {/* Vänster sida: Title + Scroll */}
                 <View style={styles.leftSide}>
                     <Text style={styles.playedSongsTitle}>Played Songs:</Text>
                     <View style={styles.playedSongsContainer}>
@@ -32,7 +30,7 @@ export default function RematchModal({ visible, onRematch, onBackToMenu, matchWi
                     </View>
                 </View>
 
-                {/* Right Side: Buttons */}
+                {/* Höger sida: Buttons */}
                 <View style={styles.buttonsWrap}>
                     <LinearGradient
                         colors={["#242F7D", "#412F59", "#804D58"]}
@@ -90,7 +88,6 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         paddingHorizontal: 48,
     },
-    // Left Side: Title + Scroll
     leftSide: {
         width: "48%",
     },
@@ -116,10 +113,9 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontFamily: "OutfitLight",
     },
-    // Right Side: Buttons
     buttonsWrap: {
         width: "48%",
-        justifyContent: "center", // centers buttons vertically
+        justifyContent: "center",
         alignItems: "center",
     },
     buttonGradient: {

@@ -1,17 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useContext, useEffect, useRef, useState } from "react";
-import {
-    Animated,
-    Dimensions,
-    Easing,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Animated, Dimensions, Easing, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
 import { playButtonSound } from "../utils/playButtonSound";
 import ShaderBackground from "./backgroundShader";
 import { BackgroundShaderContext } from "./backgroundShaderContext";
@@ -68,9 +58,6 @@ function PlayerButton({ label, onPress }) {
     );
 }
 
-
-
-
 export default function Main({ background, stars = [] }) {
     const { dividerPosRef } = useContext(BackgroundShaderContext);
     const anim = useRef(new Animated.Value(dividerPosRef.current)).current;
@@ -81,17 +68,11 @@ export default function Main({ background, stars = [] }) {
 
     // Default settings for Quick Match
     const defaultQuickMatch = {
-        //genre: "random",
-        //genreSetting: "Random",
-        genreId: null,          // This will be set dynamically in match.jsx
         genreName: null,
-        genreSetting: "Random",        // This will be set dynamically in match.jsx
-        rounds: 1,            // String values for router params
         duration: 29,
         guesses: 3,
         points: 3,
     };
-
 
     useEffect(() => {
         animateDivider(1.1);
@@ -105,7 +86,7 @@ export default function Main({ background, stars = [] }) {
             toValue,
             duration: 600,
             easing: Easing.inOut(Easing.cubic),
-            useNativeDriver: false, // ✅ shader ref, not a style prop
+            useNativeDriver: false,
         }).start(() => callback?.());
 
         anim.addListener(({ value }) => {
@@ -141,9 +122,6 @@ export default function Main({ background, stars = [] }) {
         }, 600);
 
     };
-
-
-
 
     return (
         <View style={styles.container}>
@@ -206,31 +184,27 @@ export default function Main({ background, stars = [] }) {
                         >
                             <PlayerButton
                                 label="1 Player"
-                                onPress={() =>  {
+                                onPress={() => {
                                     playButtonSound();
                                     router.push({
                                         pathname: "../components/match",
                                         params: { ...defaultQuickMatch, nrOfPlayers: 1, from: "main" },
                                     });
-
                                 }
                                 }
-
                             />
                             <View style={styles.divider} />
                             <PlayerButton
                                 label="2 Players"
-                                onPress={() =>
-                                    {
-                                        swipeAnimationAndRouteToNextView(false);
-                                        playButtonSound();
-                                    }
+                                onPress={() => {
+                                    swipeAnimationAndRouteToNextView(false);
+                                    playButtonSound();
+                                }
                                 }
 
                             />
                         </LinearGradient>
                     </View>
-
                     <View
                         style={{
                             width: BUTTON_WIDTH,
@@ -255,7 +229,8 @@ export default function Main({ background, stars = [] }) {
                                     router.push({
                                         pathname: "../components/iconSinglePlayer",
                                         params: { nrOfPlayers: 1 },
-                                    })}
+                                    })
+                                }
                                 }
                             />
                             <View style={styles.divider} />
@@ -270,8 +245,6 @@ export default function Main({ background, stars = [] }) {
                     </View>
                 </View>
             </Animated.View>
-
-
 
             <Help visible={helpVisible} onClose={() => {
                 playButtonSound();

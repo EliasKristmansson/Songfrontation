@@ -3,17 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-    Animated,
-    Easing,
-    Image,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Animated, Easing, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
 import ShaderBackground from "./backgroundShader";
 import PreGameMenuHeader from "./preGameMenuHeader";
 
@@ -79,7 +69,6 @@ export default function Icon() {
     const scrollRef1 = useRef(null);
     const scrollRef2 = useRef(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
-
 
     const fadeContent = (callback, newOpacity) => {
         Animated.timing(fadeAnim, {
@@ -187,7 +176,6 @@ export default function Icon() {
             );
         }
 
-
         const selected = player === 1 ? selected1 === idx : selected2 === idx;
         const iconName = ICONS[(idx - 1) % ICONS.length];
         const iconColor = ICON_COLORS[(idx - 1) % ICON_COLORS.length];
@@ -222,7 +210,6 @@ export default function Icon() {
         }
         return null;
     };
-
 
     return (
         <View style={styles.container}>
@@ -274,13 +261,12 @@ export default function Icon() {
                                         <MaterialCommunityIcons
                                             name={ICONS[(selected1 - 1) % ICONS.length]}
                                             size={32}
-                                            color={ICON_COLORS[(selected1 - 1) % ICON_COLORS.length]} // ✅ use the actual color
+                                            color={ICON_COLORS[(selected1 - 1) % ICON_COLORS.length]}
                                         />
                                     ) : null}
                                 </PlaceholderIcon>
                             )}
                         </View>
-
                         <ScrollView
                             ref={scrollRef1}
                             contentContainerStyle={styles.iconList}
@@ -312,13 +298,12 @@ export default function Icon() {
                                         <MaterialCommunityIcons
                                             name={ICONS[(selected2 - 1) % ICONS.length]}
                                             size={32}
-                                            color={ICON_COLORS[(selected2 - 1) % ICON_COLORS.length]} // ✅ use the actual color
+                                            color={ICON_COLORS[(selected2 - 1) % ICON_COLORS.length]}
                                         />
                                     ) : null}
                                 </PlaceholderIcon>
                             )}
                         </View>
-
                         <ScrollView
                             ref={scrollRef2}
                             contentContainerStyle={styles.iconList}
@@ -336,7 +321,6 @@ export default function Icon() {
                     </View>
                 </View>
             </Animated.View>
-
         </View>
     );
 }
