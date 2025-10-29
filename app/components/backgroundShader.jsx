@@ -7,13 +7,13 @@ export default function ShaderBackground({
   children,
   style,
   disableMotion = false,
-  speed = 0.2,
+  speed = 0.2, // rolling opacity wave animation speed
   scale = 3.0,
-  color1 = [1.2, 0.3, 0.8],
-  color2 = [1.0, 0.5, 0.2],
-  color3 = [0.8, 0.2, 0.3],
-  color4 = [0.2, 0.8, 0.5],
-  dividerPos = 1.0,
+  color1 = [1.2, 0.3, 0.8], //Left half background color
+  color2 = [1.0, 0.5, 0.2], //Left half perlin noise color
+  color3 = [0.8, 0.2, 0.3], //Right half background color
+  color4 = [0.2, 0.8, 0.5], //Right half perlin noise color
+  dividerPos = 1.0, // position of divider between left and right half (0.5 == center, 1.0 == divider hidden to the right)
 }) {
   const startTime = useRef(Date.now());
   const glRef = useRef(null);
@@ -21,98 +21,105 @@ export default function ShaderBackground({
   const latestProps = useRef({ speed, scale, color1, color2, color3, color4, dividerPos });
   const lastFrameTime = useRef(null);
   const shaderTime = useRef(0);
+
   // Update ref when props change
-  useEffect(() => {
-    latestProps.current = {
-      speed,
-      scale,
-      color1,
-      color2,
-      color3,
-      color4,
-      dividerPos,
-    };
-  }, [speed, scale, color1, color2, color3, color4, dividerPos]);
-
-  const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.current : c);
-
-  const createTexture = (gl, asset) => {
-    const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
-    return texture;
+useEffect(() => {
+  latestProps.current = {
+    speed,
+    scale,
+    color1,
+    color2,
+    color3,
+    color4,
+    dividerPos,
   };
+}, [speed, scale, color1, color2, color3, color4, dividerPos]);
+
+const resolveColor = (c) => (c && typeof c === "object" && "current" in c ? c.current : c);
+
+  // creating perlin noise and grain texture from assets
+  const createTexture = (gl, asset) => {
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
+        return texture;
+    };
 
   const startRenderLoop = (gl, uniforms) => {
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+  if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
-    const {
-      resUniform,
-      motionUniform,
-      scaleUniform,
-      color1Uniform,
-      color2Uniform,
-      color3Uniform,
-      color4Uniform,
-      dividerUniform,
-      scrollOffsetUniform,
-      pulseTimeUniform,
-    } = uniforms;
+  const {
+    // timeUniform, // not required for pulse, optional
+    resUniform,
+    motionUniform,
+    // speedUniform, // only needed if you want to upload it directly
+    scaleUniform,
+    color1Uniform,
+    color2Uniform,
+    color3Uniform,
+    color4Uniform,
+    dividerUniform,
+    scrollOffsetUniform,
+    pulseTimeUniform, // <-- make sure we destructure the new uniform
+  } = uniforms;
 
-    let lastTime = performance.now();
-    shaderTime.current = 0;
-    let scrollOffset = 0;
-    let pulseTime = 0;
+  let lastTime = performance.now();
+  shaderTime.current = 0;
+  let scrollOffset = 0;
+  let pulseTime = 0;
 
-    const render = () => {
-      const now = performance.now();
-      const delta = (now - lastTime) / 1000;
-      lastTime = now;
+  const render = () => {
+    const now = performance.now();
+    const delta = (now - lastTime) / 1000;
+    lastTime = now;
 
-      const { speed, scale } = latestProps.current;
+    const { speed, scale } = latestProps.current;
 
-      // accumulate both animations with delta
-      shaderTime.current += delta * speed;
-      scrollOffset = (scrollOffset + delta * speed * 0.05) % 1.0;
-      pulseTime = (pulseTime + delta * speed * 1.0) % (2.0 * Math.PI);
+    // accumulate both animations with delta
+    shaderTime.current += delta * speed;
+    scrollOffset = (scrollOffset + delta * speed * 0.05) % 1.0;
+    pulseTime = (pulseTime + delta * speed * 1.0) % (2.0 * Math.PI);
 
-      // Set viewport and uniforms
-      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-      gl.uniform2f(resUniform, gl.drawingBufferWidth, gl.drawingBufferHeight);
-      gl.uniform1f(motionUniform, disableMotion ? 0.0 : 1.0);
-      gl.uniform1f(scrollOffsetUniform, scrollOffset);
-      gl.uniform1f(pulseTimeUniform, pulseTime);
 
-      const { dividerPos } = latestProps.current;
-      const dividerVal = resolveColor(dividerPos);
-      const color1Val = resolveColor(color1);
-      const color2Val = resolveColor(color2);
-      const color3Val = resolveColor(color3);
-      const color4Val = resolveColor(color4);
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-      gl.uniform1f(scaleUniform, scale);
-      gl.uniform1f(dividerUniform, dividerVal);
-      gl.uniform3f(color1Uniform, color1Val[0], color1Val[1], color1Val[2]);
-      gl.uniform3f(color2Uniform, color2Val[0], color2Val[1], color2Val[2]);
-      gl.uniform3f(color3Uniform, color3Val[0], color3Val[1], color3Val[2]);
-      gl.uniform3f(color4Uniform, color4Val[0], color4Val[1], color4Val[2]);
+    gl.uniform2f(resUniform, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    gl.uniform1f(motionUniform, disableMotion ? 0.0 : 1.0);
+    gl.uniform1f(scrollOffsetUniform, scrollOffset);
 
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+    // <-- Set pulse uniform that the shader uses
+    gl.uniform1f(pulseTimeUniform, pulseTime);
 
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      gl.flush();
-      gl.endFrameEXP();
+    const { dividerPos } = latestProps.current;
+    const dividerVal = resolveColor(dividerPos);
+    const color1Val = resolveColor(color1);
+    const color2Val = resolveColor(color2);
+    const color3Val = resolveColor(color3);
+    const color4Val = resolveColor(color4);
 
-      animationRef.current = requestAnimationFrame(render);
-    };
+    gl.uniform1f(scaleUniform, scale);
+    gl.uniform1f(dividerUniform, dividerVal);
+    gl.uniform3f(color1Uniform, color1Val[0], color1Val[1], color1Val[2]);
+    gl.uniform3f(color2Uniform, color2Val[0], color2Val[1], color2Val[2]);
+    gl.uniform3f(color3Uniform, color3Val[0], color3Val[1], color3Val[2]);
+    gl.uniform3f(color4Uniform, color4Val[0], color4Val[1], color4Val[2]);
+
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.flush();
+    gl.endFrameEXP();
 
     animationRef.current = requestAnimationFrame(render);
   };
+
+  animationRef.current = requestAnimationFrame(render);
+};
 
   const onContextCreate = async (gl) => {
     const grainAsset = Asset.fromModule(require("../../assets/images/grain.png"));
@@ -124,11 +131,13 @@ export default function ShaderBackground({
     const perlinTex = createTexture(gl, perlinAsset);
     const grainTex = createTexture(gl, grainAsset);
 
+    // vertex shader for per-vertex rendering. largely unused, only vertices used are to create a full screen quad
     const vertShaderSource = `
       attribute vec4 position;
       void main() { gl_Position = position; }
     `;
 
+    //frag shader for per-pixel rendering, which is what our shader primarily consists of
     const fragShaderSource = `
   precision mediump float;
 
@@ -147,13 +156,19 @@ uniform sampler2D u_perlinTex;
 uniform sampler2D u_grainTex;
 uniform float u_scrollOffset;
 
+
+// function for calculating the visual elements of the shader, such as textures, colors and animations
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+
+  // sine-based rolling opacity reveal animation, make positive to flip direction.
   float pulse = sin(u_pulseTime * -2.0 + uv.y * 2.0) * 0.3 + 0.2;
 
+  //setting up perlin noise texture scale and offset
   vec2 perlinUV = fract(uv * u_scale + vec2(0.0, u_scrollOffset));
   vec4 perlinSample = texture2D(u_perlinTex, perlinUV);
 
+  //apply the rolling opacity reveal animation to the perlin noise
   float factor = perlinSample.r * pulse;
 
   vec3 firstHalf = mix(u_color1, u_color2, factor);
@@ -162,6 +177,7 @@ void main() {
   float secondHalfMask = step(u_dividerPos, uv.x);
   vec3 baseColor = mix(firstHalf, secondHalf, secondHalfMask);
 
+  // largely obsolete code for the previous white divider line between the two halves. Try to remove
   float dividerDist = abs(uv.x - u_dividerPos);
   float dividerLine = smoothstep(0.0, 0.003, 0.003 - dividerDist);
   vec3 dividerColor = vec3(1.0);
@@ -190,9 +206,9 @@ void main() {
 
     const vertices = new Float32Array([
       -1.0, -1.0,
-      1.0, -1.0,
-      -1.0, 1.0,
-      1.0, 1.0,
+       1.0, -1.0,
+      -1.0,  1.0,
+       1.0,  1.0,
     ]);
 
     const vertexBuffer = gl.createBuffer();
@@ -235,24 +251,26 @@ void main() {
 
   };
 
+  //Restart shader when app comes to foreground (fixes fps issues when minimizing app)
   useEffect(() => {
-    const handleAppStateChange = (nextState) => {
-      if (nextState === "active" && glRef.current) {
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
-        // restart from fresh RAF cycle
-        startRenderLoop(glRef.current.gl, glRef.current);
-      } else if (nextState.match(/inactive|background/)) {
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
-    };
-
-    const sub = AppState.addEventListener("change", handleAppStateChange);
-    return () => {
-      sub.remove();
+  const handleAppStateChange = (nextState) => {
+    if (nextState === "active" && glRef.current) {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, []);
+      // restart from fresh RAF cycle
+      startRenderLoop(glRef.current.gl, glRef.current);
+    } else if (nextState.match(/inactive|background/)) {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+  };
+
+  const sub = AppState.addEventListener("change", handleAppStateChange);
+  return () => {
+    sub.remove();
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+  };
+}, []);
+
 
   return (
     <View style={[styles.container, style]}>

@@ -26,15 +26,15 @@ export default function RootLayout() {
                 }}>
 
                     <ShaderBackground
-                        color1={primaryBackgroundColorRef}
+                        color1={primaryBackgroundColorRef} // updated dynamically, can pulse green as part of animation defined in match component
                         color2={[0.439, 0.506, 1.000]}
 
-                        color3={secondaryBackgroundColorRef}
+                        color3={secondaryBackgroundColorRef} // updated dynamically, can pulse green as part of animation defined in match component
                         color4={[0.718, 0.459, 0.525]}
 
-                        speed={animationSpeed} // updated dynamically
+                        speed={animationSpeed} // updated dynamically, 0 for disabling shader animations. Accessed in settings component
                         scale={1}
-                        dividerPos={dividerPosRef} // updated dynamically
+                        dividerPos={dividerPosRef} // updated dynamically, handles position of divider when starting/exiting 2-player matches
                         style={styles.shader}
                     >
 
