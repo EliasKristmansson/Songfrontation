@@ -68,7 +68,7 @@ export default function Main({ background, stars = [] }) {
 
     // Default settings for Quick Match
     const defaultQuickMatch = {
-        genreName: null,
+        genreSetting: "Random",
         duration: 29,
         guesses: 3,
         points: 3,
